@@ -1,4 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { Boot } from "./Boot.js";
 
@@ -39,7 +42,7 @@ describe("Boot", () => {
     );
 
     expect(await screen.findByText("failed")).toBeInTheDocument();
-    expect(screen.getByText("app-v8")).toBeInTheDocument();
+    expect(screen.getByText("app-v17")).toBeInTheDocument();
     expect(screen.getAllByText("present")).toHaveLength(3);
     expect(screen.getByText("1")).toBeInTheDocument();
     const diagnosticText = screen.getByRole("alert").textContent ?? "";
@@ -62,5 +65,15 @@ describe("Boot", () => {
       expect(screen.getByText("render failed")).toBeInTheDocument();
     });
     consoleError.mockRestore();
+  });
+
+  it("keeps a static startup fallback in html before React mounts", () => {
+    const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+    const html = readFileSync(resolve(webRoot, "index.html"), "utf8");
+
+    expect(html).toContain("data-startup-fallback");
+    expect(html).toContain("app-v17");
+    expect(html).not.toContain("sourceText");
+    expect(html).not.toContain("objectKey");
   });
 });

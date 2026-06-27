@@ -7,7 +7,7 @@
     "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
     "deploy:cloudflare": "pnpm build && pnpm --filter @ss/server deploy",
     "dev": "pnpm --filter @ss/shared build && pnpm --parallel --filter @ss/web --filter @ss/server dev",
-    "test": "pnpm build && pnpm -r test",
+    "test": "pnpm --filter @ss/shared build && pnpm -r test",
     "typecheck": "pnpm --filter @ss/shared build && pnpm -r typecheck"
   },
   "devDependencies": {

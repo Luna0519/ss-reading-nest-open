@@ -7,7 +7,24 @@
     <title>S×S 小窝共读</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main
+        data-startup-fallback
+        style="min-height:100vh;padding:24px;background:#211c1a;color:#f3ece8;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+      >
+        <strong>SxS reading nest startup</strong>
+        <p style="max-width:36rem;line-height:1.6">
+          If this message stays visible, the app shell loaded but JavaScript did not finish mounting.
+          Please refresh the widget or reopen ChatGPT, then send this startup panel to Codex.
+        </p>
+        <dl style="display:grid;grid-template-columns:max-content 1fr;gap:8px 14px">
+          <dt>resourceVersion</dt>
+          <dd>app-v17</dd>
+          <dt>bootStage</dt>
+          <dd>html-loaded</dd>
+        </dl>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -657,6 +657,11 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+.companion-comment p.full-text {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
 .companion-comment.live-comment {
   border-color: color-mix(in srgb, var(--peach-strong) 55%, var(--line));
   background: color-mix(in srgb, var(--peach) 48%, var(--surface));

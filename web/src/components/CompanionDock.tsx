@@ -7,6 +7,8 @@ import type {
 } from "@ss/shared";
 import type { CompanionLayout } from "../hooks/useReadingHostLayout.js";
 
+const LONG_COMMENT_PREVIEW_THRESHOLD = 90;
+
 const DEEP_ANALYSIS_DOCK_TEXT = "已生成长评，可回聊天区查看。";
 
 export interface PendingCompanionCommentDraft {
@@ -69,7 +71,13 @@ export function CompanionDock(props: {
     );
   }
 
-  const visibleCount = expanded ? 20 : props.layout === "wide" ? 3 : 1;
+  const collapsedVisibleCount = props.layout === "wide" ? 3 : 1;
+  const hasLongComment = comments.some((comment) => {
+    const text = comment.mode === "deep_analysis" ? DEEP_ANALYSIS_DOCK_TEXT : comment.text;
+    return text.length > LONG_COMMENT_PREVIEW_THRESHOLD;
+  });
+  const canExpand = comments.length > collapsedVisibleCount || hasLongComment;
+  const visibleCount = expanded ? 20 : collapsedVisibleCount;
   const visible = comments.slice(0, visibleCount);
   const latestLiveCommentId = comments.find(
     (comment) => comment.source === "live_reading"
@@ -113,7 +121,7 @@ export function CompanionDock(props: {
                 onClick={() => props.onJump(comment.position.index)}
               >
                 <span>{comment.position.label}</span>
-                <p>
+                <p className={expanded ? "full-text" : undefined}>
                   {comment.mode === "deep_analysis"
                     ? DEEP_ANALYSIS_DOCK_TEXT
                     : comment.text}
@@ -154,7 +162,12 @@ export function CompanionDock(props: {
             )}
           </div>
         ) : null}
-        {comments.length > (props.layout === "wide" ? 3 : 1) ? (
+        {hasLongComment ? (
+          <button type="button" onClick={() => setExpanded((value) => !value)}>
+            {expanded ? "收起短评" : "展开短评"}
+          </button>
+        ) : null}
+        {!hasLongComment && canExpand ? (
           <button type="button" onClick={() => setExpanded((value) => !value)}>
             {expanded ? "只看最新短评" : "查看最近短评"}
           </button>

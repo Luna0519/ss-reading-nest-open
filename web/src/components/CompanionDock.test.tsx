@@ -48,6 +48,31 @@ describe("CompanionDock", () => {
     expect(screen.queryByText("第三段弹幕")).not.toBeInTheDocument();
   });
 
+  it("lets a single long recent comment expand to full text in compact mode", () => {
+    const longText =
+      "Long companion comment that should start as a preview but become fully readable after expanding the Dock. ".repeat(4).trim();
+
+    render(
+      <CompanionDock
+        sessionId="session-a"
+        comments={[makeComment("long", "session-a", 1, longText, "current_context", "2026-06-23T05:00:00.000Z")]}
+        layout="compact"
+        loading={false}
+        onJump={vi.fn()}
+      />
+    );
+
+    const dock = screen.getByTestId("companion-dock");
+    expect(dock).not.toHaveClass("expanded");
+    expect(screen.getByText(longText).closest("p")).not.toHaveClass("full-text");
+
+    fireEvent.click(screen.getByRole("button", { name: "展开短评" }));
+
+    expect(dock).toHaveClass("expanded");
+    expect(screen.getByText(longText).closest("p")).toHaveClass("full-text");
+    expect(screen.getByRole("button", { name: "收起短评" })).toBeInTheDocument();
+  });
+
   it("orders recent comments newest first and never displays more than twenty", () => {
     const manyComments = Array.from({ length: 21 }, (_, index) =>
       makeComment(

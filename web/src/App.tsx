@@ -126,6 +126,7 @@ export function App() {
     useState<PendingCompanionCommentDraft | null>(null);
   const [pendingCommentSaving, setPendingCommentSaving] = useState(false);
   const [manualSaveRevision, setManualSaveRevision] = useState(0);
+  const [startReadingInFlight, setStartReadingInFlight] = useState(false);
   const [readerImmersive, setReaderImmersive] = useState(
     restoredWidgetState?.immersive ?? false
   );
@@ -782,11 +783,21 @@ export function App() {
     if (setupType === "novel") {
       setChunks(novelChunks);
       setRemembered(true);
-      await rememberNovel(session, sourceText, novelChunks, sourceManifest);
+      setScreen("novel");
+      try {
+        await rememberNovel(session, sourceText, novelChunks, sourceManifest);
+      } catch {
+        setRemembered(false);
+        setToast(
+          cloudUploadFailed
+            ? `云端同步失败：${cloudUploadError}；本设备正文缓存写入失败，当前仍可继续阅读，请保留原文。`
+            : "本设备正文缓存写入失败，当前仍可继续阅读；关闭后可从云端恢复。"
+        );
+        return;
+      }
       if (cloudUploadFailed) {
         setToast(`云端同步失败：${cloudUploadError}；已保留本设备正文。`);
       }
-      setScreen("novel");
     } else {
       const pages = selectedFiles.map((file) => ({ file, url: URL.createObjectURL(file) }));
       setMangaPages(pages);
@@ -796,6 +807,18 @@ export function App() {
         setToast(`云端同步失败：${cloudUploadError}；已保留本设备漫画。`);
       }
       setScreen("manga");
+    }
+  }
+
+  async function submitReadingSetup() {
+    if (startReadingInFlight) return;
+    setStartReadingInFlight(true);
+    try {
+      await startReading();
+    } catch {
+      setToast("创建阅读小窝失败，请重试；正文仍保留在当前页面。");
+    } finally {
+      setStartReadingInFlight(false);
     }
   }
 
@@ -1841,7 +1864,13 @@ export function App() {
                 : null}
             </section>
           ) : null}
-          <button className="action-primary wide-button" onClick={startReading}>进入阅读小窝</button>
+          <button
+            className="action-primary wide-button"
+            disabled={startReadingInFlight}
+            onClick={() => void submitReadingSetup()}
+          >
+            {startReadingInFlight ? "正在进入…" : "进入阅读小窝"}
+          </button>
         </main>
       ) : null}
       {screen === "novel" && sessionBundle ? (

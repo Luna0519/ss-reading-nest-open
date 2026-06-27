@@ -14,8 +14,8 @@ const token = process.env.MCP_PATH_TOKEN ?? deriveToken(workerUrl);
 const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
 const sourceBase = `${workerUrl.origin}/source/${token}`;
 const bucket = process.env.SMOKE_R2_BUCKET ?? "ss-reading-nest-sources";
-const databaseId = requiredEnv("SMOKE_D1_DATABASE_ID");
-const accountId = requiredEnv("CLOUDFLARE_ACCOUNT_ID");
+const databaseId = process.env.SMOKE_D1_DATABASE_ID ?? "1827f9ac-b6f9-46b0-b188-4854bc370b68";
+const accountId = process.env.CLOUDFLARE_ACCOUNT_ID ?? "87214ab766b74479821049400e53b40f";
 const serverDir = fileURLToPath(new URL("../..", import.meta.url));
 const runId = `task9-${Date.now()}-${randomUUID().slice(0, 8)}`;
 const novelText = `TASK9_NOVEL_SOURCE_${runId}\n\nSecond paragraph for restore.`;
@@ -276,12 +276,6 @@ function buildWorkerUrl() {
   if (process.env.WORKER_URL) return new URL(process.env.WORKER_URL);
   if (endpoint) return new URL(endpoint);
   throw new Error("Set WORKER_URL and MCP_PATH_TOKEN, or set MCP_ENDPOINT for compatibility");
-}
-
-function requiredEnv(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Set ${name} before running the remote smoke test`);
-  return value;
 }
 
 function deriveToken(url) {

@@ -18,7 +18,7 @@ describe("splitNovelText", () => {
   it("splits platform-style numbered sections without blank lines", () => {
     const chunks = splitNovelText(
       [
-        "原创平台短篇测试。",
+        "开头引子，这是一段原创测试文本。",
         "1.",
         "第一小节内容。",
         "2、",
@@ -29,7 +29,7 @@ describe("splitNovelText", () => {
     );
 
     expect(chunks).toEqual([
-      "原创平台短篇测试。",
+      "开头引子，这是一段原创测试文本。",
       "1.\n第一小节内容。",
       "2、\n第二小节内容。",
       "3\n第三小节内容。"

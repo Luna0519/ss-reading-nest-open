@@ -6,7 +6,10 @@ import { createNovelSourceManifest } from "./features/source-identity/source-man
 import { IndexedDbReadingCache } from "./storage/indexeddb-cache.js";
 
 describe("App", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await deleteTestDatabase("ss-reading-nest");
+    localStorage.clear();
+    sessionStorage.clear();
     Object.defineProperty(window, "openai", {
       configurable: true,
       value: {
@@ -18,6 +21,7 @@ describe("App", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("shows the two reading modes and bookshelf section", () => {
@@ -104,6 +108,61 @@ describe("App", () => {
 
     expect(await screen.findByText("文档超过 5 MB，请拆分后再导入。")).toBeInTheDocument();
     expect(screen.getByLabelText("小说正文")).toHaveValue("");
+  });
+
+  it("enters the novel reader and reports an error when IndexedDB cannot save the new book", async () => {
+    const cacheWrite = vi
+      .spyOn(IndexedDbReadingCache.prototype, "put")
+      .mockRejectedValueOnce(new Error("quota exceeded"));
+    const callTool = vi.fn(async (name: string) => {
+      if (name === "start_reading_session") {
+        return {
+          structuredContent: {
+            session: {
+              id: "cache-write-failure-session",
+              title: "缓存写入测试",
+              type: "novel",
+              status: "active",
+              userCurrentPosition: { kind: "paragraph", index: 1, total: 1, label: "第 1 段" },
+              assistantSyncedPosition: null,
+              liveReadingEnabled: false,
+              sourceManifest: null,
+              createdAt: "2026-06-27T00:00:00.000Z",
+              updatedAt: "2026-06-27T00:00:00.000Z",
+              lastReadAt: "2026-06-27T00:00:00.000Z"
+            }
+          }
+        };
+      }
+      if (name === "upload_cloud_source") {
+        throw new Error("cloud unavailable");
+      }
+      if (name === "set_source_manifest") {
+        return { structuredContent: {} };
+      }
+      return { structuredContent: {} };
+    });
+    Object.defineProperty(window, "openai", {
+      configurable: true,
+      value: {
+        toolOutput: { recentSessions: [] },
+        callTool,
+        setWidgetState: vi.fn()
+      }
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
+    fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "缓存写入测试" } });
+    fireEvent.change(screen.getByLabelText("小说正文"), {
+      target: { value: "缓存失败时仍应进入阅读页。" }
+    });
+    fireEvent.click(screen.getByLabelText("在本设备记住这本书"));
+    fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
+
+    expect(await screen.findByText("缓存失败时仍应进入阅读页。")).toBeInTheDocument();
+    expect(await screen.findByText(/本设备正文缓存写入失败/)).toBeInTheDocument();
+    cacheWrite.mockRestore();
   });
 
   it("includes the current paragraph in the follow-up when model-context sync is unavailable", async () => {
@@ -1045,6 +1104,31 @@ describe("App", () => {
       if (name === "set_source_manifest") {
         return { structuredContent: { sourceManifest: args.sourceManifest } };
       }
+      if (name === "upload_cloud_source") {
+        const sourceManifest = {
+          sourceId: "failed-preference-source",
+          sourceKind: "pasted_text" as const,
+          contentHash: "b".repeat(64),
+          segmentationVersion: 3,
+          paragraphCount: 1,
+          cloudSync: {
+            enabled: true,
+            provider: "r2" as const,
+            objectKey: "private/sources/failed-preference-source/source.txt"
+          }
+        };
+        return {
+          structuredContent: {
+            uploaded: true,
+            sessionId: args.sessionId,
+            sourceId: "failed-preference-source",
+            contentHash: "b".repeat(64),
+            paragraphCount: 1,
+            cloudSync: { enabled: true, provider: "r2" }
+          },
+          _meta: { sourceManifest }
+        };
+      }
       if (name === "update_session_preferences") throw new Error("network");
       return { structuredContent: {} };
     });
@@ -1568,7 +1652,9 @@ describe("App", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
 
-    expect(await screen.findByText("bridge only paragraph")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("bridge only paragraph")).toBeInTheDocument();
+    });
     expect(fetchMock).not.toHaveBeenCalled();
     await waitFor(() => {
       expect(callTool).toHaveBeenCalledWith(
@@ -2291,6 +2377,19 @@ describe("App", () => {
     });
   });
 });
+
+function deleteTestDatabase(name: string) {
+  return new Promise<void>((resolve) => {
+    if (typeof indexedDB === "undefined") {
+      resolve();
+      return;
+    }
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = () => resolve();
+    request.onerror = () => resolve();
+    request.onblocked = () => resolve();
+  });
+}
 
 function manifest(sourceId: string, hashCharacter: string): SourceManifest {
   return {
