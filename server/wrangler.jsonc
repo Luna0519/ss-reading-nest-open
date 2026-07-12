@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "ournest",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "044080cf-9cec-42cc-a80e-388d2bb93430",
       "migrations_dir": "./migrations"
     }
   ],
