@@ -22,7 +22,7 @@ describe("tool descriptors", () => {
     });
   });
 
-  it("returns the component-only source endpoint for the rendered widget", async () => {
+  it("returns the private source endpoint only in widget metadata", async () => {
     const handlers = new Map<string, () => Promise<unknown>>();
     const server = {
       registerTool: (name: string, _config: unknown, handler: () => Promise<unknown>) => {
@@ -67,17 +67,44 @@ describe("tool descriptors", () => {
       })
     };
 
-    registerReadingTools(server as never, service as never, undefined, {
+    registerReadingTools(server as never, service as never, {} as never, {
       sourceEndpointBase: "https://worker.example.test/source/secret"
     });
     const result = (await handlers.get("open_reading_nest")?.()) as {
       structuredContent?: Record<string, unknown>;
+      _meta?: Record<string, unknown>;
     };
 
-    expect(result.structuredContent?.sourceEndpointBase).toBe(
+    expect(result._meta?.sourceEndpointBase).toBe(
       "https://worker.example.test/source/secret"
     );
-    expect(JSON.stringify(result)).not.toMatch(/sourceText|bytesBase64|data:image/);
+    expect(result._meta?.cloudSourceEnabled).toBe(true);
+    expect(result.structuredContent).not.toHaveProperty("sourceEndpointBase");
+    expect(JSON.stringify(result.structuredContent)).not.toMatch(
+      /secret|sourceText|bytesBase64|data:image/
+    );
+  });
+
+  it("tells the widget when deployment uses device-only source storage", async () => {
+    const handlers = new Map<string, () => Promise<unknown>>();
+    const server = {
+      registerTool: (name: string, _config: unknown, handler: () => Promise<unknown>) => {
+        handlers.set(name, handler);
+      }
+    };
+    const service = {
+      listAllSessions: async () => [],
+      getSessionBundle: async () => ({ session: {}, quotes: [], reactions: [], bookmarks: [] })
+    };
+
+    registerReadingTools(server as never, service as never);
+    const result = (await handlers.get("open_reading_nest")?.()) as {
+      structuredContent?: Record<string, unknown>;
+      _meta?: Record<string, unknown>;
+    };
+
+    expect(result._meta).toEqual({ cloudSourceEnabled: false });
+    expect(result.structuredContent).not.toHaveProperty("sourceEndpointBase");
   });
 
   it("declares the current page as an Apps SDK file param", () => {
@@ -309,5 +336,6 @@ describe("tool descriptors", () => {
     });
     expect(JSON.stringify(result.structuredContent)).not.toMatch(/private source text|objectKey|private\/sources/);
     expect(result._meta.sourceManifest.cloudSync.objectKey).toBe("private/sources/source-1/source.txt");
+    expect(result.content).toEqual([{ type: "text", text: "私人云端正文已上传。" }]);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "@ss/server",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,7 @@
     "dev:cloud": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:dry": "wrangler deploy --dry-run",
+    "smoke:mcp": "node scripts/remote-smoke/mcp-smoke.mjs",
     "cf-types": "wrangler types",
     "start": "node dist/index.js",
     "test": "vitest run",

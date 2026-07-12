@@ -12,15 +12,9 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "ss-reading-nest-db",
+      "database_name": "ournest",
       "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
       "migrations_dir": "./migrations"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "SOURCES_BUCKET",
-      "bucket_name": "ss-reading-nest-sources"
     }
   ],
   "rules": [

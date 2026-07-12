@@ -7,13 +7,15 @@ import { handleSourceRoute } from "./source-routes.js";
 import { R2SourceObjectStorage } from "./storage/r2-source-object-storage.js";
 import { getWorkerRoute } from "./worker-router.js";
 
+type WorkerEnv = Env & { SOURCES_BUCKET?: R2Bucket };
+
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     const route = getWorkerRoute(url, env.MCP_PATH_TOKEN);
 
     if (route === "health") {
-      return Response.json({ ok: true, app: "S×S 小窝共读", version: "0.2.1" });
+      return Response.json({ ok: true, app: "S×S 小窝共读", version: "0.2.2" });
     }
     if (route === "misconfigured") {
       console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
@@ -25,14 +27,19 @@ export default {
 
     try {
       const repository = new D1ReadingRepository(env.DB);
-      const sourceStorage = new R2SourceObjectStorage(env.SOURCES_BUCKET);
-      const sourceService = new CloudSourceService(repository, sourceStorage);
+      const sourceService = env.SOURCES_BUCKET
+        ? new CloudSourceService(repository, new R2SourceObjectStorage(env.SOURCES_BUCKET))
+        : undefined;
       if (route === "source") {
-        return handleSourceRoute(request, sourceService);
+        return sourceService
+          ? handleSourceRoute(request, sourceService)
+          : new Response("Not found", { status: 404 });
       }
       const server = createMcpServerFromRepository(repository, widgetHtml, sourceService, {
-        sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}`,
-        workerOrigin: url.origin
+        workerOrigin: url.origin,
+        ...(sourceService
+          ? { sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}` }
+          : {})
       });
       return createMcpHandler(server, {
         route: url.pathname,
@@ -52,4 +59,4 @@ export default {
       );
     }
   }
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<WorkerEnv>;

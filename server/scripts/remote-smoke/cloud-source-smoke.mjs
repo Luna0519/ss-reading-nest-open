@@ -100,8 +100,12 @@ try {
 
   const openNest = await callTool("open_reading_nest", {});
   assert(
-    openNest.structuredContent?.sourceEndpointBase === sourceBase,
-    "open_reading_nest did not return the component source endpoint"
+    openNest._meta?.sourceEndpointBase === sourceBase,
+    "open_reading_nest did not return the widget-only source endpoint"
+  );
+  assert(
+    !JSON.stringify(openNest.structuredContent).includes(token),
+    "open_reading_nest leaked the private path token to model-visible content"
   );
   assertNoForbidden(JSON.stringify(openNest), "open_reading_nest");
 

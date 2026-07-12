@@ -156,7 +156,8 @@ describe("CloudSourceClient", () => {
         }
       })
     );
-    const client = new CloudSourceClient("/source/secret", fetchMock);
+    const toolCaller = vi.fn();
+    const client = new CloudSourceClient("/source/secret", fetchMock, toolCaller);
 
     const result = await client.uploadNovelSource({
       sessionId: "session-1",
@@ -168,6 +169,7 @@ describe("CloudSourceClient", () => {
       "/source/secret/upload",
       expect.objectContaining({ method: "POST" })
     );
+    expect(toolCaller).not.toHaveBeenCalled();
     expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject({
       sessionId: "session-1",
       title: "测试书",
@@ -313,7 +315,8 @@ describe("CloudSourceClient", () => {
         }
       })
     );
-    const client = new CloudSourceClient("/source/secret", fetchMock);
+    const toolCaller = vi.fn();
+    const client = new CloudSourceClient("/source/secret", fetchMock, toolCaller);
 
     const result = await client.uploadMangaSource({
       sessionId: "session-1",
@@ -327,12 +330,57 @@ describe("CloudSourceClient", () => {
       "/source/secret/upload",
       expect.objectContaining({ method: "POST" })
     );
+    expect(toolCaller).not.toHaveBeenCalled();
     expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject({
       sessionId: "session-1",
       sourceKind: "manga_import",
       pages: [{ index: 1, bytesBase64: "AQID", mimeType: "image/png", fileName: "001.png" }]
     });
     expect(JSON.stringify(result)).not.toMatch(/AQID|data:image|publicUrl|signedUrl/);
+  });
+
+  it("uses the app-only bridge for manga only when the private endpoint is unavailable", async () => {
+    const fetchMock = vi.fn();
+    const sourceManifest = {
+      sourceId: "source-manga-bridge",
+      sourceKind: "manga_import" as const,
+      contentHash: "b".repeat(64),
+      segmentationVersion: 1,
+      pageCount: 1,
+      cloudSync: {
+        enabled: true,
+        provider: "r2" as const,
+        pages: [
+          {
+            index: 1,
+            objectKey: "private/sources/source-manga-bridge/pages/1.png",
+            contentHash: "c".repeat(64),
+            mimeType: "image/png",
+            sizeBytes: 3
+          }
+        ]
+      }
+    };
+    const toolCaller = vi.fn().mockResolvedValue({
+      structuredContent: { uploaded: true },
+      _meta: { sourceManifest }
+    });
+    const client = new CloudSourceClient("/source", fetchMock, toolCaller);
+
+    const result = await client.uploadMangaSource({
+      sessionId: "session-1",
+      pages: [
+        { index: 1, blob: new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }) }
+      ]
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(toolCaller).toHaveBeenCalledWith("upload_cloud_source", {
+      sessionId: "session-1",
+      sourceKind: "manga_import",
+      pages: [{ index: 1, bytesBase64: "AQID", mimeType: "image/png" }]
+    });
+    expect(result.sourceManifest).toBe(sourceManifest);
   });
 
   it("restores one manga page from the component-only endpoint as a blob", async () => {

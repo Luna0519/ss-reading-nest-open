@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import { NOVEL_SEGMENTATION_VERSION } from "@ss/shared";
 import {
   createMangaSourceManifest,
@@ -58,6 +59,13 @@ describe("source manifests", () => {
     });
 
     expect(ordered.pageCount).toBe(2);
+    expect(ordered.contentHash).toBe(
+      sha256Hex([sha256Hex("page-one"), sha256Hex("page-two")].join("\n"))
+    );
     expect(ordered.contentHash).not.toBe(reordered.contentHash);
   });
 });
+
+function sha256Hex(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}

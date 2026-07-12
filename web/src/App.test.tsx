@@ -39,6 +39,80 @@ describe("App", () => {
     expect(screen.queryByText(/API key/i)).not.toBeInTheDocument();
   });
 
+  it("keeps source content on this device when cloud source storage is disabled", async () => {
+    const deviceCache = new IndexedDbReadingCache();
+    await deviceCache.remove("device-only-session");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
+      if (name === "start_reading_session") {
+        return {
+          structuredContent: {
+            session: {
+              id: "device-only-session",
+              title: "本地书",
+              type: "novel",
+              status: "active",
+              userCurrentPosition: { kind: "paragraph", index: 1, label: "第 1 段" },
+              assistantSyncedPosition: null,
+              liveReadingEnabled: false,
+              sourceManifest: null,
+              createdAt: "2026-07-12T00:00:00.000Z",
+              updatedAt: "2026-07-12T00:00:00.000Z",
+              lastReadAt: "2026-07-12T00:00:00.000Z"
+            }
+          }
+        };
+      }
+      if (name === "set_source_manifest") {
+        return { structuredContent: { sourceManifest: args.sourceManifest } };
+      }
+      if (name === "list_companion_comments") {
+        return { structuredContent: { comments: [] } };
+      }
+      return { structuredContent: {} };
+    });
+    Object.defineProperty(window, "openai", {
+      configurable: true,
+      value: {
+        toolOutput: { recentSessions: [] },
+        toolResponseMetadata: {
+          mcp_tool_result: { _meta: { cloudSourceEnabled: false } }
+        },
+        callTool,
+        setWidgetState: vi.fn()
+      }
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
+    expect(screen.getByText(/正文\/图片只保存在本设备/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "本地书" } });
+    fireEvent.change(screen.getByPlaceholderText("粘贴 TXT 或 Markdown 文本"), {
+      target: { value: "只保存在这台 iPad 的正文。" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
+
+    expect(await screen.findByText("只保存在这台 iPad 的正文。")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(callTool).toHaveBeenCalledWith(
+        "set_source_manifest",
+        expect.objectContaining({
+          sessionId: "device-only-session",
+          sourceManifest: expect.objectContaining({
+            cloudSync: { enabled: false, provider: "r2" }
+          })
+        })
+      );
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(callTool).not.toHaveBeenCalledWith("upload_cloud_source", expect.anything());
+    expect(await deviceCache.get("device-only-session")).toMatchObject({
+      chunks: ["只保存在这台 iPad 的正文。"]
+    });
+    await deviceCache.remove("device-only-session");
+  });
+
   it.each([
     ["txt", "海边来信.txt", "第一段。\n\n第二段。"],
     ["Markdown", "雨夜书店.md", "# 第一章\n\n故事开始了。"]
@@ -144,7 +218,12 @@ describe("App", () => {
     Object.defineProperty(window, "openai", {
       configurable: true,
       value: {
-        toolOutput: { recentSessions: [], sourceEndpointBase: "https://worker.example.test/source/secret" },
+        toolOutput: { recentSessions: [] },
+        toolResponseMetadata: {
+          mcp_tool_result: {
+            _meta: { sourceEndpointBase: "https://worker.example.test/source/secret" }
+          }
+        },
         callTool,
         requestDisplayMode: vi.fn(),
         setWidgetState: vi.fn()
@@ -368,7 +447,7 @@ describe("App", () => {
           sourceManifest: expect.objectContaining({
             sourceKind: "pasted_text",
             contentHash: expect.stringMatching(/^[a-f0-9]{64}$/),
-            segmentationVersion: 1,
+            segmentationVersion: 3,
             paragraphCount: 1
           })
         })
@@ -409,7 +488,7 @@ describe("App", () => {
         expect.objectContaining({
           sourceContext: expect.objectContaining({
             contentHash: expect.stringMatching(/^[a-f0-9]{64}$/),
-            segmentationVersion: 1,
+            segmentationVersion: 3,
             paragraphCount: 1
           })
         })
@@ -1585,7 +1664,9 @@ describe("App", () => {
         manifestObjectKey: "private/sources/cloud-upload-source/manifest.json"
       }
     };
-    const fetchMock = vi.fn(async () => jsonResponse({ sourceManifest: cloudManifest }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      jsonResponse({ sourceManifest: cloudManifest })
+    );
     vi.stubGlobal("fetch", fetchMock);
     const setWidgetState = vi.fn();
     const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
@@ -1803,6 +1884,9 @@ describe("App", () => {
       value: {
         toolOutput: {
           recentSessions: []
+        },
+        toolResponseMetadata: {
+          mcp_tool_result: { _meta: { cloudSourceEnabled: true } }
         },
         callTool,
         requestDisplayMode: vi.fn(),
@@ -2118,7 +2202,7 @@ describe("App", () => {
     await deviceCache.remove(sessionId);
   });
 
-  it("uploads new manga through the app bridge and stores returned metadata in IndexedDB", async () => {
+  it("uploads new manga through the private endpoint and stores returned metadata in IndexedDB", async () => {
     const deviceCache = new IndexedDbReadingCache();
     await deviceCache.remove("cloud-manga-session");
     const pageFile = new File([new Uint8Array([1, 2, 3])], "001.png", { type: "image/png" });
@@ -2131,7 +2215,9 @@ describe("App", () => {
         mimeType: "image/png"
       }
     ]);
-    const fetchMock = vi.fn(async () => jsonResponse({ sourceManifest: cloudManifest }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      jsonResponse({ sourceManifest: cloudManifest })
+    );
     vi.stubGlobal("fetch", fetchMock);
     const setWidgetState = vi.fn();
     const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
@@ -2176,7 +2262,10 @@ describe("App", () => {
     Object.defineProperty(window, "openai", {
       configurable: true,
       value: {
-        toolOutput: { recentSessions: [], sourceEndpointBase: "/source/secret" },
+        toolOutput: { recentSessions: [] },
+        toolResponseMetadata: {
+          mcp_tool_result: { _meta: { sourceEndpointBase: "/source/secret" } }
+        },
         callTool,
         requestDisplayMode: vi.fn(),
         setWidgetState
@@ -2192,15 +2281,18 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
 
     expect(await screen.findByText("第 1 页 / 共 1 页")).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(callTool).toHaveBeenCalledWith(
-      "upload_cloud_source",
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/source/secret/upload",
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject(
       expect.objectContaining({
         sessionId: "cloud-manga-session",
         sourceKind: "manga_import",
         pages: [{ index: 1, bytesBase64: "AQID", mimeType: "image/png", fileName: "001.png" }]
       })
     );
+    expect(callTool).not.toHaveBeenCalledWith("upload_cloud_source", expect.anything());
     expect(callTool).toHaveBeenCalledWith(
       "set_source_manifest",
       expect.objectContaining({
@@ -2505,6 +2597,9 @@ describe("App", () => {
       configurable: true,
       value: {
         toolOutput: { bookshelfSessions: [bundleA] },
+        toolResponseMetadata: {
+          mcp_tool_result: { _meta: { cloudSourceEnabled: true } }
+        },
         callTool,
         requestDisplayMode: vi.fn(),
         setWidgetState: vi.fn()

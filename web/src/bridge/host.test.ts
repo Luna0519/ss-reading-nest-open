@@ -98,4 +98,23 @@ describe("host bridge", () => {
       scrollTop: 120
     });
   });
+
+  it("reads widget-only metadata from the ChatGPT tool result envelope", async () => {
+    if (window.openai) {
+      window.openai.toolOutput = { recentSessions: [] };
+      window.openai.toolResponseMetadata = {
+        status: "finished",
+        mcp_tool_result: {
+          structuredContent: { recentSessions: [] },
+          _meta: { sourceEndpointBase: "https://worker.example.test/source/secret" }
+        }
+      };
+    }
+    const { initialToolMetadata, initialToolOutput } = await import("./host.js");
+
+    expect(initialToolOutput()).toEqual({ recentSessions: [] });
+    expect(initialToolMetadata()).toEqual({
+      sourceEndpointBase: "https://worker.example.test/source/secret"
+    });
+  });
 });

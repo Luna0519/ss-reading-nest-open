@@ -18,12 +18,14 @@ import {
   askChatGpt,
   callTool,
   fileCapabilities,
+  initialToolMetadata,
   initialToolOutput,
   initialWidgetState,
   requestReaderFullscreen,
   requestReaderInline,
   requestReaderPip,
   saveReaderWidgetState,
+  subscribeToolResults,
   updateModelContext
 } from "./bridge/host.js";
 import { syncCurrentContext } from "./bridge/sync-current-context.js";
@@ -35,8 +37,12 @@ import { SyncChoiceSheet } from "./components/SyncChoiceSheet.js";
 import { SyncProgressSheet } from "./components/SyncProgressSheet.js";
 import type { PendingCompanionCommentDraft } from "./components/CompanionDock.js";
 import { prepareCurrentPageContext } from "./features/manga/image-sync.js";
+import { sortMangaFiles } from "./features/manga/sort-files.js";
 import { splitNovelText, splitNovelTextForVersion } from "./features/novel/split-text.js";
-import { CloudSourceClient } from "./features/source-cloud/cloud-source-client.js";
+import {
+  CloudSourceClient,
+  hasPrivateSourceEndpoint
+} from "./features/source-cloud/cloud-source-client.js";
 import type { CloudUploadDiagnostics } from "./features/source-cloud/cloud-source-client.js";
 import { getSourceAvailability } from "./features/source-identity/source-availability.js";
 import {
@@ -101,7 +107,12 @@ type ImportProgress = {
 type OpenOutput = {
   bookshelfSessions?: Array<SessionBundle & { cacheState?: string }>;
   recentSessions?: Array<SessionBundle & { cacheState?: string }>;
+  /** Backwards compatibility with servers that returned this model-visible field. */
   sourceEndpointBase?: string;
+};
+type OpenMetadata = {
+  sourceEndpointBase?: string;
+  cloudSourceEnabled?: boolean;
 };
 
 const cache = new IndexedDbReadingCache();
@@ -112,7 +123,19 @@ const LARGE_NOVEL_TEXTAREA_PREVIEW_CHARS = 1200;
 
 export function App() {
   const initial = initialToolOutput<OpenOutput>();
-  const sourceEndpointBase = initial?.sourceEndpointBase ?? deriveSourceEndpointBase();
+  const initialMetadata = initialToolMetadata<OpenMetadata>();
+  const initialSourceEndpointBase =
+    initialMetadata?.sourceEndpointBase ??
+    initial?.sourceEndpointBase ??
+    deriveSourceEndpointBase();
+  const [sourceEndpointBase, setSourceEndpointBase] = useState(
+    () => initialSourceEndpointBase
+  );
+  const [cloudSourceEnabled, setCloudSourceEnabled] = useState(
+    () =>
+      initialMetadata?.cloudSourceEnabled ??
+      hasPrivateSourceEndpoint(initialSourceEndpointBase)
+  );
   const cloudSourceClient = useMemo(
     () => new CloudSourceClient(sourceEndpointBase, undefined, callTool),
     [sourceEndpointBase]
@@ -129,15 +152,7 @@ export function App() {
   const [sourceText, setSourceText] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [remembered, setRemembered] = useState(false);
-  const [recent, setRecent] = useState<BookshelfItem[]>(
-    () =>
-      (initial?.bookshelfSessions ?? initial?.recentSessions ?? []).map(
-        ({ cacheState: _cacheState, ...item }) => ({
-          ...item,
-          sourceAvailability: "unknown" as const
-        })
-      )
-  );
+  const [recent, setRecent] = useState<BookshelfItem[]>(() => toBookshelfItems(initial));
   const [sessionBundle, setSessionBundle] = useState<SessionBundle | null>(null);
   const [chunks, setChunks] = useState<string[]>([]);
   const [mangaPages, setMangaPages] = useState<MangaPage[]>([]);
@@ -172,6 +187,25 @@ export function App() {
   const restoreAttempted = useRef(false);
   const syncJobRef = useRef<ReadingSyncJob | null>(null);
   const hostLayout = useReadingHostLayout();
+
+  useEffect(
+    () =>
+      subscribeToolResults((result) => {
+        const output = result.structuredContent as OpenOutput | undefined;
+        const endpoint =
+          typeof result._meta?.sourceEndpointBase === "string"
+            ? result._meta.sourceEndpointBase
+            : output?.sourceEndpointBase;
+        if (endpoint) setSourceEndpointBase(endpoint);
+        if (typeof result._meta?.cloudSourceEnabled === "boolean") {
+          setCloudSourceEnabled(result._meta.cloudSourceEnabled);
+        }
+        if (output?.bookshelfSessions || output?.recentSessions) {
+          setRecent(toBookshelfItems(output));
+        }
+      }),
+    []
+  );
   const manualCompanionDraft = useMemo<PendingCompanionCommentDraft | null>(() => {
     if (!sessionBundle) return null;
     const preferences = sessionBundle.session.sessionPreferences;
@@ -672,7 +706,7 @@ export function App() {
         stage: "failed",
         fileName: file.name,
         fileSize: file.size,
-        sourceEndpointBasePresent: Boolean(sourceEndpointBase),
+        sourceEndpointBasePresent: hasPrivateSourceEndpoint(sourceEndpointBase),
         screen,
         message: "不支持的文件格式"
       });
@@ -684,7 +718,7 @@ export function App() {
         stage: "failed",
         fileName: file.name,
         fileSize: file.size,
-        sourceEndpointBasePresent: Boolean(sourceEndpointBase),
+        sourceEndpointBasePresent: hasPrivateSourceEndpoint(sourceEndpointBase),
         screen,
         message: "文件超过 5 MB"
       });
@@ -695,7 +729,7 @@ export function App() {
       stage: "reading",
       fileName: file.name,
       fileSize: file.size,
-      sourceEndpointBasePresent: Boolean(sourceEndpointBase),
+      sourceEndpointBasePresent: hasPrivateSourceEndpoint(sourceEndpointBase),
       screen,
       message: "正在读取文件"
     });
@@ -730,7 +764,7 @@ export function App() {
         ...current,
         stage: "ready",
         decodedTextLength: result.length,
-        sourceEndpointBasePresent: Boolean(sourceEndpointBase),
+        sourceEndpointBasePresent: hasPrivateSourceEndpoint(sourceEndpointBase),
         screen,
         message: file.size > LARGE_NOVEL_TEXTAREA_PREVIEW_BYTES ? "大文件已读取，准备分段" : "文档已读取"
       }));
@@ -767,7 +801,7 @@ export function App() {
         ...current,
         stage: "segmenting",
         decodedTextLength: sourceText.length,
-        sourceEndpointBasePresent: Boolean(sourceEndpointBase),
+        sourceEndpointBasePresent: hasPrivateSourceEndpoint(sourceEndpointBase),
         indexedDbStatus: "not_started",
         screen,
         message: "正在分段"
@@ -842,56 +876,57 @@ export function App() {
     let cloudUploadError = "";
     let cloudDiagnostics: CloudUploadDiagnostics | undefined;
     let serverSideCloudUploadOnly = false;
-    if (setupType === "novel") {
-      const sessionId = session.id;
-      setImportProgress((current) => ({
-        ...current,
-        stage: "uploading",
-        sessionId,
-        paragraphCount: novelChunks.length,
-        sourceEndpointBasePresent: Boolean(sourceEndpointBase),
-        uploadStatus: "started",
-        screen,
-        message: "正在上传云端正文"
-      }));
-      await nextFrame();
-      const upload = await cloudSourceClient.uploadNovelSource({
+    if (cloudSourceEnabled) {
+      if (setupType === "novel") {
+        const sessionId = session.id;
+        setImportProgress((current) => ({
+          ...current,
+          stage: "uploading",
+          sessionId,
+          paragraphCount: novelChunks.length,
+          sourceEndpointBasePresent: hasPrivateSourceEndpoint(sourceEndpointBase),
+          uploadStatus: "started",
+          screen,
+          message: "正在上传云端正文"
+        }));
+        await nextFrame();
+        const upload = await cloudSourceClient.uploadNovelSource({
           sessionId,
           title: title.trim(),
           sourceText
         });
-      cloudDiagnostics = upload.diagnostics;
-      if (upload.sourceManifest?.cloudSync.enabled) {
-        sourceManifest = upload.sourceManifest;
-        setImportProgress((current) => ({
-          ...current,
-          uploadStatus: "success",
-          sourceId: sourceManifest.sourceId,
-          sizeBytes: sourceManifest.cloudSync.sizeBytes,
-          paragraphCount: sourceManifest.paragraphCount ?? novelChunks.length,
-          screen,
-          message: "云端正文已上传"
-        }));
-      } else if (upload.diagnostics.bridgeUploadStatus === "success") {
-        serverSideCloudUploadOnly = true;
-        setImportProgress((current) => ({
-          ...current,
-          uploadStatus: "success",
-          screen,
-          message: "云端正文已上传"
-        }));
+        cloudDiagnostics = upload.diagnostics;
+        if (upload.sourceManifest?.cloudSync.enabled) {
+          sourceManifest = upload.sourceManifest;
+          setImportProgress((current) => ({
+            ...current,
+            uploadStatus: "success",
+            sourceId: sourceManifest.sourceId,
+            sizeBytes: sourceManifest.cloudSync.sizeBytes,
+            paragraphCount: sourceManifest.paragraphCount ?? novelChunks.length,
+            screen,
+            message: "云端正文已上传"
+          }));
+        } else if (upload.diagnostics.bridgeUploadStatus === "success") {
+          serverSideCloudUploadOnly = true;
+          setImportProgress((current) => ({
+            ...current,
+            uploadStatus: "success",
+            screen,
+            message: "云端正文已上传"
+          }));
+        } else {
+          cloudUploadFailed = true;
+          cloudUploadError = formatCloudUploadDiagnostics(upload.diagnostics);
+          setImportProgress((current) => ({
+            ...current,
+            uploadStatus: upload.diagnostics.directUploadStatus,
+            screen,
+            message: "云端上传失败，继续创建本地阅读"
+          }));
+        }
       } else {
-        cloudUploadFailed = true;
-        cloudUploadError = formatCloudUploadDiagnostics(upload.diagnostics);
-        setImportProgress((current) => ({
-          ...current,
-          uploadStatus: upload.diagnostics.directUploadStatus,
-          screen,
-          message: "云端上传失败，继续创建本地阅读"
-        }));
-      }
-    } else {
-      const upload = await cloudSourceClient.uploadMangaSource({
+        const upload = await cloudSourceClient.uploadMangaSource({
           sessionId: session.id,
           title: title.trim(),
           pages: selectedFiles.map((file, index) => ({
@@ -900,14 +935,15 @@ export function App() {
             fileName: file.name
           }))
         });
-      cloudDiagnostics = upload.diagnostics;
-      if (upload.sourceManifest?.cloudSync.enabled) {
-        sourceManifest = upload.sourceManifest;
-      } else if (upload.diagnostics.bridgeUploadStatus === "success") {
-        serverSideCloudUploadOnly = true;
-      } else {
-        cloudUploadFailed = true;
-        cloudUploadError = formatCloudUploadDiagnostics(upload.diagnostics);
+        cloudDiagnostics = upload.diagnostics;
+        if (upload.sourceManifest?.cloudSync.enabled) {
+          sourceManifest = upload.sourceManifest;
+        } else if (upload.diagnostics.bridgeUploadStatus === "success") {
+          serverSideCloudUploadOnly = true;
+        } else {
+          cloudUploadFailed = true;
+          cloudUploadError = formatCloudUploadDiagnostics(upload.diagnostics);
+        }
       }
     }
     let setSourceManifestCalled = false;
@@ -2070,10 +2106,14 @@ export function App() {
               <ImportProgressPanel progress={importProgress} />
             </div>
           ) : (
-            <label className="file-drop">导入漫画图片<input type="file" accept="image/*" multiple onChange={(e) => setSelectedFiles(Array.from(e.target.files ?? []))} /><span>{selectedFiles.length ? `已选择 ${selectedFiles.length} 张` : "点击选择多张图片"}</span></label>
+            <label className="file-drop">导入漫画图片<input type="file" accept="image/*" multiple onChange={(e) => setSelectedFiles(sortMangaFiles(e.target.files ?? []))} /><span>{selectedFiles.length ? `已选择 ${selectedFiles.length} 张（按文件名排序）` : "点击选择多张图片"}</span></label>
           )}
           <label className="remember-row"><input type="checkbox" checked={remembered} onChange={(e) => setRemembered(e.target.checked)} />在本设备记住{setupType === "novel" ? "这本书" : "这部漫画"}</label>
-          <p className="privacy-note">正文/图片只保存在本设备，用于下次继续阅读；服务器不会保存全文或漫画原图。</p>
+          <p className="privacy-note">
+            {cloudSourceEnabled
+              ? "正文/图片会保存在本设备，也会保存到配置的私有云端以便恢复。只有你主动同步的片段或页面会发送给 ChatGPT。"
+              : "正文/图片只保存在本设备，不会上传到服务器。只有你主动同步的片段或页面会发送给 ChatGPT；请保留原文件以防设备缓存被清理。"}
+          </p>
           {existingSession ? (
             <section className="setup-companion-summary" aria-label="烁构最近短评">
               <div>
@@ -2187,6 +2227,7 @@ export function App() {
       {overlay === "management" && managedBook ? (
         <BookManagementSheet
           bundle={managedBook}
+          cloudSourceEnabled={cloudSourceEnabled}
           comments={historyComments}
           historyHasMore={Boolean(historyCursor)}
           historyLoading={historyLoading}
@@ -2342,6 +2383,15 @@ function deriveSourceEndpointBase(): string {
   const match = window.location.pathname.match(/\/mcp\/([^/]+)/);
   if (!match) return "/source";
   return `/source/${match[1]}`;
+}
+
+function toBookshelfItems(output?: OpenOutput): BookshelfItem[] {
+  return (output?.bookshelfSessions ?? output?.recentSessions ?? []).map(
+    ({ cacheState: _cacheState, ...item }) => ({
+      ...item,
+      sourceAvailability: "unknown" as const
+    })
+  );
 }
 
 function buildLiveReadingOperationId(

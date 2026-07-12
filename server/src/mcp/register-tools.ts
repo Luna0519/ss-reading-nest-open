@@ -228,14 +228,20 @@ export function registerReadingTools(
         cacheState: "unknown" as const
       }))
     );
-    return toolResult(
+    const response = toolResult(
       {
         bookshelfSessions,
-        recentSessions: bookshelfSessions.slice(0, 10),
-        ...(options.sourceEndpointBase ? { sourceEndpointBase: options.sourceEndpointBase } : {})
+        recentSessions: bookshelfSessions.slice(0, 10)
       },
       "已打开 S×S 小窝共读。"
     );
+    return {
+      ...response,
+      _meta: {
+        cloudSourceEnabled: Boolean(cloudSourceService),
+        ...(options.sourceEndpointBase ? { sourceEndpointBase: options.sourceEndpointBase } : {})
+      }
+    };
   });
 
   server.registerTool(
@@ -327,7 +333,7 @@ export function registerReadingTools(
 
   registerAppTool(server, "upload_cloud_source", TOOL_CONFIGS.upload_cloud_source, async (input) => {
     if (!cloudSourceService) {
-      return toolResult({ uploaded: false }, "ç§äººäº‘ç«¯æ­£æ–‡æœåŠ¡å°šæœªå¯ç”¨ã€‚");
+      return toolResult({ uploaded: false }, "私人云端正文服务尚未启用。");
     }
     const result =
       input.sourceKind === "manga_import"
@@ -353,7 +359,7 @@ export function registerReadingTools(
         sessionId: input.sessionId,
         ...summarizeCloudSourceManifest(result.sourceManifest)
       },
-      "ç§äººäº‘ç«¯æ­£æ–‡å·²ä¸Šä¼ ã€‚"
+      "私人云端正文已上传。"
     );
     return {
       ...response,

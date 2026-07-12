@@ -4,7 +4,6 @@
 interface __BaseEnv_Env {
 	DB: D1Database;
 	MCP_PATH_TOKEN: string;
-	SOURCES_BUCKET: R2Bucket;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {

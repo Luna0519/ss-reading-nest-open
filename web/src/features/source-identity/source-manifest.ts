@@ -36,7 +36,7 @@ export async function createMangaSourceManifest(input: {
     sourceId: input.sourceId,
     sourceKind: "manga_import",
     ...(input.title ? { title: input.title } : {}),
-    contentHash: await sha256Hex(new TextEncoder().encode(pageHashes.join(""))),
+    contentHash: await sha256Hex(new TextEncoder().encode(pageHashes.join("\n"))),
     segmentationVersion: NOVEL_SEGMENTATION_VERSION,
     pageCount: input.pages.length,
     cloudSync: disabledCloudSync()

@@ -14,6 +14,7 @@ declare global {
   interface Window {
     openai?: {
       toolOutput?: unknown;
+      toolResponseMetadata?: unknown;
       theme?: "light" | "dark";
       safeArea?: { top?: number; right?: number; bottom?: number; left?: number };
       callTool?: (name: string, args: Record<string, unknown>) => Promise<ToolCallResult>;

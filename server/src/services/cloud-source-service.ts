@@ -232,10 +232,22 @@ export class CloudSourceService {
     const database = await this.repository.read();
     const session = database.sessions.find((item) => item.id === sessionId);
     if (!session) throw new AppError("SESSION_NOT_FOUND", `找不到共读 session：${sessionId}`);
-    const objectKey = session.sourceManifest?.cloudSync.objectKey;
-    if (!session.sourceManifest?.cloudSync.enabled || !objectKey) {
+    const sourceManifest = session.sourceManifest;
+    if (!sourceManifest?.cloudSync.enabled) {
       return { status: "disabled" };
     }
+
+    if (sourceManifest.sourceKind === "manga_import") {
+      const pages = sourceManifest.cloudSync.pages;
+      if (!pages?.length) return { status: "disabled" };
+      const pageHeads = await Promise.all(
+        pages.map((page) => this.storage.headObject(page.objectKey))
+      );
+      return { status: pageHeads.every((head) => head.exists) ? "available" : "missing" };
+    }
+
+    const objectKey = sourceManifest.cloudSync.objectKey;
+    if (!objectKey) return { status: "disabled" };
     const head = await this.storage.headObject(objectKey);
     return { status: head.exists ? "available" : "missing" };
   }

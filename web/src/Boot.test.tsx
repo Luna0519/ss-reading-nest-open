@@ -24,8 +24,12 @@ describe("Boot", () => {
       configurable: true,
       value: {
         toolOutput: {
-          sourceEndpointBase: "/source/secret-token",
           bookshelfSessions: [{ session: { id: "session-1" } }]
+        },
+        toolResponseMetadata: {
+          mcp_tool_result: {
+            _meta: { sourceEndpointBase: "/source/secret-token" }
+          }
         },
         widgetState: { screen: "home" }
       }

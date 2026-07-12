@@ -131,6 +131,9 @@ export function BootDiagnostics({
     | undefined;
   const bookshelfCount =
     toolOutput?.bookshelfSessions?.length ?? toolOutput?.recentSessions?.length ?? 0;
+  const sourceEndpointPresent =
+    hasSourceEndpointMetadata(window.openai?.toolResponseMetadata) ||
+    Boolean(toolOutput?.sourceEndpointBase);
 
   return (
     <main className="boot-diagnostics" role="alert" aria-live="polite">
@@ -159,7 +162,7 @@ export function BootDiagnostics({
         </div>
         <div>
           <dt>sourceEndpointBase</dt>
-          <dd>{toolOutput?.sourceEndpointBase ? "present" : "missing"}</dd>
+          <dd>{sourceEndpointPresent ? "present" : "missing"}</dd>
         </div>
         <div>
           <dt>bookshelfSessions</dt>
@@ -173,6 +176,15 @@ export function BootDiagnostics({
         ) : null}
       </dl>
     </main>
+  );
+}
+
+function hasSourceEndpointMetadata(value: unknown, depth = 0): boolean {
+  if (depth > 4 || !value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  if (typeof record.sourceEndpointBase === "string") return true;
+  return [record._meta, record.mcp_tool_result, record.call_tool_result, record.result].some(
+    (candidate) => hasSourceEndpointMetadata(candidate, depth + 1)
   );
 }
 

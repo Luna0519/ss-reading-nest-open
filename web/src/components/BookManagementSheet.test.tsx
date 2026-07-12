@@ -30,6 +30,7 @@ describe("BookManagementSheet", () => {
     render(
       <BookManagementSheet
         bundle={bundle}
+        cloudSourceEnabled
         comments={[{ id: "c", sessionId: "book-a", position: { kind: "paragraph", index: 5, label: "第 5 段" }, mode: "light_chat", length: "normal", text: "历史短评", source: "current_context", inRecent: false, inHistory: true, createdAt: "2026-06-23T00:00:00.000Z" }]}
         historyHasMore
         historyLoading={false}
@@ -65,6 +66,7 @@ describe("BookManagementSheet", () => {
     render(
       <BookManagementSheet
         bundle={bundle}
+        cloudSourceEnabled
         comments={[]}
         historyHasMore={false}
         historyLoading={false}
@@ -99,5 +101,27 @@ describe("BookManagementSheet", () => {
       deleteCloudSource: true,
       deleteLocalCache: true
     });
+  });
+
+  it("hides cloud deletion controls for device-only storage", () => {
+    render(
+      <BookManagementSheet
+        bundle={bundle}
+        cloudSourceEnabled={false}
+        comments={[]}
+        historyHasMore={false}
+        historyLoading={false}
+        onLoadMoreHistory={vi.fn()}
+        onRename={vi.fn()}
+        onStatus={vi.fn()}
+        onClearComments={vi.fn()}
+        onDelete={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "删除这本书" }));
+    expect(screen.queryByRole("checkbox", { name: "同时删除云端正文副本" })).toBeNull();
+    expect(screen.getByText(/唯一的正文或漫画缓存/)).toBeInTheDocument();
   });
 });

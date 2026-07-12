@@ -184,20 +184,28 @@ describe("privacy boundary", () => {
     );
   });
 
-  it("documents the v0.2.2 cloud-first privacy model in README", async () => {
+  it("keeps R2 optional in the default Cloudflare deployment", async () => {
+    const wranglerConfig = await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8");
+    const workerSource = await readFile(new URL("./worker.ts", import.meta.url), "utf8");
+
+    expect(wranglerConfig).not.toMatch(/r2_buckets|SOURCES_BUCKET/);
+    expect(workerSource).toContain("SOURCES_BUCKET?: R2Bucket");
+    expect(workerSource).toContain("sourceEndpointBase");
+    expect(workerSource).toMatch(/env\.SOURCES_BUCKET[\s\S]*R2SourceObjectStorage/);
+  });
+
+  it("documents the v0.2.2 device-only source privacy model in README", async () => {
     const readme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
 
     expect(readme).toContain("v0.2.2");
-    expect(readme).toMatch(/R2[\s\S]*正文/);
-    expect(readme).toMatch(/D1[\s\S]*metadata/);
-    expect(readme).toMatch(/IndexedDB[\s\S]*加速缓存/);
-    expect(readme).toContain("component-only");
+    expect(readme).toMatch(/D1[\s\S]*source metadata/);
+    expect(readme).toMatch(/正文与漫画图片只写入当前设备的 IndexedDB/);
+    expect(readme).toContain("不会跨设备同步");
+    expect(readme).toContain("不会作为阅读记录上传到 Worker");
     expect(readme).toContain("ChatGPT 模型不会自动读取整本小说或整套漫画");
     expect(readme).toContain("删除云端阅读记录");
-    expect(readme).toContain("同时删除云端正文副本");
     expect(readme).toContain("同时删除本设备正文缓存");
-    expect(readme).toContain("不生成 public URL 或 signed URL");
-    expect(readme).toContain("remote smoke");
+    expect(readme).toContain("smoke:mcp");
   });
 });
 

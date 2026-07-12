@@ -9,6 +9,7 @@ type RecordTab = "bookmarks" | "quotes" | "reactions" | "comments";
 
 export function BookManagementSheet(props: {
   bundle: SessionBundle;
+  cloudSourceEnabled: boolean;
   comments: CompanionComment[];
   historyHasMore: boolean;
   historyLoading: boolean;
@@ -126,15 +127,19 @@ export function BookManagementSheet(props: {
                 删除这本书的云端阅读记录
               </label>
               <p>会从书架移除这本书，并删除进度、偏好、短评、书签、摘录和反应。</p>
-              <label className="remember-row">
-                <input
-                  type="checkbox"
-                  checked={deleteCloudSource}
-                  onChange={(event) => setDeleteCloudSource(event.target.checked)}
-                />
-                同时删除云端正文副本
-              </label>
-              <p>会删除私人云端中保存的小说正文或漫画图片，其他设备将无法从云端恢复。</p>
+              {props.cloudSourceEnabled ? (
+                <>
+                  <label className="remember-row">
+                    <input
+                      type="checkbox"
+                      checked={deleteCloudSource}
+                      onChange={(event) => setDeleteCloudSource(event.target.checked)}
+                    />
+                    同时删除云端正文副本
+                  </label>
+                  <p>会删除私人云端中保存的小说正文或漫画图片，其他设备将无法从云端恢复。</p>
+                </>
+              ) : null}
               <label className="remember-row">
                 <input
                   type="checkbox"
@@ -143,7 +148,11 @@ export function BookManagementSheet(props: {
                 />
                 同时删除本设备正文缓存
               </label>
-              <p>只清除当前设备上的本地缓存，不影响云端。</p>
+              <p>
+                {props.cloudSourceEnabled
+                  ? "只清除当前设备上的本地缓存，不影响云端。"
+                  : "会清除当前设备上唯一的正文或漫画缓存；重新阅读时需要再次导入原文件。"}
+              </p>
               {deleteStep === 1 ? (
                 <button className="danger-button" onClick={() => setDeleteStep(2)}>
                   继续删除

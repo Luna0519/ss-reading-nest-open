@@ -97,6 +97,14 @@ export class CloudSourceClient {
         ...(page.fileName ? { fileName: page.fileName } : {})
       }))
     );
+    if (hasPrivateSourceEndpoint(this.endpointBase)) {
+      return this.uploadViaDirect({
+        sessionId: input.sessionId,
+        sourceKind: "manga_import",
+        ...(input.title ? { title: input.title } : {}),
+        pages
+      });
+    }
     if (this.toolCaller) {
       return this.uploadViaTool({
         sessionId: input.sessionId,
@@ -221,7 +229,7 @@ export class CloudSourceClient {
   }
 }
 
-function hasPrivateSourceEndpoint(endpointBase: string): boolean {
+export function hasPrivateSourceEndpoint(endpointBase: string): boolean {
   try {
     const url = new URL(endpointBase, window.location.href);
     return /\/source\/[^/]+$/.test(url.pathname);

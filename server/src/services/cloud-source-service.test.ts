@@ -141,6 +141,26 @@ describe("CloudSourceService", () => {
     );
   });
 
+  it("reports manga cloud status from every page object", async () => {
+    const { cloudSource, storage, sessionId } = setup();
+    const uploaded = await cloudSource.uploadMangaSource({
+      sessionId,
+      title: "漫画书",
+      pages: [
+        { index: 1, bytes: new Uint8Array([1, 2, 3]), mimeType: "image/png" },
+        { index: 2, bytes: new Uint8Array([4, 5, 6]), mimeType: "image/png" }
+      ]
+    });
+
+    await expect(cloudSource.getCloudSourceStatus(sessionId)).resolves.toEqual({
+      status: "available"
+    });
+    await storage.deleteObject(uploaded.sourceManifest.cloudSync.pages![1].objectKey);
+    await expect(cloudSource.getCloudSourceStatus(sessionId)).resolves.toEqual({
+      status: "missing"
+    });
+  });
+
   it("deletes cloud source objects without deleting the D1 session or returning URLs", async () => {
     const { cloudSource, repository, storage, sessionId } = setup();
     const uploaded = await cloudSource.uploadNovelSource({

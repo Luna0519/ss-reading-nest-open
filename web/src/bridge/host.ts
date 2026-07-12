@@ -3,6 +3,8 @@ import type { ToolCallResult } from "../types/openai.js";
 
 let app: McpApp | undefined;
 let appReady: Promise<void> | undefined;
+let latestToolResult: ToolCallResult | undefined;
+const toolResultListeners = new Set<(result: ToolCallResult) => void>();
 
 export interface ReadingHostContext {
   displayMode?: "inline" | "pip" | "fullscreen";
@@ -24,7 +26,8 @@ export interface ReadingHostContext {
 function connectApp() {
   if (typeof window === "undefined" || window.parent === window) return undefined;
   if (!app) {
-    app = new McpApp({ name: "S×S 小窝共读", version: "0.2.1" });
+    app = new McpApp({ name: "S×S 小窝共读", version: "0.2.2" });
+    app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
     appReady = app.connect().catch(() => undefined);
   }
   return app;
@@ -137,7 +140,41 @@ export function initialWidgetState(): ReaderWidgetState | undefined {
 }
 
 export function initialToolOutput<T>(): T | undefined {
-  return window.openai?.toolOutput as T | undefined;
+  return (window.openai?.toolOutput ?? latestToolResult?.structuredContent) as T | undefined;
+}
+
+export function initialToolMetadata<T extends Record<string, unknown>>(): T | undefined {
+  return (
+    latestToolResult?._meta ?? findToolResultMeta(window.openai?.toolResponseMetadata)
+  ) as T | undefined;
+}
+
+export function subscribeToolResults(
+  listener: (result: ToolCallResult) => void
+): () => void {
+  toolResultListeners.add(listener);
+  connectApp();
+  if (latestToolResult) listener(latestToolResult);
+
+  const legacyListener = (event: Event) => {
+    const globals = (event as CustomEvent<{ globals?: Record<string, unknown> }>).detail?.globals;
+    const structuredContent = asRecord(globals?.toolOutput ?? window.openai?.toolOutput);
+    const _meta = findToolResultMeta(
+      globals?.toolResponseMetadata ?? window.openai?.toolResponseMetadata
+    );
+    if (structuredContent || _meta) {
+      listener({
+        ...(structuredContent ? { structuredContent } : {}),
+        ...(_meta ? { _meta } : {})
+      });
+    }
+  };
+  window.addEventListener("openai:set_globals", legacyListener);
+
+  return () => {
+    toolResultListeners.delete(listener);
+    window.removeEventListener("openai:set_globals", legacyListener);
+  };
 }
 
 export function subscribeHostContext(
@@ -168,3 +205,27 @@ export const fileCapabilities = {
   selectFiles: () => window.openai?.selectFiles,
   getFileDownloadUrl: () => window.openai?.getFileDownloadUrl
 };
+
+function publishToolResult(result: ToolCallResult) {
+  latestToolResult = result;
+  for (const listener of toolResultListeners) listener(result);
+}
+
+function findToolResultMeta(value: unknown, depth = 0): Record<string, unknown> | undefined {
+  if (depth > 4) return undefined;
+  const record = asRecord(value);
+  if (!record) return undefined;
+  const meta = asRecord(record._meta);
+  if (meta) return meta;
+  for (const key of ["mcp_tool_result", "call_tool_result", "result"]) {
+    const nested = findToolResultMeta(record[key], depth + 1);
+    if (nested) return nested;
+  }
+  return "sourceEndpointBase" in record ? record : undefined;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
