@@ -78,7 +78,7 @@ pnpm --filter @ss/server exec wrangler d1 create ournest
 pnpm --filter @ss/server exec wrangler secret put MCP_PATH_TOKEN
 pnpm --filter @ss/server exec wrangler d1 migrations apply ournest --remote
 pnpm build
-pnpm --filter @ss/server deploy
+pnpm --filter @ss/server run deploy
 ```
 
 部署完成后，使用你自己的 Worker 地址与私密 MCP path 在 ChatGPT Developer Mode 中添加 app。若以后需要跨设备正文恢复，只需添加 R2 binding；Worker 会自动检测并启用云端来源，同时继续保留本设备缓存。
