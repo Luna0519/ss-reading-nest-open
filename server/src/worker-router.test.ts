@@ -12,6 +12,16 @@ describe("getWorkerRoute", () => {
     expect(getWorkerRoute(new URL("https://example.workers.dev/mcp"), "secret")).toBe("not-found");
   });
 
+  it("routes only the private standalone reader shell", () => {
+    expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret"), "secret")).toBe("app");
+    expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/"), "secret")).toBe("app");
+    expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/manifest.webmanifest"), "secret")).toBe("app");
+    expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/sw.js"), "secret")).toBe("app");
+    expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/icon.svg"), "secret")).toBe("app");
+    expect(getWorkerRoute(new URL("https://example.workers.dev/app/wrong/"), "secret")).toBe("not-found");
+    expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/private.json"), "secret")).toBe("not-found");
+  });
+
   it("routes only exact private source paths", () => {
     expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/upload"), "secret")).toBe("source");
     expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/restore"), "secret")).toBe("source");

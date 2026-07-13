@@ -1,5 +1,10 @@
 import { App as McpApp } from "@modelcontextprotocol/ext-apps";
 import type { ToolCallResult } from "../types/openai.js";
+import {
+  bootstrapStandaloneBookshelf,
+  callStandaloneTool,
+  isStandaloneMode
+} from "./standalone.js";
 
 let app: McpApp | undefined;
 let appReady: Promise<void> | undefined;
@@ -26,7 +31,7 @@ export interface ReadingHostContext {
 function connectApp() {
   if (typeof window === "undefined" || window.parent === window) return undefined;
   if (!app) {
-    app = new McpApp({ name: "S×S 小窝共读", version: "0.2.2" });
+    app = new McpApp({ name: "S×S 小窝共读", version: "0.2.3" });
     app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
     appReady = app.connect().catch(() => undefined);
   }
@@ -37,6 +42,7 @@ export async function callTool(
   name: string,
   args: Record<string, unknown>
 ): Promise<ToolCallResult> {
+  if (isStandaloneMode()) return callStandaloneTool(name, args);
   const bridge = connectApp();
   if (bridge) {
     await appReady;
@@ -50,6 +56,12 @@ export async function askChatGpt(
   prompt: string,
   options: { scrollToBottom?: boolean } = {}
 ) {
+  if (isStandaloneMode()) {
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("sxs:standalone-chat-request"));
+    }, 0);
+    return;
+  }
   await requestReaderPip();
   const bridge = connectApp();
   if (bridge) {
@@ -97,6 +109,10 @@ export async function updateModelContext(context: Record<string, unknown>): Prom
 
 export async function requestReaderFullscreen(): Promise<boolean> {
   try {
+    if (isStandaloneMode() && document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen();
+      return true;
+    }
     if (window.openai?.requestDisplayMode) {
       await window.openai.requestDisplayMode({ mode: "fullscreen" });
       return true;
@@ -115,6 +131,10 @@ export async function requestReaderFullscreen(): Promise<boolean> {
 
 export async function requestReaderInline(): Promise<boolean> {
   try {
+    if (isStandaloneMode() && document.fullscreenElement && document.exitFullscreen) {
+      await document.exitFullscreen();
+      return true;
+    }
     if (window.openai?.requestDisplayMode) {
       await window.openai.requestDisplayMode({ mode: "inline" });
       return true;
@@ -132,10 +152,22 @@ export async function requestReaderInline(): Promise<boolean> {
 }
 
 export function saveReaderWidgetState(state: ReaderWidgetState) {
+  if (isStandaloneMode()) {
+    window.localStorage.setItem("sxs:reader-widget-state", JSON.stringify(state));
+    return;
+  }
   window.openai?.setWidgetState?.(state);
 }
 
 export function initialWidgetState(): ReaderWidgetState | undefined {
+  if (isStandaloneMode()) {
+    try {
+      const saved = window.localStorage.getItem("sxs:reader-widget-state");
+      return saved ? (JSON.parse(saved) as ReaderWidgetState) : undefined;
+    } catch {
+      return undefined;
+    }
+  }
   return window.openai?.widgetState;
 }
 
@@ -154,6 +186,11 @@ export function subscribeToolResults(
 ): () => void {
   toolResultListeners.add(listener);
   connectApp();
+  void bootstrapStandaloneBookshelf()
+    ?.then((result) => publishToolResult(result))
+    .catch(() => {
+      window.dispatchEvent(new CustomEvent("sxs:standalone-connection-error"));
+    });
   if (latestToolResult) listener(latestToolResult);
 
   const legacyListener = (event: Event) => {
@@ -205,6 +242,8 @@ export const fileCapabilities = {
   selectFiles: () => window.openai?.selectFiles,
   getFileDownloadUrl: () => window.openai?.getFileDownloadUrl
 };
+
+export { isStandaloneMode };
 
 function publishToolResult(result: ToolCallResult) {
   latestToolResult = result;

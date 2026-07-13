@@ -28,6 +28,7 @@ const MODE_LABELS = {
 
 export function Home(props: {
   bookshelf: BookshelfItem[];
+  standaloneMode?: boolean;
   onNew: (type: "novel" | "manga") => void;
   onOpen: (item: BookshelfItem) => void;
   onReimport: (item: BookshelfItem) => void;
@@ -62,6 +63,13 @@ export function Home(props: {
         <h1>S×S 小窝共读</h1>
         <p>晚上好，今天想一起看什么？</p>
       </section>
+
+      {props.standaloneMode ? (
+        <aside className="standalone-note">
+          <strong>📚 独立阅读模式</strong>
+          <span>这里可以直接阅读、导入作品并保存进度；需要 AI 陪读时，再打开 ChatGPT 里的 L&amp;L 小窝共读。</span>
+        </aside>
+      ) : null}
 
       <section className="mode-grid" aria-label="共读模式">
         <button className="mode-card novel-card" onClick={() => props.onNew("novel")}>

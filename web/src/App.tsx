@@ -21,6 +21,7 @@ import {
   initialToolMetadata,
   initialToolOutput,
   initialWidgetState,
+  isStandaloneMode,
   requestReaderFullscreen,
   requestReaderInline,
   requestReaderPip,
@@ -122,6 +123,7 @@ const LARGE_NOVEL_TEXTAREA_PREVIEW_BYTES = 2 * 1024 * 1024;
 const LARGE_NOVEL_TEXTAREA_PREVIEW_CHARS = 1200;
 
 export function App() {
+  const standaloneMode = isStandaloneMode();
   const initial = initialToolOutput<OpenOutput>();
   const initialMetadata = initialToolMetadata<OpenMetadata>();
   const initialSourceEndpointBase =
@@ -206,6 +208,21 @@ export function App() {
       }),
     []
   );
+
+  useEffect(() => {
+    const explainChatHandoff = () => {
+      setToast("独立阅读模式可以看书和保存进度；AI 陪读请在 ChatGPT 里的 L&L 小窝共读中使用。");
+    };
+    const explainConnectionError = () => {
+      setToast("暂时连不上私人小窝，请检查网络后刷新页面。");
+    };
+    window.addEventListener("sxs:standalone-chat-request", explainChatHandoff);
+    window.addEventListener("sxs:standalone-connection-error", explainConnectionError);
+    return () => {
+      window.removeEventListener("sxs:standalone-chat-request", explainChatHandoff);
+      window.removeEventListener("sxs:standalone-connection-error", explainConnectionError);
+    };
+  }, []);
   const manualCompanionDraft = useMemo<PendingCompanionCommentDraft | null>(() => {
     if (!sessionBundle) return null;
     const preferences = sessionBundle.session.sessionPreferences;
@@ -2057,6 +2074,7 @@ export function App() {
       {screen === "home" ? (
         <Home
           bookshelf={recent}
+          standaloneMode={standaloneMode}
           onNew={begin}
           onOpen={continueReading}
           onReimport={prepareReimport}

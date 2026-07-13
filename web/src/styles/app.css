@@ -79,6 +79,19 @@ button:disabled { cursor: default; opacity: .42; }
 h1, h2, h3, p { margin-top: 0; }
 .home-hero h1 { margin-bottom: 9px; font-size: clamp(28px, 7vw, 40px); letter-spacing: -.04em; }
 .home-hero p { color: var(--muted); font-size: 16px; }
+.standalone-note {
+  display: grid;
+  gap: 5px;
+  margin: -8px 0 18px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--wood) 20%, var(--line));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--sage) 52%, var(--surface));
+  color: var(--ink);
+  line-height: 1.5;
+}
+.standalone-note strong { font-size: 13px; }
+.standalone-note span { color: var(--muted); font-size: 11px; }
 .mode-grid { display: grid; gap: 12px; }
 .mode-card {
   display: grid;

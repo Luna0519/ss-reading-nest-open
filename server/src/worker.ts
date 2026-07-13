@@ -5,6 +5,7 @@ import { D1ReadingRepository } from "./repositories/d1-reading-repository.js";
 import { CloudSourceService } from "./services/cloud-source-service.js";
 import { handleSourceRoute } from "./source-routes.js";
 import { R2SourceObjectStorage } from "./storage/r2-source-object-storage.js";
+import { handleStandaloneApp } from "./standalone-pwa.js";
 import { getWorkerRoute } from "./worker-router.js";
 
 type WorkerEnv = Env & { SOURCES_BUCKET?: R2Bucket };
@@ -15,7 +16,7 @@ export default {
     const route = getWorkerRoute(url, env.MCP_PATH_TOKEN);
 
     if (route === "health") {
-      return Response.json({ ok: true, app: "S×S 小窝共读", version: "0.2.2" });
+      return Response.json({ ok: true, app: "S×S 小窝共读", version: "0.2.3" });
     }
     if (route === "misconfigured") {
       console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
@@ -23,6 +24,9 @@ export default {
     }
     if (route === "not-found") {
       return new Response("Not found", { status: 404 });
+    }
+    if (route === "app") {
+      return handleStandaloneApp(request, url, env.MCP_PATH_TOKEN, widgetHtml);
     }
 
     try {
