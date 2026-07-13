@@ -32,6 +32,23 @@ describe("App", () => {
     expect(screen.getByText("我的书架")).toBeInTheDocument();
   });
 
+  it("opens the appearance panel and applies a liquid-glass theme immediately", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "打开小窝外观" }));
+    expect(screen.getByRole("dialog", { name: "小窝外观" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /月光雾紫/ }));
+    fireEvent.change(screen.getByRole("slider", { name: "透明度" }), {
+      target: { value: "0.5" }
+    });
+
+    await waitFor(() => {
+      expect(document.documentElement.dataset.llTheme).toBe("lavender");
+      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.50");
+      expect(localStorage.getItem("ll:appearance:v1")).toContain('"theme":"lavender"');
+    });
+  });
+
   it("opens the novel setup without exposing model API settings", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));

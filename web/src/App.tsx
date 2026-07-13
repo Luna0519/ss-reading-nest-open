@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type {
   CommentLength,
   CompanionComment,
@@ -30,6 +30,7 @@ import {
   updateModelContext
 } from "./bridge/host.js";
 import { syncCurrentContext } from "./bridge/sync-current-context.js";
+import { AppearanceSheet } from "./components/AppearanceSheet.js";
 import { CacheSettings } from "./components/CacheSettings.js";
 import { BookManagementSheet } from "./components/BookManagementSheet.js";
 import { DiaryPreview } from "./components/DiaryPreview.js";
@@ -64,6 +65,13 @@ import {
   buildReadingCommentPrompt
 } from "./features/reading-comments/prompt-policy.js";
 import {
+  applyAppearance,
+  loadAppearanceBackground,
+  loadAppearancePreferences,
+  saveAppearanceBackground,
+  saveAppearancePreferences
+} from "./features/appearance/appearance.js";
+import {
   cancelSyncJob,
   getActiveBatch,
   markBatchConfirmed,
@@ -79,7 +87,7 @@ import { NovelReader } from "./pages/NovelReader.js";
 import { IndexedDbReadingCache } from "./storage/indexeddb-cache.js";
 
 type Screen = "home" | "setup" | "novel" | "manga";
-type Overlay = "cache" | "more" | "diary" | "management" | null;
+type Overlay = "appearance" | "cache" | "more" | "diary" | "management" | null;
 type ImportProgress = {
   stage:
     | "idle"
@@ -124,6 +132,10 @@ const LARGE_NOVEL_TEXTAREA_PREVIEW_CHARS = 1200;
 
 export function App() {
   const standaloneMode = isStandaloneMode();
+  const [appearance, setAppearance] = useState(() => loadAppearancePreferences());
+  const [appearanceBackground, setAppearanceBackground] = useState(() =>
+    loadAppearanceBackground()
+  );
   const initial = initialToolOutput<OpenOutput>();
   const initialMetadata = initialToolMetadata<OpenMetadata>();
   const initialSourceEndpointBase =
@@ -189,6 +201,11 @@ export function App() {
   const restoreAttempted = useRef(false);
   const syncJobRef = useRef<ReadingSyncJob | null>(null);
   const hostLayout = useReadingHostLayout();
+
+  useLayoutEffect(() => {
+    applyAppearance(appearance, appearanceBackground);
+    saveAppearancePreferences(appearance);
+  }, [appearance, appearanceBackground]);
 
   useEffect(
     () =>
@@ -2075,6 +2092,7 @@ export function App() {
         <Home
           bookshelf={recent}
           standaloneMode={standaloneMode}
+          onAppearance={() => setOverlay("appearance")}
           onNew={begin}
           onOpen={continueReading}
           onReimport={prepareReimport}
@@ -2227,6 +2245,21 @@ export function App() {
           initialScrollTop={readerScrollTop}
           onScrollPosition={setReaderScrollTop}
           {...readerProps}
+        />
+      ) : null}
+      {overlay === "appearance" ? (
+        <AppearanceSheet
+          value={appearance}
+          backgroundImage={appearanceBackground}
+          onChange={setAppearance}
+          onBackgroundChange={(dataUrl) => {
+            if (!saveAppearanceBackground(dataUrl)) {
+              setToast("这张背景图太大，当前设备没有足够空间保存。");
+              return;
+            }
+            setAppearanceBackground(dataUrl);
+          }}
+          onClose={() => setOverlay(null)}
         />
       ) : null}
       {overlay === "cache" && sessionBundle ? <CacheSettings type={sessionBundle.session.type} remembered={remembered} liveReadingEnabled={sessionBundle.session.liveReadingEnabled} onRememberChange={changeRemember} onLiveReadingChange={(enabled) => void changeLiveReading(enabled)} onClear={clearCache} onClose={() => setOverlay(null)} /> : null}

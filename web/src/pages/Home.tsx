@@ -29,6 +29,7 @@ const MODE_LABELS = {
 export function Home(props: {
   bookshelf: BookshelfItem[];
   standaloneMode?: boolean;
+  onAppearance?: () => void;
   onNew: (type: "novel" | "manga") => void;
   onOpen: (item: BookshelfItem) => void;
   onReimport: (item: BookshelfItem) => void;
@@ -61,7 +62,12 @@ export function Home(props: {
       <section className="home-hero">
         <div className="hero-topline">
           <BrandMark />
-          <span className="nest-status"><i />小窝在线</span>
+          <div className="hero-actions">
+            <button type="button" className="appearance-trigger" aria-label="打开小窝外观" onClick={props.onAppearance}>
+              <i /><i /><i /><span>外观</span>
+            </button>
+            <span className="nest-status"><i />小窝在线</span>
+          </div>
         </div>
         <p className="hero-kicker">L&amp;L · OUR READING NEST</p>
         <h1><span>L&amp;L</span> 共读小窝</h1>

@@ -6,7 +6,7 @@ describe("server app", () => {
   it("reports health without requiring an API key", async () => {
     const response = await request(createApp()).get("/health");
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.4" });
+    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.5" });
   });
 
   it("accepts an MCP initialize request", async () => {

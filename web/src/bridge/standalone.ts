@@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
   const config = getStandaloneConfig();
   if (!config) throw new Error("Standalone reader path is unavailable");
   standaloneClient ??= (async () => {
-    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.4" });
+    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.5" });
     await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
     return client;
   })();
