@@ -2,8 +2,8 @@
 html, body, #root { min-height: 100%; margin: 0; }
 body {
   background:
-    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--peach) 32%, transparent), transparent 34rem),
-    var(--cream);
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--theme-bg-a) 68%, transparent), transparent 34rem),
+    var(--theme-bg-base);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -14,11 +14,14 @@ button:disabled { cursor: default; opacity: .42; }
   min-height: 100vh;
   min-height: 100dvh;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--cream) 18%, transparent), color-mix(in srgb, var(--cream) 42%, transparent)),
+    linear-gradient(color-mix(in srgb, var(--theme-overlay) 12%, transparent), color-mix(in srgb, var(--theme-overlay) 28%, transparent)),
     var(--custom-background-image, linear-gradient(transparent, transparent)),
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--theme-wash) 38%, transparent), transparent 30rem);
-  background-position: center, center, center;
-  background-size: cover, cover, auto;
+    radial-gradient(circle at 8% 4%, color-mix(in srgb, var(--theme-bg-a) 92%, transparent), transparent 34rem),
+    radial-gradient(circle at 94% 22%, color-mix(in srgb, var(--theme-bg-b) 88%, transparent), transparent 30rem),
+    radial-gradient(circle at 48% 100%, color-mix(in srgb, var(--theme-bg-c) 78%, transparent), transparent 34rem),
+    linear-gradient(145deg, var(--theme-bg-base), color-mix(in srgb, var(--theme-bg-c) 54%, var(--theme-bg-base)));
+  background-position: center, center, center, center, center, center;
+  background-size: cover, cover, cover, cover, cover, cover;
   background-attachment: fixed;
 }
 
@@ -683,7 +686,7 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
   box-shadow: var(--shadow);
 }
 
-.appearance-backdrop { background: color-mix(in srgb, var(--ink) 34%, transparent); backdrop-filter: blur(5px); }
+.appearance-backdrop { background: color-mix(in srgb, var(--wood) 24%, transparent); backdrop-filter: blur(5px) saturate(1.18); }
 .appearance-sheet {
   display: grid;
   gap: 14px;
@@ -694,6 +697,19 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
   backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.25);
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.25);
 }
+:root[data-ll-theme="lavender"] .appearance-sheet,
+:root[data-ll-theme="lavender"] .home-hero {
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(255,255,255,.9) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 84% 13%, rgba(255,244,255,.9) 0 2px, transparent 3px),
+    radial-gradient(circle at 72% 31%, rgba(219,226,255,.86) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 18% 42%, rgba(255,230,249,.82) 0 1px, transparent 2px),
+    radial-gradient(circle at 92% 58%, rgba(255,255,255,.78) 0 1.5px, transparent 2.5px),
+    linear-gradient(145deg, rgb(var(--glass-rgb) / var(--glass-panel-opacity)), rgb(var(--glass-rgb) / var(--glass-opacity)));
+}
+:root[data-ll-theme="lavender"] .appearance-sheet { box-shadow: 0 -18px 70px rgba(126, 93, 172, .24); }
+:root[data-ll-theme="forest"] .appearance-sheet { box-shadow: 0 -18px 70px rgba(64, 142, 91, .2); }
+:root[data-ll-theme="peach"] .appearance-sheet { box-shadow: 0 -18px 70px rgba(207, 100, 123, .2); }
 .appearance-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .appearance-heading span { color: var(--peach-strong); font-size: 9px; font-weight: 850; letter-spacing: .14em; }
 .appearance-heading h2 { margin: 4px 0 0; font-size: 24px; letter-spacing: -.045em; }

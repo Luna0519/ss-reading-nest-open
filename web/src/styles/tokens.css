@@ -1,22 +1,27 @@
 :root {
   color-scheme: light dark;
-  --cream: #f8f2ec;
-  --paper: #fffdf9;
-  --surface: #fffaf6;
-  --peach: #efd8d0;
-  --peach-strong: #a86d62;
-  --sage: #dfe9e1;
-  --sage-strong: #4f6e59;
-  --wood: #624940;
-  --ink: #3d302c;
-  --muted: #84726b;
-  --line: #e8ddd6;
-  --moon: #eee3bc;
-  --lilac: #e9e3ee;
-  --theme-wash: #dfe9e1;
-  --glass-rgb: 255 253 249;
-  --glass-opacity: 0.64;
-  --glass-panel-opacity: 0.9;
+  --cream: #edf8f1;
+  --paper: #fbfffb;
+  --surface: #f5fcf7;
+  --peach: #f3ced7;
+  --peach-strong: #b95f73;
+  --sage: #bfe4cb;
+  --sage-strong: #39785a;
+  --wood: #345b46;
+  --ink: #293d32;
+  --muted: #63776b;
+  --line: #cfe4d6;
+  --moon: #f5dda0;
+  --lilac: #ded8f2;
+  --theme-wash: #bfe8cb;
+  --theme-bg-base: #eff9e8;
+  --theme-bg-a: #bde8cc;
+  --theme-bg-b: #d8efc8;
+  --theme-bg-c: #d6e5ff;
+  --theme-overlay: #e7faed;
+  --glass-rgb: 244 253 247;
+  --glass-opacity: 0.58;
+  --glass-panel-opacity: 0.84;
   --glass-blur: 24px;
   --reader-font-family: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
   --reader-font-scale: 1;
@@ -36,39 +41,49 @@
 }
 
 :root[data-ll-theme="lavender"] {
-  --cream: #f6f1f5;
-  --paper: #fdfafd;
-  --surface: #fbf7fb;
-  --peach: #e8dce9;
-  --peach-strong: #8c6f91;
-  --sage: #e1e3ef;
-  --sage-strong: #666d91;
-  --wood: #5d4c61;
-  --ink: #3b303e;
-  --muted: #7e7080;
-  --line: #e4dae5;
-  --moon: #ede0b8;
-  --lilac: #e9e3ee;
-  --theme-wash: #e9e3ee;
-  --glass-rgb: 253 250 253;
+  --cream: #f2ecff;
+  --paper: #fdfaff;
+  --surface: #faf5ff;
+  --peach: #f0c6e5;
+  --peach-strong: #a1519e;
+  --sage: #d2d5ff;
+  --sage-strong: #6661a8;
+  --wood: #5b3f77;
+  --ink: #372944;
+  --muted: #786788;
+  --line: #ddcfef;
+  --moon: #ffe2a8;
+  --lilac: #ddc9ff;
+  --theme-wash: #ddc9ff;
+  --theme-bg-base: #eee6ff;
+  --theme-bg-a: #ddc8ff;
+  --theme-bg-b: #cbdcff;
+  --theme-bg-c: #f2c5e5;
+  --theme-overlay: #f4edff;
+  --glass-rgb: 249 243 255;
 }
 
 :root[data-ll-theme="peach"] {
-  --cream: #faf1e9;
-  --paper: #fffaf4;
-  --surface: #fdf6ef;
-  --peach: #f1d8cf;
-  --peach-strong: #a56f61;
-  --sage: #eadfcf;
-  --sage-strong: #806b54;
-  --wood: #62473e;
-  --ink: #3f302b;
-  --muted: #887168;
-  --line: #eadbd1;
-  --moon: #ead2a6;
-  --lilac: #eadfdf;
-  --theme-wash: #f1d8cf;
-  --glass-rgb: 255 250 244;
+  --cream: #fff0ee;
+  --paper: #fffaf8;
+  --surface: #fff5f3;
+  --peach: #ffc7cc;
+  --peach-strong: #c65e73;
+  --sage: #ffe0b9;
+  --sage-strong: #a66a49;
+  --wood: #804653;
+  --ink: #4b2e35;
+  --muted: #8b6870;
+  --line: #f0d0d5;
+  --moon: #ffd79b;
+  --lilac: #f1cde7;
+  --theme-wash: #ffc7cc;
+  --theme-bg-base: #fff0e2;
+  --theme-bg-a: #ffc5ca;
+  --theme-bg-b: #ffe0b8;
+  --theme-bg-c: #f4cce6;
+  --theme-overlay: #fff0ee;
+  --glass-rgb: 255 245 244;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -87,6 +102,11 @@
     --moon: #5a5138;
     --lilac: #45404a;
     --theme-wash: #38473c;
+    --theme-bg-base: #201d1c;
+    --theme-bg-a: #39483c;
+    --theme-bg-b: #473936;
+    --theme-bg-c: #3f3b4a;
+    --theme-overlay: #201d1c;
     --glass-rgb: 48 42 39;
     --danger: #f0a197;
     --shadow: 0 20px 52px rgba(0, 0, 0, 0.28);

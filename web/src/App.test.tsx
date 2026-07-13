@@ -37,7 +37,7 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "打开小窝外观" }));
     expect(screen.getByRole("dialog", { name: "小窝外观" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /月光雾紫/ }));
+    fireEvent.click(screen.getByRole("button", { name: /星雾梦紫/ }));
     fireEvent.change(screen.getByRole("slider", { name: "透明度" }), {
       target: { value: "0.5" }
     });

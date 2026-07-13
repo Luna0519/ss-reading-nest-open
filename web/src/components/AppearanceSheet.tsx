@@ -14,21 +14,21 @@ const THEMES: Array<{
 }> = [
   {
     value: "forest",
-    name: "月光雾森",
-    description: "鼠尾草绿 · 奶油白",
-    colors: ["#dfe9e1", "#f8f2ec", "#c98f86"]
+    name: "薄荷森光",
+    description: "薄荷绿 · 嫩叶光",
+    colors: ["#bfe8cb", "#eff9e8", "#efb5c0"]
   },
   {
     value: "lavender",
-    name: "月光雾紫",
-    description: "淡紫灰 · 珍珠白",
-    colors: ["#e9e3ee", "#f8f3f7", "#ab8cae"]
+    name: "星雾梦紫",
+    description: "薰衣草 · 蓝紫星光",
+    colors: ["#ddc8ff", "#cdd9ff", "#eeaddc"]
   },
   {
     value: "peach",
-    name: "蜜桃奶茶",
-    description: "蜜桃粉 · 焦糖奶油",
-    colors: ["#f1d8cf", "#fbf1e8", "#b98270"]
+    name: "蜜桃云霞",
+    description: "蜜桃粉 · 杏子奶油",
+    colors: ["#ffc5ca", "#ffe0bb", "#e98b9b"]
   }
 ];
 

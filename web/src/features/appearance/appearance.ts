@@ -12,8 +12,8 @@ export type AppearancePreferences = {
 
 export const DEFAULT_APPEARANCE: AppearancePreferences = {
   theme: "forest",
-  glassOpacity: 0.64,
-  glassBlur: 24,
+  glassOpacity: 0.58,
+  glassBlur: 26,
   readerFont: "serif",
   readerScale: 1,
   readerLineHeight: 1.86

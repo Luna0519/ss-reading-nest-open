@@ -7,8 +7,8 @@ import {
   useState
 } from "react";
 
-const RESOURCE_VERSION = "app-v22";
-const APP_VERSION = "0.2.5";
+const RESOURCE_VERSION = "app-v23";
+const APP_VERSION = "0.2.6";
 
 type AppModule = {
   App: ComponentType;

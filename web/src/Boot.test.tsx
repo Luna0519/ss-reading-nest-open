@@ -46,7 +46,7 @@ describe("Boot", () => {
     );
 
     expect(await screen.findByText("failed")).toBeInTheDocument();
-    expect(screen.getByText("app-v22")).toBeInTheDocument();
+    expect(screen.getByText("app-v23")).toBeInTheDocument();
     expect(screen.getAllByText("present")).toHaveLength(3);
     expect(screen.getByText("1")).toBeInTheDocument();
     const diagnosticText = screen.getByRole("alert").textContent ?? "";
@@ -76,7 +76,7 @@ describe("Boot", () => {
     const html = readFileSync(resolve(webRoot, "index.html"), "utf8");
 
     expect(html).toContain("data-startup-fallback");
-    expect(html).toContain("app-v22");
+    expect(html).toContain("app-v23");
     expect(html).not.toContain("sourceText");
     expect(html).not.toContain("objectKey");
   });
