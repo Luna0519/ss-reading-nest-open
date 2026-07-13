@@ -61,7 +61,7 @@ const expectedTools = [
   "generate_diary_context"
 ];
 
-const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.6" });
+const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
 const cleanup = {
   sessions: new Set(),
   r2Keys: new Set()

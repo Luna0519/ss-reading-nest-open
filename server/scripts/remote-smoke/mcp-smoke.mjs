@@ -5,7 +5,7 @@ const workerUrl = requireUrl("WORKER_URL");
 const token = requireEnv("MCP_PATH_TOKEN");
 const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
 const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
-const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.6" });
+const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
 
 const healthResponse = await fetch(new URL("/health", workerUrl));
 assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);

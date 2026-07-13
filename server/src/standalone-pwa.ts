@@ -1,4 +1,4 @@
-const SHELL_CACHE_VERSION = "v23";
+const SHELL_CACHE_VERSION = "v24";
 
 export function handleStandaloneApp(
   request: Request,

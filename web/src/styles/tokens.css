@@ -1,27 +1,27 @@
 :root {
   color-scheme: light dark;
-  --cream: #edf8f1;
-  --paper: #fbfffb;
-  --surface: #f5fcf7;
-  --peach: #f3ced7;
-  --peach-strong: #b95f73;
-  --sage: #bfe4cb;
-  --sage-strong: #39785a;
-  --wood: #345b46;
-  --ink: #293d32;
-  --muted: #63776b;
-  --line: #cfe4d6;
-  --moon: #f5dda0;
-  --lilac: #ded8f2;
-  --theme-wash: #bfe8cb;
-  --theme-bg-base: #eff9e8;
-  --theme-bg-a: #bde8cc;
-  --theme-bg-b: #d8efc8;
-  --theme-bg-c: #d6e5ff;
-  --theme-overlay: #e7faed;
-  --glass-rgb: 244 253 247;
-  --glass-opacity: 0.58;
-  --glass-panel-opacity: 0.84;
+  --cream: #eff9e9;
+  --paper: #fbfff9;
+  --surface: #f5fff8;
+  --peach: #f7d4df;
+  --peach-strong: #b9667b;
+  --sage: #c9f0d1;
+  --sage-strong: #337653;
+  --wood: #2f6549;
+  --ink: #254032;
+  --muted: #5f786a;
+  --line: #c8e5d2;
+  --moon: #f3e89e;
+  --lilac: #dcd8f5;
+  --theme-wash: #c9f0d1;
+  --theme-bg-base: #eef9df;
+  --theme-bg-a: #c8f0d0;
+  --theme-bg-b: #e4f6b8;
+  --theme-bg-c: #bfeee4;
+  --theme-overlay: #e6fae9;
+  --glass-rgb: 242 255 247;
+  --glass-opacity: 0.5;
+  --glass-panel-opacity: 0.64;
   --glass-blur: 24px;
   --reader-font-family: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
   --reader-font-scale: 1;
@@ -64,26 +64,26 @@
 }
 
 :root[data-ll-theme="peach"] {
-  --cream: #fff0ee;
-  --paper: #fffaf8;
-  --surface: #fff5f3;
-  --peach: #ffc7cc;
-  --peach-strong: #c65e73;
-  --sage: #ffe0b9;
-  --sage-strong: #a66a49;
-  --wood: #804653;
-  --ink: #4b2e35;
-  --muted: #8b6870;
-  --line: #f0d0d5;
-  --moon: #ffd79b;
-  --lilac: #f1cde7;
-  --theme-wash: #ffc7cc;
-  --theme-bg-base: #fff0e2;
-  --theme-bg-a: #ffc5ca;
-  --theme-bg-b: #ffe0b8;
-  --theme-bg-c: #f4cce6;
-  --theme-overlay: #fff0ee;
-  --glass-rgb: 255 245 244;
+  --cream: #fff1f6;
+  --paper: #fffafd;
+  --surface: #fff6fa;
+  --peach: #ffd4e2;
+  --peach-strong: #bf6684;
+  --sage: #ffe7d8;
+  --sage-strong: #a56b71;
+  --wood: #92536a;
+  --ink: #4c303b;
+  --muted: #8b6a78;
+  --line: #f1d3df;
+  --moon: #ffe5ac;
+  --lilac: #ead8f4;
+  --theme-wash: #ffd4e2;
+  --theme-bg-base: #fff0f6;
+  --theme-bg-a: #ffd3e2;
+  --theme-bg-b: #ffe6ee;
+  --theme-bg-c: #f4d8f1;
+  --theme-overlay: #fff1f7;
+  --glass-rgb: 255 246 251;
 }
 
 @media (prefers-color-scheme: dark) {

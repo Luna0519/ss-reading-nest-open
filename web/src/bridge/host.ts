@@ -31,7 +31,7 @@ export interface ReadingHostContext {
 function connectApp() {
   if (typeof window === "undefined" || window.parent === window) return undefined;
   if (!app) {
-    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.6" });
+    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
     app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
     appReady = app.connect().catch(() => undefined);
   }

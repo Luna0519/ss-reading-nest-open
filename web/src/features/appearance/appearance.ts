@@ -12,8 +12,8 @@ export type AppearancePreferences = {
 
 export const DEFAULT_APPEARANCE: AppearancePreferences = {
   theme: "forest",
-  glassOpacity: 0.58,
-  glassBlur: 26,
+  glassOpacity: 0.5,
+  glassBlur: 28,
   readerFont: "serif",
   readerScale: 1,
   readerLineHeight: 1.86
@@ -86,7 +86,7 @@ export function applyAppearance(
   root.style.setProperty("--glass-opacity", normalized.glassOpacity.toFixed(2));
   root.style.setProperty(
     "--glass-panel-opacity",
-    Math.min(0.96, normalized.glassOpacity + 0.26).toFixed(2)
+    Math.min(0.88, normalized.glassOpacity + 0.14).toFixed(2)
   );
   root.style.setProperty("--glass-blur", `${normalized.glassBlur}px`);
   root.style.setProperty("--reader-font-family", FONT_STACKS[normalized.readerFont]);

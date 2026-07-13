@@ -90,8 +90,8 @@ h1, h2, h3, p { margin-top: 0; }
   background:
     radial-gradient(circle at 90% 12%, color-mix(in srgb, var(--moon) 72%, transparent), transparent 9rem),
     rgb(var(--glass-rgb) / var(--glass-opacity));
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.28);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.28);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.42) brightness(1.04);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.42) brightness(1.04);
   box-shadow: var(--shadow);
 }
 .home-hero::before,
@@ -196,8 +196,8 @@ h1, h2, h3, p { margin-top: 0; }
   border: 1px solid color-mix(in srgb, var(--sage-strong) 14%, var(--line));
   border-radius: 18px;
   background: rgb(var(--glass-rgb) / var(--glass-opacity));
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.38) brightness(1.04);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.38) brightness(1.04);
   color: var(--ink);
   line-height: 1.5;
 }
@@ -227,8 +227,8 @@ h1, h2, h3, p { margin-top: 0; }
   border-radius: var(--radius-lg);
   text-align: left;
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4) brightness(1.04);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4) brightness(1.04);
 }
 .mode-card::after { position: absolute; width: 110px; height: 110px; right: -48px; bottom: -56px; border: 1px solid color-mix(in srgb, var(--wood) 11%, transparent); border-radius: 50%; content: ""; }
 .mode-card strong, .mode-card small, .mode-card em { display: block; }
@@ -281,8 +281,8 @@ h1, h2, h3, p { margin-top: 0; }
   border-radius: 23px;
   background: rgb(var(--glass-rgb) / var(--glass-opacity));
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.18);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.18);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.36) brightness(1.04);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.36) brightness(1.04);
 }
 .book-card::before { position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--peach-strong); content: ""; opacity: .65; }
 .book-card.manga::before { background: var(--sage-strong); }
@@ -425,8 +425,8 @@ h1, h2, h3, p { margin-top: 0; }
   border-radius: 28px;
   background: linear-gradient(145deg, color-mix(in srgb, var(--peach) 28%, rgb(var(--glass-rgb) / var(--glass-opacity))), rgb(var(--glass-rgb) / var(--glass-opacity)));
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.38) brightness(1.04);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.38) brightness(1.04);
 }
 .setup-heading > span { color: var(--peach-strong); font-size: 9px; font-weight: 850; letter-spacing: .14em; }
 .setup-shell .setup-heading h1 { margin: 8px 0 7px; font-size: 31px; letter-spacing: -.05em; }
@@ -686,7 +686,7 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
   box-shadow: var(--shadow);
 }
 
-.appearance-backdrop { background: color-mix(in srgb, var(--wood) 24%, transparent); backdrop-filter: blur(5px) saturate(1.18); }
+.appearance-backdrop { background: color-mix(in srgb, var(--wood) 15%, transparent); backdrop-filter: blur(7px) saturate(1.28); }
 .appearance-sheet {
   display: grid;
   gap: 14px;
@@ -694,8 +694,8 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
   max-height: 92dvh;
   padding-inline: 17px;
   background: rgb(var(--glass-rgb) / var(--glass-panel-opacity));
-  backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.25);
-  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.25);
+  backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.42) brightness(1.04);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.42) brightness(1.04);
 }
 :root[data-ll-theme="lavender"] .appearance-sheet,
 :root[data-ll-theme="lavender"] .home-hero {
@@ -777,6 +777,32 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
 .appearance-footer .text-button,
 .appearance-footer .action-primary { width: 100%; min-height: 46px; align-self: stretch; border-radius: 14px; }
 .appearance-footer .text-button { border: 1px solid var(--line); background: rgb(var(--glass-rgb) / .68); text-align: center; }
+
+.home-hero,
+.standalone-note,
+.mode-card,
+.book-card,
+.setup-heading,
+.appearance-sheet,
+.appearance-section,
+.theme-choice,
+.font-choice,
+.background-preview,
+.background-placeholder {
+  border-color: rgba(255, 255, 255, .62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .74),
+    inset 0 -1px 0 color-mix(in srgb, var(--wood) 8%, transparent),
+    0 16px 38px color-mix(in srgb, var(--wood) 12%, transparent);
+}
+.theme-choice[aria-pressed="true"],
+.font-choice[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--wood) 72%, white);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .62),
+    0 0 0 2px color-mix(in srgb, var(--wood) 72%, transparent),
+    0 12px 28px color-mix(in srgb, var(--wood) 16%, transparent);
+}
 .sheet-grip { width: 42px; height: 5px; margin: 0 auto 18px; border-radius: 999px; background: var(--line); }
 .bottom-sheet h2 { font-size: 20px; }
 .comment-preferences {

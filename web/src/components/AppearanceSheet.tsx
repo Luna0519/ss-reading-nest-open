@@ -16,7 +16,7 @@ const THEMES: Array<{
     value: "forest",
     name: "薄荷森光",
     description: "薄荷绿 · 嫩叶光",
-    colors: ["#bfe8cb", "#eff9e8", "#efb5c0"]
+    colors: ["#c9f0d1", "#e8f7bf", "#bdeee2"]
   },
   {
     value: "lavender",
@@ -28,7 +28,7 @@ const THEMES: Array<{
     value: "peach",
     name: "蜜桃云霞",
     description: "蜜桃粉 · 杏子奶油",
-    colors: ["#ffc5ca", "#ffe0bb", "#e98b9b"]
+    colors: ["#ffd5e3", "#ffe7ef", "#f4adc7"]
   }
 ];
 
