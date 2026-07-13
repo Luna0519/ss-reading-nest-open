@@ -26,7 +26,7 @@ describe("App", () => {
 
   it("shows the two reading modes and bookshelf section", () => {
     render(<App />);
-    expect(screen.getByText("S×S 小窝共读")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "L&L 共读小窝" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /小说共读/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /漫画共读/ })).toBeInTheDocument();
     expect(screen.getByText("我的书架")).toBeInTheDocument();

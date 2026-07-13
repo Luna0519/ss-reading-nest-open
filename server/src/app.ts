@@ -12,7 +12,7 @@ export function createApp() {
   const transports: TransportMap = {};
 
   app.get("/health", (_request, response) => {
-    response.json({ ok: true, app: "S×S 小窝共读", version: "0.2.3" });
+    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.4" });
   });
 
   app.post("/mcp", async (request: Request, response: Response) => {

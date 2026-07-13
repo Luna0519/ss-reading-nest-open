@@ -30,7 +30,7 @@ import { ReadingService } from "../services/reading-service.js";
 import type { CloudSourceService } from "../services/cloud-source-service.js";
 import { toolResult } from "./tool-result.js";
 
-export const READING_NEST_URI = "ui://ss-reading-nest/app-v20.html";
+export const READING_NEST_URI = "ui://ss-reading-nest/app-v21.html";
 
 const readOnly = {
   readOnlyHint: true,
@@ -45,7 +45,7 @@ const mutation = {
 
 export const TOOL_CONFIGS = {
   open_reading_nest: {
-    title: "打开 S×S 小窝共读",
+    title: "打开 L&L 共读小窝",
     description: "Use this when the user wants to open the reading nest or continue recent reading.",
     inputSchema: openReadingNestInputSchema,
     annotations: readOnly,
@@ -233,7 +233,7 @@ export function registerReadingTools(
         bookshelfSessions,
         recentSessions: bookshelfSessions.slice(0, 10)
       },
-      "已打开 S×S 小窝共读。"
+      "已打开 L&L 共读小窝。"
     );
     return {
       ...response,

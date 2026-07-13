@@ -33,7 +33,7 @@ describe("standalone PWA", () => {
     );
     expect(shell.headers.get("content-type")).toContain("text/html");
     expect(shell.headers.get("referrer-policy")).toBe("no-referrer");
-    expect(await shell.text()).toContain("L&L 小窝共读");
+    expect(await shell.text()).toContain("L&L 共读小窝");
 
     const manifestUrl = `${base}manifest.webmanifest`;
     const manifest = handleStandaloneApp(
@@ -44,7 +44,7 @@ describe("standalone PWA", () => {
     );
     expect(manifest.headers.get("content-type")).toContain("application/manifest+json");
     await expect(manifest.json()).resolves.toMatchObject({
-      name: "L&L 小窝共读",
+      name: "L&L 共读小窝",
       start_url: "./",
       display: "standalone"
     });

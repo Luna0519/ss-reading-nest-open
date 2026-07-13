@@ -59,35 +59,53 @@ export function Home(props: {
   return (
     <main className="home-shell">
       <section className="home-hero">
-        <div className="nest-mark">S×S</div>
-        <h1>S×S 小窝共读</h1>
-        <p>晚上好，今天想一起看什么？</p>
+        <div className="hero-topline">
+          <BrandMark />
+          <span className="nest-status"><i />小窝在线</span>
+        </div>
+        <p className="hero-kicker">L&amp;L · OUR READING NEST</p>
+        <h1><span>L&amp;L</span> 共读小窝</h1>
+        <p className="hero-intro">把喜欢的故事放进来，我们慢慢读完。</p>
+        <div className="hero-summary" aria-label="小窝概况">
+          <span><strong>{props.bookshelf.length}</strong> 本故事</span>
+          <i />
+          <span>{props.bookshelf.length ? "书页还在等我们" : "等待我们的第一本故事"}</span>
+        </div>
       </section>
 
       {props.standaloneMode ? (
         <aside className="standalone-note">
-          <strong>📚 独立阅读模式</strong>
-          <span>这里可以直接阅读、导入作品并保存进度；需要 AI 陪读时，再打开 ChatGPT 里的 L&amp;L 小窝共读。</span>
+          <span className="standalone-symbol" aria-hidden="true">⌂</span>
+          <span><strong>独立阅读模式</strong><small>阅读、导入和进度保存都可以在这里完成；AI 陪读请回到 ChatGPT 里的 L&amp;L 共读小窝。</small></span>
         </aside>
       ) : null}
 
-      <section className="mode-grid" aria-label="共读模式">
-        <button className="mode-card novel-card" onClick={() => props.onNew("novel")}>
-          <span className="mode-icon">📖</span>
-          <span><strong>小说共读</strong><small>贴进文字，慢慢读</small></span>
-          <span>›</span>
-        </button>
-        <button className="mode-card manga-card" onClick={() => props.onNew("manga")}>
-          <span className="mode-icon">🖼️</span>
-          <span><strong>漫画共读</strong><small>导入图片，一页页看</small></span>
-          <span>›</span>
-        </button>
+      <section className="reading-modes" aria-labelledby="new-reading-heading">
+        <div className="section-intro">
+          <div>
+            <span>BEGIN TOGETHER</span>
+            <h2 id="new-reading-heading">开始一段共读</h2>
+          </div>
+          <p>选一种方式，把故事带回小窝。</p>
+        </div>
+        <div className="mode-grid" aria-label="共读模式">
+          <button className="mode-card novel-card" onClick={() => props.onNew("novel")}>
+            <span className="mode-icon"><NovelIcon /></span>
+            <span className="mode-copy"><small>文字故事</small><strong>小说共读</strong><em>TXT · Markdown · 粘贴正文</em></span>
+            <span className="mode-arrow" aria-hidden="true">↗</span>
+          </button>
+          <button className="mode-card manga-card" onClick={() => props.onNew("manga")}>
+            <span className="mode-icon"><MangaIcon /></span>
+            <span className="mode-copy"><small>图像故事</small><strong>漫画共读</strong><em>导入图片 · 一页页慢慢看</em></span>
+            <span className="mode-arrow" aria-hidden="true">↗</span>
+          </button>
+        </div>
       </section>
 
       <section className="bookshelf-section">
         <div className="section-heading">
-          <h2>我的书架</h2>
-          <span>{props.bookshelf.length} 本作品</span>
+          <div><span>OUR SHELF</span><h2>我的书架</h2></div>
+          <span className="book-count">{props.bookshelf.length} 本作品</span>
         </div>
         <div className="bookshelf-filters" aria-label="书架筛选">
           {FILTERS.map((option) => (
@@ -103,7 +121,11 @@ export function Home(props: {
         </div>
 
         {props.bookshelf.length === 0 ? (
-          <div className="empty-nest">小窝还是空的。选一本故事，我们一起开始吧。</div>
+          <div className="empty-nest">
+            <span className="empty-mark" aria-hidden="true">L&amp;L</span>
+            <strong>书架还空着</strong>
+            <p>选一本故事放进来，我们从第一页开始。</p>
+          </div>
         ) : visible.length === 0 ? (
           <div className="empty-nest">这个筛选下还没有作品。</div>
         ) : (
@@ -134,10 +156,10 @@ function BookCard(props: {
   const available = item.sourceAvailability === "available_local";
   const action = sourceAction(item);
   return (
-    <article className="book-card">
+    <article className={`book-card ${item.session.type}`}>
       <div className="book-card-top">
-        <span className={`book-spine ${item.session.type}`}>
-          {item.session.type === "novel" ? "书" : "画"}
+        <span className={`book-spine ${item.session.type}`} aria-hidden="true">
+          {item.session.type === "novel" ? "文" : "画"}
         </span>
         <div className="book-title">
           <strong>{item.session.title}</strong>
@@ -159,8 +181,8 @@ function BookCard(props: {
         <strong>{action.status}</strong>
         <span>{action.hint}</span>
       </div>
-      <p className="book-comment">
-        {item.latestComment ? `烁构：${item.latestComment}` : "烁构还没留下短评。"}
+      <p className={`book-comment ${item.latestComment ? "has-comment" : ""}`}>
+        <span aria-hidden="true">“</span>{item.latestComment ? `烁构：${item.latestComment}` : "烁构还没留下短评。"}
       </p>
       <button
         type="button"
@@ -179,6 +201,39 @@ function BookCard(props: {
         管理这本书
       </button>
     </article>
+  );
+}
+
+function BrandMark() {
+  return (
+    <span className="brand-mark" aria-label="L&L">
+      <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
+        <path d="M10 16.5c7-3.2 14.4-2.2 22 3.4 7.6-5.6 15-6.6 22-3.4v31.2c-7-2.6-14.4-1.2-22 4.2-7.6-5.4-15-6.8-22-4.2V16.5Z" />
+        <path d="M32 20v31" />
+        <circle cx="51" cy="12" r="3" />
+        <path d="m44 8 1.2 2.8L48 12l-2.8 1.2L44 16l-1.2-2.8L40 12l2.8-1.2L44 8Z" />
+      </svg>
+      <b>L&amp;L</b>
+    </span>
+  );
+}
+
+function NovelIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M8 10.5c5.3-2.2 10.6-1.5 16 2.4 5.4-3.9 10.7-4.6 16-2.4v27c-5.3-1.8-10.6-.7-16 3.1-5.4-3.8-10.7-4.9-16-3.1v-27Z" />
+      <path d="M24 13v27" />
+    </svg>
+  );
+}
+
+function MangaIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <rect x="8" y="9" width="32" height="30" rx="4" />
+      <circle cx="30" cy="18" r="3" />
+      <path d="m12 34 8-9 6 6 4-4 6 7" />
+    </svg>
   );
 }
 

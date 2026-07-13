@@ -211,7 +211,7 @@ export function App() {
 
   useEffect(() => {
     const explainChatHandoff = () => {
-      setToast("独立阅读模式可以看书和保存进度；AI 陪读请在 ChatGPT 里的 L&L 小窝共读中使用。");
+      setToast("独立阅读模式可以看书和保存进度；AI 陪读请在 ChatGPT 里的 L&L 共读小窝中使用。");
     };
     const explainConnectionError = () => {
       setToast("暂时连不上私人小窝，请检查网络后刷新页面。");
@@ -2084,8 +2084,11 @@ export function App() {
       {screen === "setup" ? (
         <main className="setup-shell">
           <button className="back-link" onClick={() => setScreen("home")}>‹ 返回小窝</button>
-          <h1>{setupType === "novel" ? "小说共读" : "漫画共读"}</h1>
-          <p>{existingSession ? `继续《${existingSession.title}》` : "准备好内容，我们就一起开始。"}</p>
+          <header className="setup-heading">
+            <span>L&amp;L · NEW STORY</span>
+            <h1>{setupType === "novel" ? "小说共读" : "漫画共读"}</h1>
+            <p>{existingSession ? `继续《${existingSession.title}》` : "准备好内容，我们就一起开始。"}</p>
+          </header>
           <label>作品名<input aria-label="作品名" value={title} onChange={(e) => setTitle(e.target.value)} /></label>
           {setupType === "novel" ? (
             <div className="novel-source-field">

@@ -12,8 +12,8 @@ export function createMcpServerFromRepository(
   options: { sourceEndpointBase?: string; workerOrigin?: string } = {}
 ) {
   const server = new McpServer({
-    name: "S×S 小窝共读",
-    version: "0.2.3"
+    name: "L&L 共读小窝",
+    version: "0.2.4"
   });
   const service = new ReadingService(repository);
   registerReadingResource(server, widgetHtml, options.workerOrigin);

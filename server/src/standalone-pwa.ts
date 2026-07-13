@@ -1,4 +1,4 @@
-const SHELL_CACHE_VERSION = "v20";
+const SHELL_CACHE_VERSION = "v21";
 
 export function handleStandaloneApp(
   request: Request,
@@ -61,10 +61,10 @@ export function buildStandaloneHtml(widgetHtml: string): string {
   const pwaHead = [
     '<meta name="sxs-standalone" content="true" />',
     '<meta name="theme-color" content="#f7efe8" />',
-    '<meta name="application-name" content="L&L 小窝共读" />',
+    '<meta name="application-name" content="L&L 共读小窝" />',
     '<meta name="apple-mobile-web-app-capable" content="yes" />',
     '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
-    '<meta name="apple-mobile-web-app-title" content="L&L 小窝共读" />',
+    '<meta name="apple-mobile-web-app-title" content="L&L 共读小窝" />',
     '<link rel="manifest" href="./manifest.webmanifest" />',
     '<link rel="apple-touch-icon" href="./icon.svg" />'
   ].join("\n    ");
@@ -83,8 +83,8 @@ export function buildStandaloneHtml(widgetHtml: string): string {
 function buildManifest() {
   return {
     id: "./",
-    name: "L&L 小窝共读",
-    short_name: "L&L 小窝",
+    name: "L&L 共读小窝",
+    short_name: "L&L 共读",
     description: "属于我们的独立阅读小窝",
     lang: "zh-CN",
     start_url: "./",

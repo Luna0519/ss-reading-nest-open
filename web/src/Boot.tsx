@@ -7,8 +7,8 @@ import {
   useState
 } from "react";
 
-const RESOURCE_VERSION = "app-v20";
-const APP_VERSION = "0.2.3";
+const RESOURCE_VERSION = "app-v21";
+const APP_VERSION = "0.2.4";
 
 type AppModule = {
   App: ComponentType;
@@ -103,7 +103,7 @@ class BootErrorBoundary extends Component<BoundaryProps, BoundaryState> {
   }
 
   componentDidCatch(error: unknown, _info: ErrorInfo) {
-    console.error("SxS reading nest boot failed", sanitizeErrorMessage(error));
+    console.error("L&L reading nest boot failed", sanitizeErrorMessage(error));
   }
 
   render() {
@@ -137,7 +137,7 @@ export function BootDiagnostics({
 
   return (
     <main className="boot-diagnostics" role="alert" aria-live="polite">
-      <strong>SxS 小窝加载诊断</strong>
+      <strong>L&amp;L 共读小窝加载诊断</strong>
       <p>组件还没有正常显示。请刷新小窝；如果仍是空白，把这块信息截图给 Codex。</p>
       <dl>
         <div>

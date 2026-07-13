@@ -1,4 +1,4 @@
-# S×S 小窝共读 / Reading Nest
+# L&L 共读小窝 / Reading Nest
 
 一个移动端优先的 AI 共读小窝，运行在 ChatGPT Apps SDK + MCP 之上。用户可以导入自己的小说文本或漫画图片，记录自己和 AI 的阅读位置，并使用补课同步、轻量短评、书签、摘录与短评 Dock。
 
@@ -116,7 +116,7 @@ https://<你的-worker域名>/mcp/<你的-MCP_PATH_TOKEN>
 2. 在 ChatGPT 打开 Settings → Security and login，启用 Developer mode。
 3. 打开 Settings → Plugins（或 `https://chatgpt.com/plugins`），点击 `+` 创建 developer-mode app。
 4. 填写名称、用途说明和上面的完整 MCP server URL。连接成功后应显示 23 个工具。
-5. 新建聊天，点击输入框旁的 `+` → More，选择这个 app，再让 ChatGPT“打开 S×S 小窝共读”。
+5. 新建聊天，点击输入框旁的 `+` → More，选择这个 app，再让 ChatGPT“打开 L&L 共读小窝”。
 
 ChatGPT 要求远程 MCP endpoint 可通过 HTTPS 访问。`MCP_PATH_TOKEN` 在此单用户方案中等同于访问密钥，不要发到聊天、截图、日志或提交到 Git。当前操作以 [OpenAI 官方连接说明](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt) 为准。
 
