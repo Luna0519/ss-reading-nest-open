@@ -115,7 +115,7 @@ index e4c685d..f643a59 100644
        "https://reading-nest.example.workers.dev"
      );
 diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
-index 21a3b3d..046f141 100644
+index 21a3b3d..4ff7a3d 100644
 --- a/server/src/mcp/register-tools.ts
 +++ b/server/src/mcp/register-tools.ts
 @@ -30,7 +30,7 @@ import { ReadingService } from "../services/reading-service.js";
@@ -127,6 +127,58 @@ index 21a3b3d..046f141 100644
  
  const readOnly = {
    readOnlyHint: true,
+@@ -69,7 +69,7 @@ export const TOOL_CONFIGS = {
+     annotations: { ...mutation, idempotentHint: true }
+   },
+   confirm_assistant_synced_position: {
+-    title: "确认烁构已读位置",
++    title: "确认林序言已读位置",
+     description:
+       "Use this only after the user explicitly confirms that ChatGPT replied it has read through a batch end.",
+     inputSchema: confirmAssistantSyncedPositionInputSchema,
+@@ -124,21 +124,21 @@ export const TOOL_CONFIGS = {
+     annotations: { ...mutation, idempotentHint: true }
+   },
+   publish_companion_comment: {
+-    title: "发布烁构陪读短评",
++    title: "发布林序言陪读短评",
+     description:
+       "Use this before replying with a lightweight reading comment so the same short text appears in the reading Dock.",
+     inputSchema: publishCompanionCommentInputSchema,
+     annotations: { ...mutation, idempotentHint: true }
+   },
+   list_companion_comments: {
+-    title: "读取烁构陪读短评",
++    title: "读取林序言陪读短评",
+     description:
+       "Use this when the reading widget needs recent or paged historical companion comments for one session.",
+     inputSchema: listCompanionCommentsInputSchema,
+     annotations: readOnly
+   },
+   clear_companion_comments: {
+-    title: "清除烁构陪读短评",
++    title: "清除林序言陪读短评",
+     description:
+       "Use this when the user explicitly clears recent, historical, or all companion comments for one session.",
+     inputSchema: clearCompanionCommentsInputSchema,
+@@ -282,7 +282,7 @@ export function registerReadingTools(
+           confirmedBatchId: input.batchId,
+           updatedAt: session.updatedAt
+         },
+-        `已由用户确认烁构读到${input.confirmedPosition.label}。`
++        `已由用户确认林序言读到${input.confirmedPosition.label}。`
+       );
+     }
+   );
+@@ -412,7 +412,7 @@ export function registerReadingTools(
+     TOOL_CONFIGS.list_companion_comments,
+     async (input) => {
+       const result = await service.listCompanionComments(input);
+-      return toolResult(result, "已读取这本书的烁构陪读短评。");
++      return toolResult(result, "已读取这本书的林序言陪读短评。");
+     }
+   );
+ 
 diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
 index 9e76434..7852f04 100644
 --- a/server/src/mcp/server-factory.ts
@@ -140,6 +192,26 @@ index 9e76434..7852f04 100644
    });
    const service = new ReadingService(repository);
    registerReadingResource(server, widgetHtml, options.workerOrigin);
+diff --git a/server/src/services/reading-service.ts b/server/src/services/reading-service.ts
+index 31d1741..38cd6fc 100644
+--- a/server/src/services/reading-service.ts
++++ b/server/src/services/reading-service.ts
+@@ -130,13 +130,13 @@ export class ReadingService {
+         throw new AppError("INVALID_OPERATION", "确认位置类型与当前阅读位置不一致。");
+       }
+       if (input.confirmedPosition.index > session.userCurrentPosition.index) {
+-        throw new AppError("INVALID_OPERATION", "不能确认烁构读到了用户尚未读到的位置。");
++        throw new AppError("INVALID_OPERATION", "不能确认林序言读到了用户尚未读到的位置。");
+       }
+       if (
+         session.assistantSyncedPosition &&
+         input.confirmedPosition.index < session.assistantSyncedPosition.index
+       ) {
+-        throw new AppError("INVALID_OPERATION", "烁构确认位置不能倒退。");
++        throw new AppError("INVALID_OPERATION", "林序言确认位置不能倒退。");
+       }
+       const now = this.deps.now().toISOString();
+       session.assistantSyncedPosition = input.confirmedPosition;
 diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
 index e509afa..c47e5e3 100644
 --- a/server/src/standalone-pwa.ts
@@ -201,7 +273,7 @@ index 088c892..09a45f8 100644
    "type": "module",
    "scripts": {
 diff --git a/web/src/App.test.tsx b/web/src/App.test.tsx
-index 7b93b47..511f69c 100644
+index 7b93b47..ffa2da6 100644
 --- a/web/src/App.test.tsx
 +++ b/web/src/App.test.tsx
 @@ -37,15 +37,15 @@ describe("App", () => {
@@ -225,6 +297,189 @@ index 7b93b47..511f69c 100644
      });
    });
  
+@@ -748,7 +748,7 @@ describe("App", () => {
+       }
+     });
+     fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
+-    await screen.findByText(/烁构确认读到：尚未同步/);
++    await screen.findByText(/林序言确认读到：尚未同步/);
+ 
+     for (let index = 0; index < 27; index += 1) {
+       fireEvent.click(screen.getByRole("button", { name: "下一段" }));
+@@ -764,7 +764,7 @@ describe("App", () => {
+ 
+     fireEvent.click(screen.getByRole("button", { name: /完整补课后再陪读/ }));
+     const confirmButton = await screen.findByRole("button", {
+-      name: /我看到烁构回复“已读到第 28 段”，开始正式陪读/
++      name: /我看到林序言回复“已读到第 28 段”，开始正式陪读/
+     });
+     expect(callTool).not.toHaveBeenCalledWith(
+       "confirm_assistant_synced_position",
+@@ -870,8 +870,8 @@ describe("App", () => {
+     await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalledTimes(2));
+     expect(String(sendFollowUpMessage.mock.calls[1]?.[0]?.prompt)).toContain("补课已确认完成");
+     expect(String(sendFollowUpMessage.mock.calls[1]?.[0]?.prompt)).not.toContain("只简短回复");
+-    expect(screen.queryByText("烁构补课中")).not.toBeInTheDocument();
+-    expect(await screen.findByRole("button", { name: "保存烁构短评" })).toBeInTheDocument();
++    expect(screen.queryByText("林序言补课中")).not.toBeInTheDocument();
++    expect(await screen.findByRole("button", { name: "保存林序言短评" })).toBeInTheDocument();
+ 
+     await deviceCache.remove("sequence-session");
+   });
+@@ -957,13 +957,13 @@ describe("App", () => {
+       expect(screen.getByRole("button", { name: "长评" })).toBeEnabled();
+     });
+ 
+-    fireEvent.click(screen.getByRole("checkbox", { name: "自动保存烁构陪读短评" }));
++    fireEvent.click(screen.getByRole("checkbox", { name: "自动保存林序言陪读短评" }));
+     await waitFor(() => {
+       expect(callTool).toHaveBeenCalledWith("update_session_preferences", {
+         sessionId: "session-preferences",
+         preferences: { autoSaveCompanionComments: false }
+       });
+-      expect(screen.getByRole("checkbox", { name: "自动保存烁构陪读短评" })).not.toBeChecked();
++      expect(screen.getByRole("checkbox", { name: "自动保存林序言陪读短评" })).not.toBeChecked();
+     });
+ 
+     fireEvent.click(screen.getByRole("button", { name: "立即吐槽" }));
+@@ -1204,11 +1204,11 @@ describe("App", () => {
+     fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
+     fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "短评保存测试" } });
+     fireEvent.change(screen.getByPlaceholderText("粘贴 TXT 或 Markdown 文本"), {
+-      target: { value: "这段需要烁构吐槽一下。" }
++      target: { value: "这段需要林序言吐槽一下。" }
+     });
+     fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
+     await screen.findByRole("button", { name: "陪我看看这里" });
+-    expect(await screen.findByRole("button", { name: "保存烁构短评" })).toBeInTheDocument();
++    expect(await screen.findByRole("button", { name: "保存林序言短评" })).toBeInTheDocument();
+     fireEvent.click(screen.getByRole("button", { name: "全屏阅读" }));
+     expect(await screen.findByRole("button", { name: "退出全屏" })).toBeInTheDocument();
+ 
+@@ -1219,11 +1219,11 @@ describe("App", () => {
+       expect.anything()
+     );
+ 
+-    fireEvent.click(await screen.findByRole("button", { name: "保存烁构短评" }));
++    fireEvent.click(await screen.findByRole("button", { name: "保存林序言短评" }));
+     fireEvent.change(screen.getByLabelText("短评内容"), {
+       target: { value: "这句吐槽值得贴到小窝。" }
+     });
+-    fireEvent.click(screen.getByRole("button", { name: "收入烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "收入林序言短评" }));
+ 
+     await waitFor(() => {
+       expect(callTool).toHaveBeenCalledWith(
+@@ -1239,11 +1239,11 @@ describe("App", () => {
+     expect(await screen.findByText("这句吐槽值得贴到小窝。")).toBeInTheDocument();
+     expect(screen.getByRole("button", { name: "退出全屏" })).toBeInTheDocument();
+     expect(screen.getByLabelText("短评内容")).toHaveValue("");
+-    expect(screen.getByRole("button", { name: "收入烁构短评" })).toBeInTheDocument();
++    expect(screen.getByRole("button", { name: "收入林序言短评" })).toBeInTheDocument();
+     fireEvent.change(screen.getByLabelText("短评内容"), {
+       target: { value: "这句吐槽值得贴到小窝。" }
+     });
+-    fireEvent.click(screen.getByRole("button", { name: "收入烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "收入林序言短评" }));
+     await waitFor(() => {
+       expect(
+         callTool.mock.calls.filter(([name]) => name === "publish_companion_comment")
+@@ -1253,7 +1253,7 @@ describe("App", () => {
+ 
+     fireEvent.click(screen.getByRole("button", { name: "返回首页" }));
+     fireEvent.click(await screen.findByRole("button", { name: "管理《短评保存测试》" }));
+-    fireEvent.click(await screen.findByRole("button", { name: "烁构评论" }));
++    fireEvent.click(await screen.findByRole("button", { name: "林序言评论" }));
+     expect(screen.getByText("这句吐槽值得贴到小窝。")).toBeInTheDocument();
+   });
+ 
+@@ -1573,7 +1573,7 @@ describe("App", () => {
+                 position: { kind: "paragraph", index: 8, label: "第 8 段" },
+                 mode: "light_chat",
+                 length: "normal",
+-                text: "烁构已经追到第八段啦，这里可以接着聊。",
++                text: "林序言已经追到第八段啦，这里可以接着聊。",
+                 source: "catch_up_complete",
+                 inRecent: true,
+                 inHistory: true,
+@@ -1600,7 +1600,7 @@ describe("App", () => {
+     fireEvent.click(await screen.findByRole("button", { name: "继续阅读《Reader Comment Book》" }));
+ 
+     expect(await screen.findByText("用户读到：第 3 段")).toBeInTheDocument();
+-    expect(await screen.findByText("烁构已经追到第八段啦，这里可以接着聊。")).toBeInTheDocument();
++    expect(await screen.findByText("林序言已经追到第八段啦，这里可以接着聊。")).toBeInTheDocument();
+     expect(screen.getByText("第 8 段")).toBeInTheDocument();
+     await deviceCache.remove("reader-comment-session");
+   });
+diff --git a/web/src/App.tsx b/web/src/App.tsx
+index e200d4e..3465496 100644
+--- a/web/src/App.tsx
++++ b/web/src/App.tsx
+@@ -608,7 +608,7 @@ export function App() {
+         result.structuredContent?.nextCursor as string | undefined
+       );
+     } catch {
+-      setToast("烁构评论历史暂时没有读取成功。");
++      setToast("林序言评论历史暂时没有读取成功。");
+     } finally {
+       setHistoryLoading(false);
+     }
+@@ -1188,7 +1188,7 @@ export function App() {
+       });
+       setToast(
+         mode === "context"
+-          ? `已同步${sessionBundle.session.userCurrentPosition.label}，烁构正在看这里。`
++          ? `已同步${sessionBundle.session.userCurrentPosition.label}，林序言正在看这里。`
+           : "已用兼容模式发送当前段落。"
+       );
+     } finally {
+@@ -1202,7 +1202,7 @@ export function App() {
+     const userIndex = sessionBundle.session.userCurrentPosition.index;
+     const assistantIndex = sessionBundle.session.assistantSyncedPosition?.index ?? 0;
+     if (userIndex <= assistantIndex) {
+-      setToast("烁构已经看到这里啦，正在换个角度陪你看。");
++      setToast("林序言已经看到这里啦，正在换个角度陪你看。");
+       await lookAtNovel(currentText, selectedText);
+       return;
+     }
+@@ -1419,7 +1419,7 @@ export function App() {
+       if (confirmed.mode === "live_reading") {
+         clearSyncJobState();
+         await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
+-        setToast(`已确认烁构读到第 ${batch.rangeEnd} 段。`);
++        setToast(`已确认林序言读到第 ${batch.rangeEnd} 段。`);
+         return;
+       }
+       const formalMode = sessionBundle.session.sessionPreferences.readingCommentMode;
+@@ -1460,7 +1460,7 @@ export function App() {
+       });
+       clearSyncJobState();
+       await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
+-      setToast("烁构追上你啦，可以正式陪读了。");
++      setToast("林序言追上你啦，可以正式陪读了。");
+       return;
+     }
+     storeSyncJob(confirmed);
+@@ -2154,15 +2154,15 @@ export function App() {
+               : "正文/图片只保存在本设备，不会上传到服务器。只有你主动同步的片段或页面会发送给 ChatGPT；请保留原文件以防设备缓存被清理。"}
+           </p>
+           {existingSession ? (
+-            <section className="setup-companion-summary" aria-label="烁构最近短评">
++            <section className="setup-companion-summary" aria-label="林序言最近短评">
+               <div>
+-                <strong>烁构最近短评</strong>
++                <strong>林序言最近短评</strong>
+                 <span>重新导入正文后，陪读 Dock 会继续显示这些短评。</span>
+               </div>
+-              {companionLoading ? <p>正在看看烁构留下了什么……</p> : null}
++              {companionLoading ? <p>正在看看林序言留下了什么……</p> : null}
+               {!companionLoading && companionError ? <p>{companionError}</p> : null}
+               {!companionLoading && !companionError && companionComments.length === 0 ? (
+-                <p>烁构还没留下短评。</p>
++                <p>林序言还没留下短评。</p>
+               ) : null}
+               {!companionLoading && !companionError
+                 ? companionComments.slice(0, 3).map((comment) => (
 diff --git a/web/src/Boot.test.tsx b/web/src/Boot.test.tsx
 index abd5023..b4d6027 100644
 --- a/web/src/Boot.test.tsx
@@ -351,6 +606,313 @@ index 2b6aff2..83b1d3f 100644
              step={1}
              display={`${Math.round(props.value.glassBlur)} px`}
              onChange={(glassBlur) => patch({ glassBlur })}
+diff --git a/web/src/components/BookManagementSheet.test.tsx b/web/src/components/BookManagementSheet.test.tsx
+index b265473..e10c707 100644
+--- a/web/src/components/BookManagementSheet.test.tsx
++++ b/web/src/components/BookManagementSheet.test.tsx
+@@ -55,7 +55,7 @@ describe("BookManagementSheet", () => {
+     expect(screen.getAllByText("用户反应")).toHaveLength(2);
+     fireEvent.click(screen.getByRole("button", { name: "书签" }));
+     expect(screen.getByText("书签标签")).toBeInTheDocument();
+-    fireEvent.click(screen.getByRole("button", { name: "烁构评论" }));
++    fireEvent.click(screen.getByRole("button", { name: "林序言评论" }));
+     expect(screen.getByText("历史短评")).toBeInTheDocument();
+     expect(screen.getByRole("button", { name: "加载更多评论" })).toBeInTheDocument();
+   });
+diff --git a/web/src/components/BookManagementSheet.tsx b/web/src/components/BookManagementSheet.tsx
+index 7a95eda..6e52f63 100644
+--- a/web/src/components/BookManagementSheet.tsx
++++ b/web/src/components/BookManagementSheet.tsx
+@@ -72,7 +72,7 @@ export function BookManagementSheet(props: {
+             <button aria-pressed={tab === "bookmarks"} onClick={() => setTab("bookmarks")}>书签</button>
+             <button aria-pressed={tab === "quotes"} onClick={() => setTab("quotes")}>摘录</button>
+             <button aria-pressed={tab === "reactions"} onClick={() => setTab("reactions")}>用户反应</button>
+-            <button aria-pressed={tab === "comments"} onClick={() => setTab("comments")}>烁构评论</button>
++            <button aria-pressed={tab === "comments"} onClick={() => setTab("comments")}>林序言评论</button>
+           </div>
+           <div className="record-list">
+             {tab === "bookmarks"
+diff --git a/web/src/components/CompanionDock.test.tsx b/web/src/components/CompanionDock.test.tsx
+index 589531b..fbd49f0 100644
+--- a/web/src/components/CompanionDock.test.tsx
++++ b/web/src/components/CompanionDock.test.tsx
+@@ -141,8 +141,8 @@ describe("CompanionDock", () => {
+     fireEvent.click(screen.getByRole("button", { name: /第 4 段.*第四段短评/ }));
+     expect(onJump).toHaveBeenCalledWith(4);
+     fireEvent.click(screen.getByRole("button", { name: "收起陪读 Dock" }));
+-    expect(screen.getByRole("button", { name: "烁构陪读" })).toBeInTheDocument();
+-    fireEvent.click(screen.getByRole("button", { name: "烁构陪读" }));
++    expect(screen.getByRole("button", { name: "林序言陪读" })).toBeInTheDocument();
++    fireEvent.click(screen.getByRole("button", { name: "林序言陪读" }));
+     fireEvent.click(screen.getByRole("button", { name: "清除最近短评" }));
+     expect(onClear).toHaveBeenCalledTimes(1);
+ 
+@@ -155,7 +155,7 @@ describe("CompanionDock", () => {
+         onJump={onJump}
+       />
+     );
+-    expect(screen.getByText("烁构还没留下短评。")).toBeInTheDocument();
++    expect(screen.getByText("林序言还没留下短评。")).toBeInTheDocument();
+ 
+     rerender(
+       <CompanionDock
+@@ -221,11 +221,11 @@ describe("CompanionDock", () => {
+       />
+     );
+ 
+-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "保存林序言短评" }));
+     fireEvent.change(screen.getByLabelText("短评内容"), {
+       target: { value: "这句吐槽值得留下。" }
+     });
+-    fireEvent.click(screen.getByRole("button", { name: "收入烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "收入林序言短评" }));
+ 
+     expect(onSavePendingComment).toHaveBeenCalledWith("这句吐槽值得留下。");
+   });
+@@ -250,11 +250,11 @@ describe("CompanionDock", () => {
+       />
+     );
+ 
+-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "保存林序言短评" }));
+     fireEvent.change(screen.getByLabelText("短评内容"), {
+       target: { value: "这条短评要收入小窝。" }
+     });
+-    fireEvent.click(screen.getByRole("button", { name: "收入烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "收入林序言短评" }));
+ 
+     expect(onSavePendingComment).toHaveBeenCalledWith("这条短评要收入小窝。");
+   });
+@@ -278,11 +278,11 @@ describe("CompanionDock", () => {
+       />
+     );
+ 
+-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "保存林序言短评" }));
+ 
+     expect(screen.getByTestId("companion-dock")).toHaveClass("draft-open");
+     expect(screen.getByLabelText("短评内容")).toBeInTheDocument();
+-    expect(screen.getByRole("button", { name: "收入烁构短评" })).toBeInTheDocument();
++    expect(screen.getByRole("button", { name: "收入林序言短评" })).toBeInTheDocument();
+   });
+   it("keeps the draft panel open when a saved draft is replaced", () => {
+     const { rerender } = render(
+@@ -304,7 +304,7 @@ describe("CompanionDock", () => {
+       />
+     );
+ 
+-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "保存林序言短评" }));
+     fireEvent.change(screen.getByLabelText("短评内容"), {
+       target: { value: "刚贴进来的短评。" }
+     });
+@@ -330,7 +330,7 @@ describe("CompanionDock", () => {
+ 
+     expect(screen.getByTestId("companion-dock")).toHaveClass("draft-open");
+     expect(screen.getByLabelText("短评内容")).toHaveValue("");
+-    expect(screen.getByRole("button", { name: "收入烁构短评" })).toBeInTheDocument();
++    expect(screen.getByRole("button", { name: "收入林序言短评" })).toBeInTheDocument();
+   });
+   it("does not close the draft panel when the host layout revision changes", () => {
+     const draft = {
+@@ -354,7 +354,7 @@ describe("CompanionDock", () => {
+       />
+     );
+ 
+-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "保存林序言短评" }));
+     fireEvent.change(screen.getByLabelText("短评内容"), {
+       target: { value: "布局刷新时别关。" }
+     });
+diff --git a/web/src/components/CompanionDock.tsx b/web/src/components/CompanionDock.tsx
+index 096ac47..44ad950 100644
+--- a/web/src/components/CompanionDock.tsx
++++ b/web/src/components/CompanionDock.tsx
+@@ -65,7 +65,7 @@ export function CompanionDock(props: {
+         data-testid="companion-dock"
+       >
+         <button type="button" className="companion-tab" onClick={() => setCollapsed(false)}>
+-          烁构陪读
++          林序言陪读
+         </button>
+       </aside>
+     );
+@@ -87,11 +87,11 @@ export function CompanionDock(props: {
+     <aside
+       className={`companion-dock companion-dock-${props.layout}${expanded ? " expanded" : ""}${draftOpen ? " draft-open" : ""}`}
+       data-testid="companion-dock"
+-      aria-label="烁构陪读短评"
++      aria-label="林序言陪读短评"
+     >
+       <header className="companion-dock-header">
+         <div>
+-          <strong>烁构陪读</strong>
++          <strong>林序言陪读</strong>
+           <span>最近短评</span>
+         </div>
+         <div className="companion-dock-controls">
+@@ -105,10 +105,10 @@ export function CompanionDock(props: {
+       </header>
+ 
+       <div className="companion-comment-list">
+-        {props.loading ? <p className="companion-empty">正在看看烁构留下了什么……</p> : null}
++        {props.loading ? <p className="companion-empty">正在看看林序言留下了什么……</p> : null}
+         {!props.loading && props.error ? <p className="companion-empty">{props.error}</p> : null}
+         {!props.loading && !props.error && visible.length === 0 ? (
+-          <p className="companion-empty">烁构还没留下短评。</p>
++          <p className="companion-empty">林序言还没留下短评。</p>
+         ) : null}
+         {!props.loading && !props.error
+           ? visible.map((comment) => (
+@@ -136,7 +136,7 @@ export function CompanionDock(props: {
+           <div className="pending-comment-save">
+             {!draftOpen ? (
+               <button type="button" onClick={() => setDraftOpen(true)}>
+-                保存烁构短评
++                保存林序言短评
+               </button>
+             ) : (
+               <form
+@@ -156,7 +156,7 @@ export function CompanionDock(props: {
+                   />
+                 </label>
+                 <button type="submit" disabled={!draftText.trim() || props.pendingCommentSaving}>
+-                  {props.pendingCommentSaving ? "正在保存…" : "收入烁构短评"}
++                  {props.pendingCommentSaving ? "正在保存…" : "收入林序言短评"}
+                 </button>
+               </form>
+             )}
+diff --git a/web/src/components/DiaryPreview.tsx b/web/src/components/DiaryPreview.tsx
+index 69174cb..ebc2df6 100644
+--- a/web/src/components/DiaryPreview.tsx
++++ b/web/src/components/DiaryPreview.tsx
+@@ -21,7 +21,7 @@ export function DiaryPreview(props: {
+         <ul>{props.context.quotes.map((item) => <li key={item.id}>{item.content}</li>)}</ul>
+         <h3>吐槽</h3>
+         <ul>{props.context.reactions.map((item) => <li key={item.id}>{item.content}</li>)}</ul>
+-        <button className="action-primary wide-button" onClick={props.onWrite}>请烁构写成小窝日记</button>
++        <button className="action-primary wide-button" onClick={props.onWrite}>请林序言写成小窝日记</button>
+         <button className="text-button" onClick={props.onClose}>关闭</button>
+       </section>
+     </div>
+diff --git a/web/src/components/ReadingCommentPreferences.test.tsx b/web/src/components/ReadingCommentPreferences.test.tsx
+index c1daf80..0f4c796 100644
+--- a/web/src/components/ReadingCommentPreferences.test.tsx
++++ b/web/src/components/ReadingCommentPreferences.test.tsx
+@@ -28,7 +28,7 @@ describe("ReadingCommentPreferences", () => {
+     ]) {
+       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+     }
+-    expect(screen.getByRole("checkbox", { name: "自动保存烁构陪读短评" })).not.toBeChecked();
++    expect(screen.getByRole("checkbox", { name: "自动保存林序言陪读短评" })).not.toBeChecked();
+     expect(screen.getByText(/不会保存小说正文、prompt 或完整聊天/)).toBeInTheDocument();
+   });
+ 
+@@ -110,7 +110,7 @@ describe("ReadingCommentPreferences", () => {
+     expect(onQuickAction).toHaveBeenCalledWith("deep_analysis", "long");
+     expect(onQuickAction).toHaveBeenCalledWith("diary_summary", "long");
+ 
+-    fireEvent.click(screen.getByRole("checkbox", { name: "自动保存烁构陪读短评" }));
++    fireEvent.click(screen.getByRole("checkbox", { name: "自动保存林序言陪读短评" }));
+     expect(onChange).toHaveBeenCalledWith({ autoSaveCompanionComments: true });
+   });
+ 
+@@ -134,7 +134,7 @@ describe("ReadingCommentPreferences", () => {
+ 
+     const deepButton = screen.getByRole("button", { name: "认真分析" });
+     fireEvent.click(deepButton);
+-    fireEvent.click(screen.getByRole("checkbox", { name: "自动保存烁构陪读短评" }));
++    fireEvent.click(screen.getByRole("checkbox", { name: "自动保存林序言陪读短评" }));
+ 
+     expect(deepButton).toBeEnabled();
+     expect(onChange).toHaveBeenCalledWith({
+@@ -198,7 +198,7 @@ describe("ReadingCommentPreferences", () => {
+       "aria-pressed",
+       "true"
+     );
+-    expect(screen.getByRole("checkbox", { name: "自动保存烁构陪读短评" })).toBeChecked();
++    expect(screen.getByRole("checkbox", { name: "自动保存林序言陪读短评" })).toBeChecked();
+ 
+     rerender(
+       <ReadingCommentPreferences
+@@ -218,6 +218,6 @@ describe("ReadingCommentPreferences", () => {
+       "aria-pressed",
+       "true"
+     );
+-    expect(screen.getByRole("checkbox", { name: "自动保存烁构陪读短评" })).not.toBeChecked();
++    expect(screen.getByRole("checkbox", { name: "自动保存林序言陪读短评" })).not.toBeChecked();
+   });
+ });
+diff --git a/web/src/components/ReadingCommentPreferences.tsx b/web/src/components/ReadingCommentPreferences.tsx
+index 9da7b5b..3ddc6c4 100644
+--- a/web/src/components/ReadingCommentPreferences.tsx
++++ b/web/src/components/ReadingCommentPreferences.tsx
+@@ -118,7 +118,7 @@ export function ReadingCommentPreferences(props: {
+       </div>
+ 
+       <label className="toggle-row comment-save-toggle">
+-        <span>自动保存烁构陪读短评</span>
++        <span>自动保存林序言陪读短评</span>
+         <input
+           type="checkbox"
+           checked={props.preferences.autoSaveCompanionComments}
+@@ -128,7 +128,7 @@ export function ReadingCommentPreferences(props: {
+         />
+       </label>
+       <p className="privacy-note">
+-        开启后，本书会自动保存烁构的轻量陪读短评，方便以后翻回旧段落查看。不会保存小说正文、prompt 或完整聊天。
++        开启后，本书会自动保存林序言的轻量陪读短评，方便以后翻回旧段落查看。不会保存小说正文、prompt 或完整聊天。
+       </p>
+     </section>
+   );
+diff --git a/web/src/components/ReadingSyncStatus.tsx b/web/src/components/ReadingSyncStatus.tsx
+index 30e5d4c..5be7c92 100644
+--- a/web/src/components/ReadingSyncStatus.tsx
++++ b/web/src/components/ReadingSyncStatus.tsx
+@@ -9,7 +9,7 @@ export function ReadingSyncStatus({ session }: { session: ReadingSession }) {
+   return (
+     <aside className="sync-status" aria-label="陪读同步状态">
+       <span>用户读到：{user.label}</span>
+-      <span>烁构确认读到：{assistant?.label ?? "尚未同步"}</span>
++      <span>林序言确认读到：{assistant?.label ?? "尚未同步"}</span>
+       {hasGap ? (
+         <span>
+           待补课：第 {pendingStart}–{user.index} {user.kind === "page" ? "页" : "段"}
+diff --git a/web/src/components/SyncChoiceSheet.tsx b/web/src/components/SyncChoiceSheet.tsx
+index b764d57..0f40b1c 100644
+--- a/web/src/components/SyncChoiceSheet.tsx
++++ b/web/src/components/SyncChoiceSheet.tsx
+@@ -11,7 +11,7 @@ export function SyncChoiceSheet(props: {
+     <div className="sheet-backdrop">
+       <section className="bottom-sheet sync-sheet" role="dialog" aria-modal="true">
+         <h2>中间有较多剧情，要怎么同步？</h2>
+-        <p>烁构还停在{props.assistantLabel}，你已经读到{props.userLabel}。</p>
++        <p>林序言还停在{props.assistantLabel}，你已经读到{props.userLabel}。</p>
+         <button className="action-primary" onClick={props.onFull}>
+           完整补课后再陪读（推荐）
+         </button>
+diff --git a/web/src/components/SyncProgressSheet.tsx b/web/src/components/SyncProgressSheet.tsx
+index 77b05b9..43211f0 100644
+--- a/web/src/components/SyncProgressSheet.tsx
++++ b/web/src/components/SyncProgressSheet.tsx
+@@ -12,14 +12,14 @@ export function SyncProgressSheet(props: {
+   return (
+     <div className="sheet-backdrop">
+       <section className="bottom-sheet sync-sheet" role="dialog" aria-modal="true">
+-        <h2>烁构补课中</h2>
++        <h2>林序言补课中</h2>
+         <p>
+           已确认：{props.job.confirmedThrough?.label ?? "尚未同步"}
+           {batch ? ` · 当前第 ${batch.rangeStart}–${batch.rangeEnd} ${unit}` : ""}
+         </p>
+         {batch?.status === "sent-awaiting-confirmation" ? (
+           <button className="action-primary" onClick={props.onConfirm}>
+-            我看到烁构回复“已读到第 {batch.rangeEnd} {unit}”，
++            我看到林序言回复“已读到第 {batch.rangeEnd} {unit}”，
+             {batch.isFinal ? "开始正式陪读" : "发送下一批"}
+           </button>
+         ) : null}
 diff --git a/web/src/features/appearance/appearance.test.ts b/web/src/features/appearance/appearance.test.ts
 index a90656c..60bacc5 100644
 --- a/web/src/features/appearance/appearance.test.ts
@@ -412,6 +974,59 @@ index 017aaae..3631ade 100644
      readerFont: isReaderFont(value.readerFont) ? value.readerFont : DEFAULT_APPEARANCE.readerFont,
      readerScale: clamp(value.readerScale, 0.9, 1.3, DEFAULT_APPEARANCE.readerScale),
      readerLineHeight: clamp(
+diff --git a/web/src/features/manga/image-sync.test.ts b/web/src/features/manga/image-sync.test.ts
+index 5ea9a38..c1a96a5 100644
+--- a/web/src/features/manga/image-sync.test.ts
++++ b/web/src/features/manga/image-sync.test.ts
+@@ -35,7 +35,7 @@ describe("prepareCurrentPageContext", () => {
+       syncMode: "description",
+       pageDescription: "这一页男主在哭。",
+       userNote: "这里好难过。",
+-      warning: "当前环境暂不支持图片同步，可以先用页面描述让烁构共读。"
++      warning: "当前环境暂不支持图片同步，可以先用页面描述让林序言共读。"
+     });
+   });
+ });
+diff --git a/web/src/features/manga/image-sync.ts b/web/src/features/manga/image-sync.ts
+index e83f698..6f8d995 100644
+--- a/web/src/features/manga/image-sync.ts
++++ b/web/src/features/manga/image-sync.ts
+@@ -31,6 +31,6 @@ export async function prepareCurrentPageContext(input: {
+     syncMode: "description",
+     ...(input.pageDescription ? { pageDescription: input.pageDescription } : {}),
+     ...(input.userNote ? { userNote: input.userNote } : {}),
+-    warning: "当前环境暂不支持图片同步，可以先用页面描述让烁构共读。"
++    warning: "当前环境暂不支持图片同步，可以先用页面描述让林序言共读。"
+   };
+ }
+diff --git a/web/src/features/reading-sync/build-messages.test.ts b/web/src/features/reading-sync/build-messages.test.ts
+index 01e1bfb..d2733a7 100644
+--- a/web/src/features/reading-sync/build-messages.test.ts
++++ b/web/src/features/reading-sync/build-messages.test.ts
+@@ -38,7 +38,7 @@ describe("reading-sync messages", () => {
+     const message = buildBatchChatMessage(job, batch);
+ 
+     expect(message).toContain("【补课第 1/4 批：第 3–8 段】");
+-    expect(message).toContain("烁构先安静追到用户当前位置");
++    expect(message).toContain("林序言先安静追到用户当前位置");
+     expect(message).toContain("只简短回复：“已读到第 8 段。”");
+     expect(message).toContain(batch.text);
+     expect(message).not.toMatch(/剧情摘要|关键事件|人物关系/);
+diff --git a/web/src/features/reading-sync/build-messages.ts b/web/src/features/reading-sync/build-messages.ts
+index d6fc26f..cc36228 100644
+--- a/web/src/features/reading-sync/build-messages.ts
++++ b/web/src/features/reading-sync/build-messages.ts
+@@ -7,8 +7,8 @@ export function buildBatchChatMessage(job: ReadingSyncJob, batch: SyncBatch) {
+     batchHeader(batch),
+     "",
+     "这是 skipped range 分批补课，不是正式点评。",
+-    `用户当前已读到${job.targetPosition.label}，烁构上次确认读到${confirmedLabel(job)}。`,
+-    "这是补课批次。烁构先安静追到用户当前位置，不展开评论。",
++    `用户当前已读到${job.targetPosition.label}，林序言上次确认读到${confirmedLabel(job)}。`,
++    "这是补课批次。林序言先安静追到用户当前位置，不展开评论。",
+     `只简短回复：“已读到第 ${batch.rangeEnd} 段。”`,
+     "",
+     batch.text
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
 index 2523197..557c0bc 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
@@ -454,6 +1069,67 @@ index b9391dd..c4fca05 100644
 +    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v25</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
    );
  }
+diff --git a/web/src/pages/Home.test.tsx b/web/src/pages/Home.test.tsx
+index 0c11755..f517334 100644
+--- a/web/src/pages/Home.test.tsx
++++ b/web/src/pages/Home.test.tsx
+@@ -23,7 +23,7 @@ describe("Home bookshelf core", () => {
+     expect(screen.getAllByText("阅读中").length).toBeGreaterThan(0);
+     expect(screen.getAllByText("已完成").length).toBeGreaterThan(0);
+     expect(screen.getByText("用户：第 8 段")).toBeInTheDocument();
+-    expect(screen.getByText("烁构：第 6 段")).toBeInTheDocument();
++    expect(screen.getByText("林序言：第 6 段")).toBeInTheDocument();
+     expect(screen.getAllByText("轻松聊聊").length).toBeGreaterThan(0);
+     expect(screen.getByText(/这里像伏笔/)).toBeInTheDocument();
+   });
+diff --git a/web/src/pages/Home.tsx b/web/src/pages/Home.tsx
+index f26a868..8ae302f 100644
+--- a/web/src/pages/Home.tsx
++++ b/web/src/pages/Home.tsx
+@@ -180,7 +180,7 @@ function BookCard(props: {
+       </div>
+       <div className="book-progress">
+         <span>用户：{item.session.userCurrentPosition.label}</span>
+-        <span>烁构：{item.session.assistantSyncedPosition?.label ?? "尚未同步"}</span>
++        <span>林序言：{item.session.assistantSyncedPosition?.label ?? "尚未同步"}</span>
+         <span>{MODE_LABELS[item.session.sessionPreferences.readingCommentMode]}</span>
+       </div>
+       <div className={`book-source ${item.sourceAvailability}`}>
+@@ -188,7 +188,7 @@ function BookCard(props: {
+         <span>{action.hint}</span>
+       </div>
+       <p className={`book-comment ${item.latestComment ? "has-comment" : ""}`}>
+-        <span aria-hidden="true">“</span>{item.latestComment ? `烁构：${item.latestComment}` : "烁构还没留下短评。"}
++        <span aria-hidden="true">“</span>{item.latestComment ? `林序言：${item.latestComment}` : "林序言还没留下短评。"}
+       </p>
+       <button
+         type="button"
+diff --git a/web/src/pages/MangaReader.test.tsx b/web/src/pages/MangaReader.test.tsx
+index 553c7f7..2da386f 100644
+--- a/web/src/pages/MangaReader.test.tsx
++++ b/web/src/pages/MangaReader.test.tsx
+@@ -54,7 +54,7 @@ describe("MangaReader v0.2 positions", () => {
+     );
+ 
+     expect(screen.getByText("用户读到：第 2 页")).toBeInTheDocument();
+-    expect(screen.getByText("烁构确认读到：第 1 页")).toBeInTheDocument();
++    expect(screen.getByText("林序言确认读到：第 1 页")).toBeInTheDocument();
+     expect(screen.getByText(/待补课：第 2–2 页/)).toBeInTheDocument();
+ 
+     fireEvent.click(screen.getByRole("button", { name: "下一页" }));
+diff --git a/web/src/pages/MangaReader.tsx b/web/src/pages/MangaReader.tsx
+index 06da839..ecff5fd 100644
+--- a/web/src/pages/MangaReader.tsx
++++ b/web/src/pages/MangaReader.tsx
+@@ -96,7 +96,7 @@ export function MangaReader(props: {
+               <textarea value={props.description} onChange={(event) => props.onDescription(event.target.value)} placeholder="例如：这一页男主在哭" />
+             </label>
+             <label>
+-              想和烁构说
++              想和林序言说
+               <input value={props.note} onChange={(event) => props.onNote(event.target.value)} placeholder="写一句备注或吐槽" />
+             </label>
+           </div>
 diff --git a/web/src/styles/app.css b/web/src/styles/app.css
 index a60e55d..110833d 100644
 --- a/web/src/styles/app.css
