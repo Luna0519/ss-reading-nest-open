@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index 0820d9c354353d6f3ddf840442a586491282824a..37e03e0871a035d278ab2fabbb4c9058374d5920 100644
+index 0820d9c354353d6f3ddf840442a586491282824a..8765518ab68927338372444d77017956f7e9fe7a 100644
 --- a/package.json
 +++ b/package.json
 @@ -1,7 +1,7 @@
@@ -7,7 +7,7 @@ index 0820d9c354353d6f3ddf840442a586491282824a..37e03e0871a035d278ab2fabbb4c9058
    "name": "ss-reading-nest",
    "private": true,
 -  "version": "0.2.7",
-+  "version": "0.2.9",
++  "version": "0.2.10",
    "packageManager": "pnpm@10.15.1",
    "scripts": {
      "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
@@ -55,19 +55,19 @@ index 0c2e9b4d8c799ee6811774a748c0cb4eae3d05c2..83e81cd6351862db13f90fe34be1ec01
      dependencies:
        lightningcss: 1.32.0
 diff --git a/server/package.json b/server/package.json
-index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..3a291873759a782d2afe69d32389cec63259e348 100644
+index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..d52a0eb8d2e5a16557ddc020e9208393391596d0 100644
 --- a/server/package.json
 +++ b/server/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/server",
 -  "version": "0.2.7",
-+  "version": "0.2.9",
++  "version": "0.2.10",
    "private": true,
    "type": "module",
    "scripts": {
 diff --git a/server/scripts/remote-smoke/cloud-source-smoke.mjs b/server/scripts/remote-smoke/cloud-source-smoke.mjs
-index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..6927c38349279789a62d0c1f440a63a3bac7ab26 100644
+index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..a20264849b040c132ed952aaa5ce52e0447fcf74 100644
 --- a/server/scripts/remote-smoke/cloud-source-smoke.mjs
 +++ b/server/scripts/remote-smoke/cloud-source-smoke.mjs
 @@ -61,7 +61,7 @@ const expectedTools = [
@@ -75,12 +75,12 @@ index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..6927c38349279789a62d0c1f440a63a3
  ];
  
 -const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.9" });
++const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.10" });
  const cleanup = {
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 81737592c12db53b0f77280f424ac1c7422fed9a..fcf9455b4d72691092eba2dac4c3e7074a467569 100644
+index 81737592c12db53b0f77280f424ac1c7422fed9a..58f97d0850f69506e4f01ac671b240a243192c79 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,7 +5,7 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -88,30 +88,47 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..fcf9455b4d72691092eba2dac4c3e707
  const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
  const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
 -const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.9" });
++const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.10" });
  
  const healthResponse = await fetch(new URL("/health", workerUrl));
  assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);
-@@ -21,6 +21,42 @@ try {
+@@ -21,6 +21,59 @@ try {
    assert(tools.tools.length === 23, `expected 23 tools, got ${tools.tools.length}`);
    const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
    assert(Boolean(openTool?._meta?.ui), "open_reading_nest is missing its UI resource metadata");
 +  assert(
-+    openTool?._meta?.ui?.resourceUri === "ui://widget/ll-reading-nest-v26.html",
-+    "open_reading_nest is not pointing at the v26 UI resource"
++    openTool?._meta?.ui?.resourceUri === "ui://widget/ll-reading-nest-v27.html",
++    "open_reading_nest is not pointing at the v27 UI resource"
 +  );
 +
 +  const resources = await client.listResources();
++  const expectedTemplateUris = [
++    "ui://widget/ll-reading-nest-v27.html",
++    "ui://widget/ll-reading-nest-v26.html",
++    "ui://widget/ll-reading-nest-v25.html",
++    "ui://ss-reading-nest/app-v24.html"
++  ];
++  for (const uri of expectedTemplateUris) {
++    assert(resources.resources.some((resource) => resource.uri === uri), `${uri} was not listed`);
++    const compatibilityResult = await client.readResource({ uri });
++    const compatibilityTemplate = compatibilityResult.contents.find(
++      (content) => content.uri === uri
++    );
++    assert(
++      compatibilityTemplate?.mimeType === "text/html;profile=mcp-app",
++      `${uri} MIME is invalid`
++    );
++  }
 +  const templateDescriptor = resources.resources.find(
-+    (resource) => resource.uri === "ui://widget/ll-reading-nest-v26.html"
++    (resource) => resource.uri === "ui://widget/ll-reading-nest-v27.html"
 +  );
-+  assert(Boolean(templateDescriptor), "v26 UI resource was not listed");
++  assert(Boolean(templateDescriptor), "v27 UI resource was not listed");
 +
 +  const templateResult = await client.readResource({
-+    uri: "ui://widget/ll-reading-nest-v26.html"
++    uri: "ui://widget/ll-reading-nest-v27.html"
 +  });
 +  const template = templateResult.contents.find(
-+    (content) => content.uri === "ui://widget/ll-reading-nest-v26.html"
++    (content) => content.uri === "ui://widget/ll-reading-nest-v27.html"
 +  );
 +  assert(template?.mimeType === "text/html;profile=mcp-app", "UI resource MIME is invalid");
 +  assert(typeof template?.text === "string" && template.text.length > 0, "UI template is empty");
@@ -135,7 +152,7 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..fcf9455b4d72691092eba2dac4c3e707
  
    const opened = await client.callTool({ name: "open_reading_nest", arguments: {} });
    assert(Array.isArray(opened.structuredContent?.bookshelfSessions), "bookshelf result is missing");
-@@ -41,6 +77,8 @@ try {
+@@ -41,6 +94,8 @@ try {
        workerOrigin: workerUrl.origin,
        appVersion: health.version,
        toolCount: tools.tools.length,
@@ -144,7 +161,7 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..fcf9455b4d72691092eba2dac4c3e707
        cloudSourceEnabled: expectCloudSource,
        tokenHiddenFromModel: true
      })
-@@ -61,6 +99,12 @@ function requireUrl(name) {
+@@ -61,6 +116,12 @@ function requireUrl(name) {
    return value;
  }
  
@@ -158,7 +175,7 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..fcf9455b4d72691092eba2dac4c3e707
    if (!condition) throw new Error(message);
  }
 diff --git a/server/src/app.test.ts b/server/src/app.test.ts
-index 629ce2403058a7ad53676da31823633d2f35ccec..2f6f5f663f624294040484f8b81c64410fa89117 100644
+index 629ce2403058a7ad53676da31823633d2f35ccec..67217712089191c88582917a5b42e92d3e18c070 100644
 --- a/server/src/app.test.ts
 +++ b/server/src/app.test.ts
 @@ -6,7 +6,7 @@ describe("server app", () => {
@@ -166,12 +183,12 @@ index 629ce2403058a7ad53676da31823633d2f35ccec..2f6f5f663f624294040484f8b81c6441
      const response = await request(createApp()).get("/health");
      expect(response.status).toBe(200);
 -    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.9" });
++    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.10" });
    });
  
    it("accepts an MCP initialize request", async () => {
 diff --git a/server/src/app.ts b/server/src/app.ts
-index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..39a1d381dd52e2ef80b136943b6d1e1e6abe7183 100644
+index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..df24f80141e936528afea4ebb701be06900316d3 100644
 --- a/server/src/app.ts
 +++ b/server/src/app.ts
 @@ -12,7 +12,7 @@ export function createApp() {
@@ -179,7 +196,7 @@ index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..39a1d381dd52e2ef80b136943b6d1e1e
  
    app.get("/health", (_request, response) => {
 -    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.9" });
++    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.10" });
    });
  
    app.post("/mcp", async (request: Request, response: Response) => {
@@ -202,10 +219,10 @@ index 3a031d8f71be198d6852d79a24240a8200c0f4e7..7a79428938f473d23d1c44301a55ba57
 +  export default content;
 +}
 diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
-index e4c685d13228068801b94b092509e01e9a00c149..2714230f306fce0a0ad2a74ebde21f7a37427f6d 100644
+index e4c685d13228068801b94b092509e01e9a00c149..5bae4b3e9af89a1098449be212841bc6b7614d27 100644
 --- a/server/src/mcp/register-resource.test.ts
 +++ b/server/src/mcp/register-resource.test.ts
-@@ -3,32 +3,59 @@ import { describe, expect, it, vi } from "vitest";
+@@ -3,34 +3,76 @@ import { describe, expect, it, vi } from "vitest";
  const registerAppResource = vi.fn();
  
  vi.mock("@modelcontextprotocol/ext-apps/server", () => ({
@@ -216,9 +233,10 @@ index e4c685d13228068801b94b092509e01e9a00c149..2714230f306fce0a0ad2a74ebde21f7a
  
  describe("registerReadingResource", () => {
 -  it("uses an app-v24 resource with standard and ChatGPT legacy CSP access to the deployed Worker origin", async () => {
-+  it("uses a lightweight v26 MCP App resource with absolute allowlisted assets", async () => {
++  it("uses a cache-busted resource and keeps every installed template URI readable", async () => {
      const { registerReadingResource } = await import("./register-resource.js");
-     const { READING_NEST_URI } = await import("./register-tools.js");
+-    const { READING_NEST_URI } = await import("./register-tools.js");
++    const { READING_NEST_COMPAT_URIS, READING_NEST_URI } = await import("./register-tools.js");
  
 -    registerReadingResource({} as never, "<html></html>", "https://reading-nest.example.workers.dev");
 +    registerReadingResource(
@@ -230,8 +248,12 @@ index e4c685d13228068801b94b092509e01e9a00c149..2714230f306fce0a0ad2a74ebde21f7a
  
 -    expect(READING_NEST_URI).toBe("ui://ss-reading-nest/app-v24.html");
 -    expect(uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v26.html");
-+    expect(uri).toBe("ui://widget/ll-reading-nest-v26.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v27.html");
++    expect(uri).toBe("ui://widget/ll-reading-nest-v27.html");
++    expect(registerAppResource.mock.calls.map((call) => call[2])).toEqual([
++      READING_NEST_URI,
++      ...READING_NEST_COMPAT_URIS
++    ]);
      expect(descriptor._meta.ui.csp.connectDomains).toContain(
        "https://reading-nest.example.workers.dev"
      );
@@ -251,7 +273,7 @@ index e4c685d13228068801b94b092509e01e9a00c149..2714230f306fce0a0ad2a74ebde21f7a
  
      const loaded = await loader();
 -    expect(loaded.contents[0].uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v26.html");
++    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v27.html");
 +    expect(loaded.contents[0].mimeType).toBe("text/html;profile=mcp-app");
 +    expect(loaded.contents[0].text).toContain(
 +      'href="https://reading-nest.example.workers.dev/widget-assets/v26/ll-reading-nest-v26.css"'
@@ -271,12 +293,28 @@ index e4c685d13228068801b94b092509e01e9a00c149..2714230f306fce0a0ad2a74ebde21f7a
      expect(loaded.contents[0]._meta["openai/widgetCSP"].connect_domains).toContain(
        "https://reading-nest.example.workers.dev"
      );
++
++    for (const call of registerAppResource.mock.calls.slice(1)) {
++      const resourceUri = call[2];
++      const compatibilityLoader = call[4];
++      const compatibilityResource = await compatibilityLoader();
++      expect(compatibilityResource.contents[0]).toMatchObject({
++        uri: resourceUri,
++        mimeType: "text/html;profile=mcp-app"
++      });
++      expect(compatibilityResource.contents[0].text).toBe(loaded.contents[0].text);
++    }
+   });
+ });
 diff --git a/server/src/mcp/register-resource.ts b/server/src/mcp/register-resource.ts
-index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..ec49bd3b0818c745411ad5c14f39cd0e79b1bf56 100644
+index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..6df60124ec9547c088800f90ef0f8ab1198065ce 100644
 --- a/server/src/mcp/register-resource.ts
 +++ b/server/src/mcp/register-resource.ts
-@@ -3,15 +3,18 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
- import { READING_NEST_URI } from "./register-tools.js";
+@@ -1,53 +1,72 @@
+ import { registerAppResource, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
+ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+-import { READING_NEST_URI } from "./register-tools.js";
++import { READING_NEST_COMPAT_URIS, READING_NEST_URI } from "./register-tools.js";
  
  export function registerReadingResource(server: McpServer, widgetHtml: string, workerOrigin?: string) {
 -  const connectDomains = [workerOrigin ?? "http://localhost:8787"];
@@ -293,25 +331,49 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..ec49bd3b0818c745411ad5c14f39cd0e
 -    resource_domains: []
 +    resource_domains: resourceDomains
    };
+-  registerAppResource(
+-    server,
+-    "L&L 共读小窝",
+-    READING_NEST_URI,
+-    {
+-      description: "L&L 的移动端小说与漫画共读小窝",
+-      _meta: {
+-        ui: {
+-          csp: resourceCsp,
+-          prefersBorder: true
+-        },
+-        "openai/widgetCSP": openaiWidgetCsp,
+-        "openai/widgetDescription":
+-          "L&L 的私人共读小窝，用于阅读自己粘贴的小说文本或导入的漫画图片。"
+-      }
+-    },
+-    async () => {
+-      return {
 +  const resolvedWidgetHtml = resolveWidgetAssetUrls(widgetHtml, appOrigin);
-   registerAppResource(
-     server,
-     "L&L 共读小窝",
-@@ -21,9 +24,11 @@ export function registerReadingResource(server: McpServer, widgetHtml: string, w
-       _meta: {
-         ui: {
-           csp: resourceCsp,
-+          domain: appOrigin,
-           prefersBorder: true
-         },
-         "openai/widgetCSP": openaiWidgetCsp,
-+        "openai/widgetDomain": appOrigin,
-         "openai/widgetDescription":
-           "L&L 的私人共读小窝，用于阅读自己粘贴的小说文本或导入的漫画图片。"
-       }
-@@ -34,13 +39,15 @@ export function registerReadingResource(server: McpServer, widgetHtml: string, w
++  for (const [index, resourceUri] of [READING_NEST_URI, ...READING_NEST_COMPAT_URIS].entries()) {
++    registerAppResource(
++      server,
++      index === 0 ? "L&L 共读小窝" : `L&L 共读小窝（兼容模板 ${index}）`,
++      resourceUri,
++      {
++        description: "L&L 的移动端小说与漫画共读小窝",
++        _meta: {
++          ui: {
++            csp: resourceCsp,
++            domain: appOrigin,
++            prefersBorder: true
++          },
++          "openai/widgetCSP": openaiWidgetCsp,
++          "openai/widgetDomain": appOrigin,
++          "openai/widgetDescription":
++            "L&L 的私人共读小窝，用于阅读自己粘贴的小说文本或导入的漫画图片。"
++        }
++      },
++      async () => ({
+         contents: [
            {
-             uri: READING_NEST_URI,
+-            uri: READING_NEST_URI,
++            uri: resourceUri,
              mimeType: RESOURCE_MIME_TYPE,
 -            text: widgetHtml,
 +            text: resolvedWidgetHtml,
@@ -326,36 +388,67 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..ec49bd3b0818c745411ad5c14f39cd0e
                "openai/widgetDescription":
                  "L&L 的私人共读小窝，用于阅读自己粘贴的小说文本或导入的漫画图片。",
                "openai/widgetPrefersBorder": true
-@@ -51,3 +58,15 @@ export function registerReadingResource(server: McpServer, widgetHtml: string, w
-     }
-   );
- }
+             }
+           }
+         ]
+-      };
+-    }
++      })
++    );
++  }
++}
 +
 +export function resolveWidgetAssetUrls(widgetHtml: string, workerOrigin: string): string {
 +  const origin = normalizeOrigin(workerOrigin);
 +  return widgetHtml.replace(
 +    /(["'])\/widget-assets\/v26\//g,
 +    `$1${origin}/widget-assets/v26/`
-+  );
-+}
+   );
+ }
 +
 +function normalizeOrigin(value: string): string {
 +  return new URL(value).origin;
 +}
+diff --git a/server/src/mcp/register-tools.test.ts b/server/src/mcp/register-tools.test.ts
+index 764054784994f1f1ca68789fa9c713a8133d132a..99d817cfabb64b9f41b54dc4490ceaafe2daa9fb 100644
+--- a/server/src/mcp/register-tools.test.ts
++++ b/server/src/mcp/register-tools.test.ts
+@@ -1,6 +1,7 @@
+ import { describe, expect, it } from "vitest";
+ import {
+   buildCurrentReadingContext,
++  READING_NEST_COMPAT_URIS,
+   READING_NEST_URI,
+   registerReadingTools,
+   TOOL_CONFIGS
+@@ -11,6 +12,8 @@ describe("tool descriptors", () => {
+     expect(TOOL_CONFIGS.open_reading_nest._meta?.ui).toEqual({
+       resourceUri: READING_NEST_URI
+     });
++    expect(READING_NEST_URI).toContain("v27");
++    expect(READING_NEST_COMPAT_URIS).toContain("ui://widget/ll-reading-nest-v25.html");
+     for (const [name, config] of Object.entries(TOOL_CONFIGS)) {
+       if (name !== "open_reading_nest" && name !== "upload_cloud_source") {
+         const meta = "_meta" in config ? (config._meta as Record<string, unknown>) : undefined;
 diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
-index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..aaf612a5f16e406741c620c01d963d3aace63ad2 100644
+index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..37f0adf8208675412708510111bc2d730dcde402 100644
 --- a/server/src/mcp/register-tools.ts
 +++ b/server/src/mcp/register-tools.ts
-@@ -30,7 +30,7 @@ import { ReadingService } from "../services/reading-service.js";
+@@ -30,7 +30,12 @@ import { ReadingService } from "../services/reading-service.js";
  import type { CloudSourceService } from "../services/cloud-source-service.js";
  import { toolResult } from "./tool-result.js";
  
 -export const READING_NEST_URI = "ui://ss-reading-nest/app-v24.html";
-+export const READING_NEST_URI = "ui://widget/ll-reading-nest-v26.html";
++export const READING_NEST_URI = "ui://widget/ll-reading-nest-v27.html";
++export const READING_NEST_COMPAT_URIS = [
++  "ui://widget/ll-reading-nest-v26.html",
++  "ui://widget/ll-reading-nest-v25.html",
++  "ui://ss-reading-nest/app-v24.html"
++] as const;
  
  const readOnly = {
    readOnlyHint: true,
-@@ -69,7 +69,7 @@ export const TOOL_CONFIGS = {
+@@ -69,7 +74,7 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    confirm_assistant_synced_position: {
@@ -364,7 +457,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..aaf612a5f16e406741c620c01d963d3a
      description:
        "Use this only after the user explicitly confirms that ChatGPT replied it has read through a batch end.",
      inputSchema: confirmAssistantSyncedPositionInputSchema,
-@@ -124,21 +124,21 @@ export const TOOL_CONFIGS = {
+@@ -124,21 +129,21 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    publish_companion_comment: {
@@ -389,7 +482,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..aaf612a5f16e406741c620c01d963d3a
      description:
        "Use this when the user explicitly clears recent, historical, or all companion comments for one session.",
      inputSchema: clearCompanionCommentsInputSchema,
-@@ -282,7 +282,7 @@ export function registerReadingTools(
+@@ -282,7 +287,7 @@ export function registerReadingTools(
            confirmedBatchId: input.batchId,
            updatedAt: session.updatedAt
          },
@@ -398,7 +491,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..aaf612a5f16e406741c620c01d963d3a
        );
      }
    );
-@@ -412,7 +412,7 @@ export function registerReadingTools(
+@@ -412,7 +417,7 @@ export function registerReadingTools(
      TOOL_CONFIGS.list_companion_comments,
      async (input) => {
        const result = await service.listCompanionComments(input);
@@ -408,7 +501,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..aaf612a5f16e406741c620c01d963d3a
    );
  
 diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
-index 9e7643489cce7180588313ad4033028420ff60f4..b1c607996357a9b61d38f898f6d71620b1a9ef9c 100644
+index 9e7643489cce7180588313ad4033028420ff60f4..c52f1110251e12b19516a1b1f744f26875648c96 100644
 --- a/server/src/mcp/server-factory.ts
 +++ b/server/src/mcp/server-factory.ts
 @@ -13,7 +13,7 @@ export function createMcpServerFromRepository(
@@ -416,7 +509,7 @@ index 9e7643489cce7180588313ad4033028420ff60f4..b1c607996357a9b61d38f898f6d71620
    const server = new McpServer({
      name: "L&L 共读小窝",
 -    version: "0.2.7"
-+    version: "0.2.9"
++    version: "0.2.10"
    });
    const service = new ReadingService(repository);
    registerReadingResource(server, widgetHtml, options.workerOrigin);
@@ -441,10 +534,39 @@ index 31d174121a7b30f0dce89f598d33ed5a339c9926..38cd6fc248088ad8b2cb2a57cb64ad78
        const now = this.deps.now().toISOString();
        session.assistantSyncedPosition = input.confirmedPosition;
 diff --git a/server/src/standalone-pwa.test.ts b/server/src/standalone-pwa.test.ts
-index ea35efc2291adbaa285eb936597afa90b5fee935..8dd47e39769599f443fd25066caf789fef36505c 100644
+index ea35efc2291adbaa285eb936597afa90b5fee935..21584fa5011f7e9bce99fc5235276e54941647a6 100644
 --- a/server/src/standalone-pwa.test.ts
 +++ b/server/src/standalone-pwa.test.ts
-@@ -54,7 +54,8 @@ describe("standalone PWA", () => {
+@@ -1,10 +1,27 @@
+ import { describe, expect, it } from "vitest";
+-import { buildStandaloneHtml, handleStandaloneApp } from "./standalone-pwa.js";
++import {
++  buildStandaloneHtml,
++  handleStandaloneApp,
++  handleStandaloneEntry
++} from "./standalone-pwa.js";
+ 
+ const token = "private-token";
+ const base = `https://example.workers.dev/app/${token}/`;
+ 
+ describe("standalone PWA", () => {
++  it("serves a safe unlock page at the shareable /app/ address", async () => {
++    const entry = handleStandaloneEntry(
++      new Request("https://example.workers.dev/app/"),
++      new URL("https://example.workers.dev/app/")
++    );
++    expect(entry.status).toBe(200);
++    expect(entry.headers.get("cache-control")).toBe("no-store");
++    const html = await entry.text();
++    expect(html).toContain("MCP 地址或私密 Token");
++    expect(html).toContain('location.assign("/app/"');
++    expect(html).not.toContain(token);
++  });
++
+   it("adds install metadata and service-worker registration to the widget shell", () => {
+     const html = buildStandaloneHtml("<html><head><title>Nest</title></head><body>reader</body></html>");
+     expect(html).toContain('name="sxs-standalone"');
+@@ -54,7 +71,8 @@ describe("standalone PWA", () => {
      const swUrl = `${base}sw.js`;
      const response = handleStandaloneApp(new Request(swUrl), new URL(swUrl), token, "");
      const script = await response.text();
@@ -455,18 +577,92 @@ index ea35efc2291adbaa285eb936597afa90b5fee935..8dd47e39769599f443fd25066caf789f
      expect(script).not.toContain("/source/");
    });
 diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
-index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..ca735b61f2b46ff014abd1d5fe44f83fce6da728 100644
+index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..19020a4269b1c8dafb75a0b8cfbbc2fe45c313a5 100644
 --- a/server/src/standalone-pwa.ts
 +++ b/server/src/standalone-pwa.ts
-@@ -1,4 +1,6 @@
+@@ -1,4 +1,80 @@
 -const SHELL_CACHE_VERSION = "v24";
 +import { WIDGET_SCRIPT_PATH, WIDGET_STYLE_PATH } from "./widget-assets.js";
 +
 +const SHELL_CACHE_VERSION = "v26";
++
++export function handleStandaloneEntry(request: Request, url: URL): Response {
++  if (request.method !== "GET" && request.method !== "HEAD") {
++    return new Response("Method not allowed", {
++      status: 405,
++      headers: { Allow: "GET, HEAD" }
++    });
++  }
++  if (url.pathname === "/app") {
++    const redirect = new URL(url);
++    redirect.pathname = "/app/";
++    return Response.redirect(redirect, 308);
++  }
++
++  const html = `<!doctype html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="utf-8" />
++    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
++    <meta name="theme-color" content="#dce9f6" />
++    <title>L&amp;L 共读小窝</title>
++    <style>
++      :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
++      * { box-sizing: border-box; }
++      body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px; color: #1d3044;
++        background: radial-gradient(circle at 18% 12%, #fff 0 10%, transparent 38%), linear-gradient(145deg, #cadceb, #edf4fa 52%, #b9cfdf); }
++      main { width: min(100%, 430px); padding: 28px 22px; border: 1px solid rgba(255,255,255,.78); border-radius: 28px;
++        background: linear-gradient(145deg, rgba(255,255,255,.48), rgba(235,245,252,.24));
++        box-shadow: inset 0 1px rgba(255,255,255,.85), 0 20px 60px rgba(42,75,103,.18);
++        -webkit-backdrop-filter: blur(28px) saturate(145%); backdrop-filter: blur(28px) saturate(145%); }
++      h1 { margin: 0 0 10px; font-size: 25px; }
++      p { margin: 0 0 20px; line-height: 1.65; color: #405a71; }
++      label { display: block; margin-bottom: 8px; font-weight: 700; }
++      input, button { width: 100%; min-height: 50px; border-radius: 16px; font: inherit; }
++      input { border: 1px solid rgba(75,105,130,.25); padding: 0 15px; background: rgba(255,255,255,.45); color: #142b3f; }
++      button { margin-top: 12px; border: 1px solid rgba(255,255,255,.7); background: rgba(52,85,113,.78); color: white; font-weight: 750; }
++      small { display: block; min-height: 20px; margin-top: 10px; color: #8b3340; }
++    </style>
++  </head>
++  <body>
++    <main>
++      <h1>L&amp;L 共读小窝</h1>
++      <p>这是私人网页入口。粘贴 ChatGPT 插件里原来的完整 MCP 地址，或只粘贴最后的私密 Token，即可打开；内容只在本机处理。</p>
++      <form id="unlock">
++        <label for="private-address">MCP 地址或私密 Token</label>
++        <input id="private-address" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" />
++        <button type="submit">打开小窝</button>
++        <small id="error" role="alert"></small>
++      </form>
++    </main>
++    <script>
++      document.getElementById("unlock").addEventListener("submit", function (event) {
++        event.preventDefault();
++        var raw = document.getElementById("private-address").value.trim();
++        var marker = "/mcp/";
++        var token = raw.includes(marker) ? raw.slice(raw.indexOf(marker) + marker.length) : raw;
++        token = token.replace(/[/?#].*$/, "");
++        if (!token || !/^[A-Za-z0-9._~-]+$/.test(token)) {
++          document.getElementById("error").textContent = "地址或 Token 不正确，请重新粘贴。";
++          return;
++        }
++        location.assign("/app/" + encodeURIComponent(token) + "/");
++      });
++    </script>
++  </body>
++</html>`;
++  return bodyResponse(request, html, {
++    "Content-Type": "text/html; charset=utf-8",
++    "Cache-Control": "no-store",
++    "Referrer-Policy": "no-referrer",
++    "X-Content-Type-Options": "nosniff",
++    "X-Robots-Tag": "noindex, nofollow"
++  });
++}
  
  export function handleStandaloneApp(
    request: Request,
-@@ -60,7 +62,7 @@ export function handleStandaloneApp(
+@@ -60,7 +136,7 @@ export function handleStandaloneApp(
  export function buildStandaloneHtml(widgetHtml: string): string {
    const pwaHead = [
      '<meta name="sxs-standalone" content="true" />',
@@ -475,7 +671,7 @@ index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..ca735b61f2b46ff014abd1d5fe44f83f
      '<meta name="application-name" content="L&L 共读小窝" />',
      '<meta name="apple-mobile-web-app-capable" content="yes" />',
      '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
-@@ -91,8 +93,8 @@ function buildManifest() {
+@@ -91,8 +167,8 @@ function buildManifest() {
      scope: "./",
      display: "standalone",
      orientation: "any",
@@ -486,7 +682,7 @@ index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..ca735b61f2b46ff014abd1d5fe44f83f
      icons: [
        {
          src: "./icon.svg",
-@@ -106,7 +108,7 @@ function buildManifest() {
+@@ -106,7 +182,7 @@ function buildManifest() {
  
  function buildServiceWorker(): string {
    return `const CACHE_NAME = "ll-reading-nest-shell-${SHELL_CACHE_VERSION}";
@@ -495,7 +691,7 @@ index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..ca735b61f2b46ff014abd1d5fe44f83f
  
  self.addEventListener("install", (event) => {
    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)));
-@@ -137,10 +139,10 @@ self.addEventListener("fetch", (event) => {
+@@ -137,10 +213,10 @@ self.addEventListener("fetch", (event) => {
  
  function buildIcon(): string {
    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -615,7 +811,7 @@ index 0000000000000000000000000000000000000000..501bbe98864c3fe387d0fbf7e9ec0a24
 +  });
 +}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705c2ccadfeece1585fb2d379b7846862cae..612dbb43e4f84ef6ddfd13969805e0465e795cd3 100644
+index 1e35705c2ccadfeece1585fb2d379b7846862cae..236306cb58e805541794b9bc5931f422fa7fedb9 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
 @@ -6,6 +6,27 @@ describe("getWorkerRoute", () => {
@@ -646,17 +842,27 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..612dbb43e4f84ef6ddfd13969805e046
    it("accepts only the exact private MCP path", () => {
      expect(getWorkerRoute(new URL("https://example.workers.dev/mcp/secret"), "secret")).toBe("mcp");
      expect(getWorkerRoute(new URL("https://example.workers.dev/mcp/wrong"), "secret")).toBe("not-found");
+@@ -13,6 +34,8 @@ describe("getWorkerRoute", () => {
+   });
+ 
+   it("routes only the private standalone reader shell", () => {
++    expect(getWorkerRoute(new URL("https://example.workers.dev/app"), "secret")).toBe("app-entry");
++    expect(getWorkerRoute(new URL("https://example.workers.dev/app/"), "secret")).toBe("app-entry");
+     expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret"), "secret")).toBe("app");
+     expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/"), "secret")).toBe("app");
+     expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/manifest.webmanifest"), "secret")).toBe("app");
 diff --git a/server/src/worker-router.ts b/server/src/worker-router.ts
-index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..f7a34610a7d1e0475018b668ac4f058842784db2 100644
+index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..5666eccb848a58cc5a16ba2cb3c3077835e5ff2b 100644
 --- a/server/src/worker-router.ts
 +++ b/server/src/worker-router.ts
-@@ -1,7 +1,19 @@
+@@ -1,8 +1,22 @@
 -export type WorkerRoute = "health" | "app" | "mcp" | "source" | "not-found" | "misconfigured";
 +import { WIDGET_SCRIPT_PATH, WIDGET_STYLE_PATH } from "./widget-assets.js";
 +
 +export type WorkerRoute =
 +  | "health"
 +  | "widget-asset"
++  | "app-entry"
 +  | "app"
 +  | "mcp"
 +  | "source"
@@ -669,10 +875,12 @@ index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..f7a34610a7d1e0475018b668ac4f0588
 +    return "widget-asset";
 +  }
    if (!token) return "misconfigured";
++  if (url.pathname === "/app" || url.pathname === "/app/") return "app-entry";
    if (
      url.pathname === `/app/${token}` ||
+     url.pathname === `/app/${token}/` ||
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..cb69919f10a7c38c1f301dfda5b3679abca14310 100644
+index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..f75b89c4337cfeabbacccabbdefa568888ef4848 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
 @@ -1,11 +1,14 @@
@@ -685,7 +893,8 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..cb69919f10a7c38c1f301dfda5b3679a
  import { CloudSourceService } from "./services/cloud-source-service.js";
  import { handleSourceRoute } from "./source-routes.js";
  import { R2SourceObjectStorage } from "./storage/r2-source-object-storage.js";
- import { handleStandaloneApp } from "./standalone-pwa.js";
+-import { handleStandaloneApp } from "./standalone-pwa.js";
++import { handleStandaloneApp, handleStandaloneEntry } from "./standalone-pwa.js";
 +import { handleWidgetAsset } from "./widget-assets.js";
  import { getWorkerRoute } from "./worker-router.js";
  
@@ -695,7 +904,7 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..cb69919f10a7c38c1f301dfda5b3679a
  
      if (route === "health") {
 -      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.9" });
++      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.10" });
 +    }
 +    if (route === "widget-asset") {
 +      return handleWidgetAsset(request, url, {
@@ -705,6 +914,16 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..cb69919f10a7c38c1f301dfda5b3679a
      }
      if (route === "misconfigured") {
        console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
+@@ -25,6 +34,9 @@ export default {
+     if (route === "not-found") {
+       return new Response("Not found", { status: 404 });
+     }
++    if (route === "app-entry") {
++      return handleStandaloneEntry(request, url);
++    }
+     if (route === "app") {
+       return handleStandaloneApp(request, url, env.MCP_PATH_TOKEN, widgetHtml);
+     }
 diff --git a/server/wrangler.jsonc b/server/wrangler.jsonc
 index 7aab7e42427e60a97ed07e9095de236c53b29b6b..773289d3427e1b970ce3fe8565db4718ad53afc4 100644
 --- a/server/wrangler.jsonc
@@ -719,14 +938,14 @@ index 7aab7e42427e60a97ed07e9095de236c53b29b6b..773289d3427e1b970ce3fe8565db4718
      }
    ],
 diff --git a/shared/package.json b/shared/package.json
-index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..0420e12241211cde0abd469d664fdf82a67bacd7 100644
+index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..e3bbb44cb1e4d1a5f565df5811e71e70801ec40b 100644
 --- a/shared/package.json
 +++ b/shared/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/shared",
 -  "version": "0.2.7",
-+  "version": "0.2.9",
++  "version": "0.2.10",
    "private": true,
    "type": "module",
    "main": "./dist/index.js",
@@ -761,14 +980,14 @@ index b26131350103fa1e2f004ff508fea591ef27e284..1ca19387d68c40c17c869e52887ee612
            <dd>html-loaded</dd>
          </dl>
 diff --git a/web/package.json b/web/package.json
-index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..9dc0e015799a2a64b9cdf099b0e58ffe3bb94dca 100644
+index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..3adb2600c9ebd348d6812e16fb48da5dbb3c2cab 100644
 --- a/web/package.json
 +++ b/web/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/web",
 -  "version": "0.2.7",
-+  "version": "0.2.9",
++  "version": "0.2.10",
    "private": true,
    "type": "module",
    "scripts": {
@@ -1021,7 +1240,7 @@ index abd502381499a52c09052f004b1ebb609a5639f1..96088a96a0b1262c69441317e65c24dd
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37b0c0ac24d0be3669363489c7474aed801..125b4804474389d54a900ff7c3ea35faf922aad4 100644
+index c23bd37b0c0ac24d0be3669363489c7474aed801..c69791ce5f61e58e7942da05a130d37de5665391 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -1031,12 +1250,12 @@ index c23bd37b0c0ac24d0be3669363489c7474aed801..125b4804474389d54a900ff7c3ea35fa
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
 +const RESOURCE_VERSION = "app-v26";
-+const APP_VERSION = "0.2.9";
++const APP_VERSION = "0.2.10";
  
  type AppModule = {
    App: ComponentType;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28caba9ed1572f1b58d39264eed2545953d76..92278c32ac1c3c3ab0a7bb7719c7d8c9822994c6 100644
+index 08a28caba9ed1572f1b58d39264eed2545953d76..0bf9b40c4b5a0a9105bdf4d53affc5f88b3b3c53 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -1044,12 +1263,12 @@ index 08a28caba9ed1572f1b58d39264eed2545953d76..92278c32ac1c3c3ab0a7bb7719c7d8c9
    if (typeof window === "undefined" || window.parent === window) return undefined;
    if (!app) {
 -    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
-+    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.9" });
++    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.10" });
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
 diff --git a/web/src/bridge/standalone.ts b/web/src/bridge/standalone.ts
-index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..bee5fe78284bd32f17aec1543aabc92a4054234d 100644
+index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..e0e6b66ab49dda19b5908c4983c0f7a6fbf0115f 100644
 --- a/web/src/bridge/standalone.ts
 +++ b/web/src/bridge/standalone.ts
 @@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
@@ -1057,7 +1276,7 @@ index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..bee5fe78284bd32f17aec1543aabc92a
    if (!config) throw new Error("Standalone reader path is unavailable");
    standaloneClient ??= (async () => {
 -    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.7" });
-+    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.9" });
++    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.10" });
      await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
      return client;
    })();
@@ -1740,7 +1959,7 @@ index d6fc26f0671c933c4b04b98900aebaa38f40b4b8..cc36228656be332fbe2b9dca68b506fe
      "",
      batch.text
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197e6ba2317df34567a63db060563be71fcc..a85cf137ca4c3657e981c7b6c7877ed9122bac86 100644
+index 2523197e6ba2317df34567a63db060563be71fcc..04da05e417a34ad66f670009c46fb145df1e9905 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
 @@ -247,8 +247,8 @@ describe("CloudSourceClient", () => {
@@ -1750,12 +1969,12 @@ index 2523197e6ba2317df34567a63db060563be71fcc..a85cf137ca4c3657e981c7b6c7877ed9
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
 +    expect(message).toContain("resourceVersion=app-v26");
-+    expect(message).toContain("appVersion=0.2.9");
++    expect(message).toContain("appVersion=0.2.10");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..9168cbd0898179db3388e3108ae88d402e2c0d53 100644
+index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..7f8959678113580257f7d98ac568cf18381132dc 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
 @@ -20,8 +20,8 @@ export interface CloudSourceUploadResult {
@@ -1765,7 +1984,7 @@ index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..9168cbd0898179db3388e3108ae88d40
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
 +const RESOURCE_VERSION = "app-v26";
-+const APP_VERSION = "0.2.9";
++const APP_VERSION = "0.2.10";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
  export class CloudSourceClient {
