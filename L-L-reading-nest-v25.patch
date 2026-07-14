@@ -1,0 +1,881 @@
+diff --git a/package.json b/package.json
+index 0820d9c..4167f01 100644
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "ss-reading-nest",
+   "private": true,
+-  "version": "0.2.7",
++  "version": "0.2.8",
+   "packageManager": "pnpm@10.15.1",
+   "scripts": {
+     "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
+diff --git a/server/package.json b/server/package.json
+index c1ce2a3..4e4fa66 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@ss/server",
+-  "version": "0.2.7",
++  "version": "0.2.8",
+   "private": true,
+   "type": "module",
+   "scripts": {
+diff --git a/server/scripts/remote-smoke/cloud-source-smoke.mjs b/server/scripts/remote-smoke/cloud-source-smoke.mjs
+index e719dcd..824d4dd 100644
+--- a/server/scripts/remote-smoke/cloud-source-smoke.mjs
++++ b/server/scripts/remote-smoke/cloud-source-smoke.mjs
+@@ -61,7 +61,7 @@ const expectedTools = [
+   "generate_diary_context"
+ ];
+ 
+-const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
++const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.8" });
+ const cleanup = {
+   sessions: new Set(),
+   r2Keys: new Set()
+diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
+index 8173759..1632ee8 100644
+--- a/server/scripts/remote-smoke/mcp-smoke.mjs
++++ b/server/scripts/remote-smoke/mcp-smoke.mjs
+@@ -5,7 +5,7 @@ const workerUrl = requireUrl("WORKER_URL");
+ const token = requireEnv("MCP_PATH_TOKEN");
+ const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
+ const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
+-const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
++const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.8" });
+ 
+ const healthResponse = await fetch(new URL("/health", workerUrl));
+ assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);
+diff --git a/server/src/app.test.ts b/server/src/app.test.ts
+index 629ce24..e2c0d37 100644
+--- a/server/src/app.test.ts
++++ b/server/src/app.test.ts
+@@ -6,7 +6,7 @@ describe("server app", () => {
+   it("reports health without requiring an API key", async () => {
+     const response = await request(createApp()).get("/health");
+     expect(response.status).toBe(200);
+-    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
++    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.8" });
+   });
+ 
+   it("accepts an MCP initialize request", async () => {
+diff --git a/server/src/app.ts b/server/src/app.ts
+index f4e9bd5..68ff0cd 100644
+--- a/server/src/app.ts
++++ b/server/src/app.ts
+@@ -12,7 +12,7 @@ export function createApp() {
+   const transports: TransportMap = {};
+ 
+   app.get("/health", (_request, response) => {
+-    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
++    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.8" });
+   });
+ 
+   app.post("/mcp", async (request: Request, response: Response) => {
+diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
+index e4c685d..f643a59 100644
+--- a/server/src/mcp/register-resource.test.ts
++++ b/server/src/mcp/register-resource.test.ts
+@@ -3,20 +3,20 @@ import { describe, expect, it, vi } from "vitest";
+ const registerAppResource = vi.fn();
+ 
+ vi.mock("@modelcontextprotocol/ext-apps/server", () => ({
+-  RESOURCE_MIME_TYPE: "text/html+skybridge",
++  RESOURCE_MIME_TYPE: "text/html;profile=mcp-app",
+   registerAppResource
+ }));
+ 
+ describe("registerReadingResource", () => {
+-  it("uses an app-v24 resource with standard and ChatGPT legacy CSP access to the deployed Worker origin", async () => {
++  it("uses a fresh v25 MCP App resource with standard and ChatGPT legacy CSP access", async () => {
+     const { registerReadingResource } = await import("./register-resource.js");
+     const { READING_NEST_URI } = await import("./register-tools.js");
+ 
+     registerReadingResource({} as never, "<html></html>", "https://reading-nest.example.workers.dev");
+     const [, , uri, descriptor, loader] = registerAppResource.mock.calls[0];
+ 
+-    expect(READING_NEST_URI).toBe("ui://ss-reading-nest/app-v24.html");
+-    expect(uri).toBe("ui://ss-reading-nest/app-v24.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v25.html");
++    expect(uri).toBe("ui://widget/ll-reading-nest-v25.html");
+     expect(descriptor._meta.ui.csp.connectDomains).toContain(
+       "https://reading-nest.example.workers.dev"
+     );
+@@ -25,7 +25,8 @@ describe("registerReadingResource", () => {
+     );
+ 
+     const loaded = await loader();
+-    expect(loaded.contents[0].uri).toBe("ui://ss-reading-nest/app-v24.html");
++    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v25.html");
++    expect(loaded.contents[0].mimeType).toBe("text/html;profile=mcp-app");
+     expect(loaded.contents[0]._meta.ui.csp.connectDomains).toContain(
+       "https://reading-nest.example.workers.dev"
+     );
+diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
+index 21a3b3d..046f141 100644
+--- a/server/src/mcp/register-tools.ts
++++ b/server/src/mcp/register-tools.ts
+@@ -30,7 +30,7 @@ import { ReadingService } from "../services/reading-service.js";
+ import type { CloudSourceService } from "../services/cloud-source-service.js";
+ import { toolResult } from "./tool-result.js";
+ 
+-export const READING_NEST_URI = "ui://ss-reading-nest/app-v24.html";
++export const READING_NEST_URI = "ui://widget/ll-reading-nest-v25.html";
+ 
+ const readOnly = {
+   readOnlyHint: true,
+diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
+index 9e76434..7852f04 100644
+--- a/server/src/mcp/server-factory.ts
++++ b/server/src/mcp/server-factory.ts
+@@ -13,7 +13,7 @@ export function createMcpServerFromRepository(
+ ) {
+   const server = new McpServer({
+     name: "L&L 共读小窝",
+-    version: "0.2.7"
++    version: "0.2.8"
+   });
+   const service = new ReadingService(repository);
+   registerReadingResource(server, widgetHtml, options.workerOrigin);
+diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
+index e509afa..c47e5e3 100644
+--- a/server/src/standalone-pwa.ts
++++ b/server/src/standalone-pwa.ts
+@@ -1,4 +1,4 @@
+-const SHELL_CACHE_VERSION = "v24";
++const SHELL_CACHE_VERSION = "v25";
+ 
+ export function handleStandaloneApp(
+   request: Request,
+diff --git a/server/src/worker.ts b/server/src/worker.ts
+index 6f84bb2..cfa5304 100644
+--- a/server/src/worker.ts
++++ b/server/src/worker.ts
+@@ -16,7 +16,7 @@ export default {
+     const route = getWorkerRoute(url, env.MCP_PATH_TOKEN);
+ 
+     if (route === "health") {
+-      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
++      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.8" });
+     }
+     if (route === "misconfigured") {
+       console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
+diff --git a/shared/package.json b/shared/package.json
+index d2cbeca..49a5a17 100644
+--- a/shared/package.json
++++ b/shared/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@ss/shared",
+-  "version": "0.2.7",
++  "version": "0.2.8",
+   "private": true,
+   "type": "module",
+   "main": "./dist/index.js",
+diff --git a/web/index.html b/web/index.html
+index b261313..d6072e5 100644
+--- a/web/index.html
++++ b/web/index.html
+@@ -19,7 +19,7 @@
+         </p>
+         <dl style="display:grid;grid-template-columns:max-content 1fr;gap:8px 14px">
+           <dt>resourceVersion</dt>
+-          <dd>app-v24</dd>
++          <dd>app-v25</dd>
+           <dt>bootStage</dt>
+           <dd>html-loaded</dd>
+         </dl>
+diff --git a/web/package.json b/web/package.json
+index 088c892..09a45f8 100644
+--- a/web/package.json
++++ b/web/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@ss/web",
+-  "version": "0.2.7",
++  "version": "0.2.8",
+   "private": true,
+   "type": "module",
+   "scripts": {
+diff --git a/web/src/App.test.tsx b/web/src/App.test.tsx
+index 7b93b47..511f69c 100644
+--- a/web/src/App.test.tsx
++++ b/web/src/App.test.tsx
+@@ -37,15 +37,15 @@ describe("App", () => {
+ 
+     fireEvent.click(screen.getByRole("button", { name: "打开小窝外观" }));
+     expect(screen.getByRole("dialog", { name: "小窝外观" })).toBeInTheDocument();
+-    fireEvent.click(screen.getByRole("button", { name: /星雾梦紫/ }));
+-    fireEvent.change(screen.getByRole("slider", { name: "透明度" }), {
+-      target: { value: "0.5" }
++    fireEvent.click(screen.getByRole("button", { name: /月光星雾/ }));
++    fireEvent.change(screen.getByRole("slider", { name: "透光度" }), {
++      target: { value: "0.7" }
+     });
+ 
+     await waitFor(() => {
+       expect(document.documentElement.dataset.llTheme).toBe("lavender");
+-      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.50");
+-      expect(localStorage.getItem("ll:appearance:v1")).toContain('"theme":"lavender"');
++      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.30");
++      expect(localStorage.getItem("ll:appearance:v2")).toContain('"theme":"lavender"');
+     });
+   });
+ 
+diff --git a/web/src/Boot.test.tsx b/web/src/Boot.test.tsx
+index abd5023..b4d6027 100644
+--- a/web/src/Boot.test.tsx
++++ b/web/src/Boot.test.tsx
+@@ -46,7 +46,7 @@ describe("Boot", () => {
+     );
+ 
+     expect(await screen.findByText("failed")).toBeInTheDocument();
+-    expect(screen.getByText("app-v24")).toBeInTheDocument();
++    expect(screen.getByText("app-v25")).toBeInTheDocument();
+     expect(screen.getAllByText("present")).toHaveLength(3);
+     expect(screen.getByText("1")).toBeInTheDocument();
+     const diagnosticText = screen.getByRole("alert").textContent ?? "";
+@@ -76,7 +76,7 @@ describe("Boot", () => {
+     const html = readFileSync(resolve(webRoot, "index.html"), "utf8");
+ 
+     expect(html).toContain("data-startup-fallback");
+-    expect(html).toContain("app-v24");
++    expect(html).toContain("app-v25");
+     expect(html).not.toContain("sourceText");
+     expect(html).not.toContain("objectKey");
+   });
+diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
+index c23bd37..f621dce 100644
+--- a/web/src/Boot.tsx
++++ b/web/src/Boot.tsx
+@@ -7,8 +7,8 @@ import {
+   useState
+ } from "react";
+ 
+-const RESOURCE_VERSION = "app-v24";
+-const APP_VERSION = "0.2.7";
++const RESOURCE_VERSION = "app-v25";
++const APP_VERSION = "0.2.8";
+ 
+ type AppModule = {
+   App: ComponentType;
+diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
+index 08a28ca..fa14bb4 100644
+--- a/web/src/bridge/host.ts
++++ b/web/src/bridge/host.ts
+@@ -31,7 +31,7 @@ export interface ReadingHostContext {
+ function connectApp() {
+   if (typeof window === "undefined" || window.parent === window) return undefined;
+   if (!app) {
+-    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
++    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.8" });
+     app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
+     appReady = app.connect().catch(() => undefined);
+   }
+diff --git a/web/src/bridge/standalone.ts b/web/src/bridge/standalone.ts
+index f6c1e54..9296d84 100644
+--- a/web/src/bridge/standalone.ts
++++ b/web/src/bridge/standalone.ts
+@@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
+   const config = getStandaloneConfig();
+   if (!config) throw new Error("Standalone reader path is unavailable");
+   standaloneClient ??= (async () => {
+-    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.7" });
++    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.8" });
+     await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
+     return client;
+   })();
+diff --git a/web/src/components/AppearanceSheet.tsx b/web/src/components/AppearanceSheet.tsx
+index 2b6aff2..83b1d3f 100644
+--- a/web/src/components/AppearanceSheet.tsx
++++ b/web/src/components/AppearanceSheet.tsx
+@@ -14,21 +14,21 @@ const THEMES: Array<{
+ }> = [
+   {
+     value: "forest",
+-    name: "薄荷森光",
+-    description: "薄荷绿 · 嫩叶光",
+-    colors: ["#c9f0d1", "#e8f7bf", "#bdeee2"]
++    name: "青苹果雨",
++    description: "嫩芽绿 · 薄荷水光",
++    colors: ["#bdf4ce", "#e8f8b8", "#c5f4e9"]
+   },
+   {
+     value: "lavender",
+-    name: "星雾梦紫",
+-    description: "薰衣草 · 蓝紫星光",
+-    colors: ["#ddc8ff", "#cdd9ff", "#eeaddc"]
++    name: "月光星雾",
++    description: "梦紫蓝 · 樱花星光",
++    colors: ["#d9c8ff", "#cbdcff", "#ffd0ec"]
+   },
+   {
+     value: "peach",
+-    name: "蜜桃云霞",
+-    description: "蜜桃粉 · 杏子奶油",
+-    colors: ["#ffd5e3", "#ffe7ef", "#f4adc7"]
++    name: "兔兔樱粉",
++    description: "嫩樱粉 · 云朵白",
++    colors: ["#ffd2e2", "#fff0f6", "#f7c2dc"]
+   }
+ ];
+ 
+@@ -102,19 +102,19 @@ export function AppearanceSheet(props: {
+         <section className="appearance-section glass-controls">
+           <div className="appearance-section-title"><strong>液态玻璃</strong><span>边调边看效果</span></div>
+           <RangeControl
+-            label="透明度"
+-            value={props.value.glassOpacity}
+-            min={0.36}
+-            max={0.92}
++            label="透光度"
++            value={1 - props.value.glassOpacity}
++            min={0.45}
++            max={0.88}
+             step={0.02}
+-            display={`${Math.round(props.value.glassOpacity * 100)}%`}
+-            onChange={(glassOpacity) => patch({ glassOpacity })}
++            display={`${Math.round((1 - props.value.glassOpacity) * 100)}%`}
++            onChange={(glassTransparency) => patch({ glassOpacity: 1 - glassTransparency })}
+           />
+           <RangeControl
+             label="磨砂模糊"
+             value={props.value.glassBlur}
+-            min={8}
+-            max={38}
++            min={16}
++            max={44}
+             step={1}
+             display={`${Math.round(props.value.glassBlur)} px`}
+             onChange={(glassBlur) => patch({ glassBlur })}
+diff --git a/web/src/features/appearance/appearance.test.ts b/web/src/features/appearance/appearance.test.ts
+index a90656c..60bacc5 100644
+--- a/web/src/features/appearance/appearance.test.ts
++++ b/web/src/features/appearance/appearance.test.ts
+@@ -21,8 +21,8 @@ describe("appearance preferences", () => {
+       })
+     ).toMatchObject({
+       theme: "lavender",
+-      glassOpacity: 0.92,
+-      glassBlur: 8,
++      glassOpacity: 0.55,
++      glassBlur: 16,
+       readerScale: 0.9,
+       readerLineHeight: 2.2
+     });
+diff --git a/web/src/features/appearance/appearance.ts b/web/src/features/appearance/appearance.ts
+index 017aaae..3631ade 100644
+--- a/web/src/features/appearance/appearance.ts
++++ b/web/src/features/appearance/appearance.ts
+@@ -11,15 +11,17 @@ export type AppearancePreferences = {
+ };
+ 
+ export const DEFAULT_APPEARANCE: AppearancePreferences = {
+-  theme: "forest",
+-  glassOpacity: 0.5,
+-  glassBlur: 28,
++  theme: "lavender",
++  glassOpacity: 0.24,
++  glassBlur: 30,
+   readerFont: "serif",
+   readerScale: 1,
+   readerLineHeight: 1.86
+ };
+ 
+-const SETTINGS_KEY = "ll:appearance:v1";
++// v2 intentionally starts from the softer liquid-glass defaults. Keeping this
++// separate from v1 prevents an old 36% / 8px setting from masking the redesign.
++const SETTINGS_KEY = "ll:appearance:v2";
+ const BACKGROUND_KEY = "ll:appearance-background:v1";
+ const FONT_STACKS: Record<ReaderFont, string> = {
+   rounded: 'ui-rounded, "SF Pro Rounded", "PingFang SC", system-ui, sans-serif',
+@@ -86,7 +88,7 @@ export function applyAppearance(
+   root.style.setProperty("--glass-opacity", normalized.glassOpacity.toFixed(2));
+   root.style.setProperty(
+     "--glass-panel-opacity",
+-    Math.min(0.88, normalized.glassOpacity + 0.14).toFixed(2)
++    Math.min(0.62, normalized.glassOpacity + 0.14).toFixed(2)
+   );
+   root.style.setProperty("--glass-blur", `${normalized.glassBlur}px`);
+   root.style.setProperty("--reader-font-family", FONT_STACKS[normalized.readerFont]);
+@@ -106,8 +108,8 @@ export function normalizeAppearance(
+ ): AppearancePreferences {
+   return {
+     theme: isTheme(value.theme) ? value.theme : DEFAULT_APPEARANCE.theme,
+-    glassOpacity: clamp(value.glassOpacity, 0.36, 0.92, DEFAULT_APPEARANCE.glassOpacity),
+-    glassBlur: clamp(value.glassBlur, 8, 38, DEFAULT_APPEARANCE.glassBlur),
++    glassOpacity: clamp(value.glassOpacity, 0.12, 0.55, DEFAULT_APPEARANCE.glassOpacity),
++    glassBlur: clamp(value.glassBlur, 16, 44, DEFAULT_APPEARANCE.glassBlur),
+     readerFont: isReaderFont(value.readerFont) ? value.readerFont : DEFAULT_APPEARANCE.readerFont,
+     readerScale: clamp(value.readerScale, 0.9, 1.3, DEFAULT_APPEARANCE.readerScale),
+     readerLineHeight: clamp(
+diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
+index 2523197..557c0bc 100644
+--- a/web/src/features/source-cloud/cloud-source-client.test.ts
++++ b/web/src/features/source-cloud/cloud-source-client.test.ts
+@@ -247,8 +247,8 @@ describe("CloudSourceClient", () => {
+     });
+     const message = result.diagnostics.directUploadError ?? "";
+ 
+-    expect(message).toContain("resourceVersion=app-v24");
+-    expect(message).toContain("appVersion=0.2.7");
++    expect(message).toContain("resourceVersion=app-v25");
++    expect(message).toContain("appVersion=0.2.8");
+     expect(message).toContain("sourceEndpointBase=present");
+     expect(message).toContain("uploadOrigin=https://worker.example.test");
+     expect(message).toContain("uploadPath=/source/<token>/upload");
+diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
+index fd4eb1f..a871704 100644
+--- a/web/src/features/source-cloud/cloud-source-client.ts
++++ b/web/src/features/source-cloud/cloud-source-client.ts
+@@ -20,8 +20,8 @@ export interface CloudSourceUploadResult {
+   diagnostics: CloudUploadDiagnostics;
+ }
+ 
+-const RESOURCE_VERSION = "app-v24";
+-const APP_VERSION = "0.2.7";
++const RESOURCE_VERSION = "app-v25";
++const APP_VERSION = "0.2.8";
+ const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
+ 
+ export class CloudSourceClient {
+diff --git a/web/src/main.tsx b/web/src/main.tsx
+index b9391dd..c4fca05 100644
+--- a/web/src/main.tsx
++++ b/web/src/main.tsx
+@@ -15,6 +15,6 @@ if (rootElement) {
+ } else {
+   document.body.insertAdjacentHTML(
+     "afterbegin",
+-    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v24</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
++    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v25</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
+   );
+ }
+diff --git a/web/src/styles/app.css b/web/src/styles/app.css
+index a60e55d..110833d 100644
+--- a/web/src/styles/app.css
++++ b/web/src/styles/app.css
+@@ -2,7 +2,7 @@
+ html, body, #root { min-height: 100%; margin: 0; }
+ body {
+   background:
+-    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--theme-bg-a) 68%, transparent), transparent 34rem),
++    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--theme-bg-a) 84%, transparent), transparent 34rem),
+     var(--theme-bg-base);
+   -webkit-font-smoothing: antialiased;
+   text-rendering: optimizeLegibility;
+@@ -11,19 +11,34 @@ button, input, textarea { font: inherit; }
+ button { min-height: 44px; cursor: pointer; color: inherit; }
+ button:disabled { cursor: default; opacity: .42; }
+ .app {
++  position: relative;
++  isolation: isolate;
+   min-height: 100vh;
+   min-height: 100dvh;
+   background-image:
+-    linear-gradient(color-mix(in srgb, var(--theme-overlay) 12%, transparent), color-mix(in srgb, var(--theme-overlay) 28%, transparent)),
++    linear-gradient(color-mix(in srgb, var(--theme-overlay) 4%, transparent), color-mix(in srgb, var(--theme-overlay) 13%, transparent)),
+     var(--custom-background-image, linear-gradient(transparent, transparent)),
+-    radial-gradient(circle at 8% 4%, color-mix(in srgb, var(--theme-bg-a) 92%, transparent), transparent 34rem),
+-    radial-gradient(circle at 94% 22%, color-mix(in srgb, var(--theme-bg-b) 88%, transparent), transparent 30rem),
+-    radial-gradient(circle at 48% 100%, color-mix(in srgb, var(--theme-bg-c) 78%, transparent), transparent 34rem),
+-    linear-gradient(145deg, var(--theme-bg-base), color-mix(in srgb, var(--theme-bg-c) 54%, var(--theme-bg-base)));
++    radial-gradient(circle at 8% 4%, color-mix(in srgb, var(--theme-bg-a) 96%, transparent), transparent 29rem),
++    radial-gradient(circle at 94% 24%, color-mix(in srgb, var(--theme-bg-b) 94%, transparent), transparent 27rem),
++    radial-gradient(circle at 45% 100%, color-mix(in srgb, var(--theme-bg-c) 90%, transparent), transparent 31rem),
++    linear-gradient(145deg, var(--theme-bg-base), color-mix(in srgb, var(--theme-bg-c) 68%, var(--theme-bg-base)));
+   background-position: center, center, center, center, center, center;
+   background-size: cover, cover, cover, cover, cover, cover;
+   background-attachment: fixed;
+ }
++.app::before {
++  position: fixed;
++  z-index: -1;
++  inset: 0;
++  pointer-events: none;
++  background:
++    radial-gradient(circle at 18% 15%, rgba(255, 255, 255, .78) 0 2px, transparent 3px),
++    radial-gradient(circle at 81% 10%, rgba(255, 255, 255, .72) 0 1.5px, transparent 2.5px),
++    radial-gradient(circle at 72% 43%, rgba(255, 255, 255, .5) 0 1px, transparent 2px),
++    radial-gradient(ellipse at 16% 68%, rgba(255, 255, 255, .22), transparent 24%),
++    radial-gradient(ellipse at 88% 78%, color-mix(in srgb, var(--theme-bg-a) 30%, transparent), transparent 28%);
++  content: "";
++}
+ 
+ .boot-diagnostics {
+   width: min(100%, 720px);
+@@ -85,13 +100,14 @@ h1, h2, h3, p { margin-top: 0; }
+   min-height: 290px;
+   margin-bottom: 18px;
+   padding: 22px 22px 20px;
+-  border: 1px solid color-mix(in srgb, var(--wood) 12%, var(--line));
++  border: 1px solid rgba(255, 255, 255, .82);
+   border-radius: 34px;
+   background:
+-    radial-gradient(circle at 90% 12%, color-mix(in srgb, var(--moon) 72%, transparent), transparent 9rem),
++    linear-gradient(145deg, rgba(255, 255, 255, .28), rgba(255, 255, 255, .03) 55%),
++    radial-gradient(circle at 90% 12%, color-mix(in srgb, var(--moon) 66%, transparent), transparent 9rem),
+     rgb(var(--glass-rgb) / var(--glass-opacity));
+-  backdrop-filter: blur(var(--glass-blur)) saturate(1.42) brightness(1.04);
+-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.42) brightness(1.04);
++  backdrop-filter: blur(var(--glass-blur)) saturate(1.7) brightness(1.07);
++  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7) brightness(1.07);
+   box-shadow: var(--shadow);
+ }
+ .home-hero::before,
+@@ -114,7 +130,7 @@ h1, h2, h3, p { margin-top: 0; }
+   padding: 7px 10px;
+   border: 1px solid color-mix(in srgb, var(--wood) 14%, var(--line));
+   border-radius: 999px;
+-  background: rgb(var(--glass-rgb) / var(--glass-panel-opacity));
++  background: linear-gradient(145deg, rgba(255,255,255,.28), rgba(255,255,255,.05)), rgb(var(--glass-rgb) / var(--glass-opacity));
+   color: var(--muted);
+   backdrop-filter: blur(var(--glass-blur));
+   -webkit-backdrop-filter: blur(var(--glass-blur));
+@@ -195,9 +211,9 @@ h1, h2, h3, p { margin-top: 0; }
+   padding: 12px 14px;
+   border: 1px solid color-mix(in srgb, var(--sage-strong) 14%, var(--line));
+   border-radius: 18px;
+-  background: rgb(var(--glass-rgb) / var(--glass-opacity));
+-  backdrop-filter: blur(var(--glass-blur)) saturate(1.38) brightness(1.04);
+-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.38) brightness(1.04);
++  background: linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.03)), rgb(var(--glass-rgb) / var(--glass-opacity));
++  backdrop-filter: blur(var(--glass-blur)) saturate(1.65) brightness(1.07);
++  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.65) brightness(1.07);
+   color: var(--ink);
+   line-height: 1.5;
+ }
+@@ -227,8 +243,8 @@ h1, h2, h3, p { margin-top: 0; }
+   border-radius: var(--radius-lg);
+   text-align: left;
+   box-shadow: var(--shadow-soft);
+-  backdrop-filter: blur(var(--glass-blur)) saturate(1.4) brightness(1.04);
+-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4) brightness(1.04);
++  backdrop-filter: blur(var(--glass-blur)) saturate(1.68) brightness(1.07);
++  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.68) brightness(1.07);
+ }
+ .mode-card::after { position: absolute; width: 110px; height: 110px; right: -48px; bottom: -56px; border: 1px solid color-mix(in srgb, var(--wood) 11%, transparent); border-radius: 50%; content: ""; }
+ .mode-card strong, .mode-card small, .mode-card em { display: block; }
+@@ -238,9 +254,9 @@ h1, h2, h3, p { margin-top: 0; }
+ .mode-icon { display: grid; width: 54px; height: 54px; place-items: center; border-radius: 18px; background: color-mix(in srgb, var(--surface) 82%, transparent); box-shadow: 0 8px 18px color-mix(in srgb, var(--wood) 9%, transparent); }
+ .mode-icon svg { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+ .mode-arrow { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--surface) 72%, transparent); font-size: 15px; }
+-.novel-card { background: linear-gradient(135deg, color-mix(in srgb, var(--peach) 52%, rgb(var(--glass-rgb) / var(--glass-opacity))), rgb(var(--glass-rgb) / var(--glass-opacity))); }
++.novel-card { background: linear-gradient(135deg, color-mix(in srgb, var(--peach) 44%, transparent), transparent 72%), linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.02)), rgb(var(--glass-rgb) / var(--glass-opacity)); }
+ .novel-card .mode-icon { color: var(--peach-strong); }
+-.manga-card { background: linear-gradient(135deg, color-mix(in srgb, var(--sage) 56%, rgb(var(--glass-rgb) / var(--glass-opacity))), rgb(var(--glass-rgb) / var(--glass-opacity))); }
++.manga-card { background: linear-gradient(135deg, color-mix(in srgb, var(--sage) 48%, transparent), transparent 72%), linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.02)), rgb(var(--glass-rgb) / var(--glass-opacity)); }
+ .manga-card .mode-icon,
+ .manga-card small { color: var(--sage-strong); }
+ .recent-section { margin-top: 30px; }
+@@ -279,10 +295,10 @@ h1, h2, h3, p { margin-top: 0; }
+   padding: 16px;
+   border: 1px solid color-mix(in srgb, var(--wood) 10%, var(--line));
+   border-radius: 23px;
+-  background: rgb(var(--glass-rgb) / var(--glass-opacity));
++  background: linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.02)), rgb(var(--glass-rgb) / var(--glass-opacity));
+   box-shadow: var(--shadow-soft);
+-  backdrop-filter: blur(var(--glass-blur)) saturate(1.36) brightness(1.04);
+-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.36) brightness(1.04);
++  backdrop-filter: blur(var(--glass-blur)) saturate(1.62) brightness(1.07);
++  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.62) brightness(1.07);
+ }
+ .book-card::before { position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--peach-strong); content: ""; opacity: .65; }
+ .book-card.manga::before { background: var(--sage-strong); }
+@@ -686,16 +702,23 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+   box-shadow: var(--shadow);
+ }
+ 
+-.appearance-backdrop { background: color-mix(in srgb, var(--wood) 15%, transparent); backdrop-filter: blur(7px) saturate(1.28); }
++.appearance-backdrop {
++  background: color-mix(in srgb, var(--wood) 10%, transparent);
++  backdrop-filter: blur(11px) saturate(1.38);
++  -webkit-backdrop-filter: blur(11px) saturate(1.38);
++}
+ .appearance-sheet {
+   display: grid;
+   gap: 14px;
+   max-height: 92vh;
+   max-height: 92dvh;
+   padding-inline: 17px;
+-  background: rgb(var(--glass-rgb) / var(--glass-panel-opacity));
+-  backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.42) brightness(1.04);
+-  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.42) brightness(1.04);
++  border: 1px solid rgba(255, 255, 255, .86);
++  background:
++    linear-gradient(155deg, rgba(255,255,255,.30), rgba(255,255,255,.04) 58%),
++    rgb(var(--glass-rgb) / var(--glass-panel-opacity));
++  backdrop-filter: blur(calc(var(--glass-blur) + 10px)) saturate(1.74) brightness(1.08);
++  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 10px)) saturate(1.74) brightness(1.08);
+ }
+ :root[data-ll-theme="lavender"] .appearance-sheet,
+ :root[data-ll-theme="lavender"] .home-hero {
+@@ -705,22 +728,25 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+     radial-gradient(circle at 72% 31%, rgba(219,226,255,.86) 0 1.5px, transparent 2.5px),
+     radial-gradient(circle at 18% 42%, rgba(255,230,249,.82) 0 1px, transparent 2px),
+     radial-gradient(circle at 92% 58%, rgba(255,255,255,.78) 0 1.5px, transparent 2.5px),
+-    linear-gradient(145deg, rgb(var(--glass-rgb) / var(--glass-panel-opacity)), rgb(var(--glass-rgb) / var(--glass-opacity)));
++    linear-gradient(145deg, rgba(255,255,255,.22), rgba(255,255,255,.02)),
++    rgb(var(--glass-rgb) / var(--glass-panel-opacity));
+ }
+-:root[data-ll-theme="lavender"] .appearance-sheet { box-shadow: 0 -18px 70px rgba(126, 93, 172, .24); }
+-:root[data-ll-theme="forest"] .appearance-sheet { box-shadow: 0 -18px 70px rgba(64, 142, 91, .2); }
+-:root[data-ll-theme="peach"] .appearance-sheet { box-shadow: 0 -18px 70px rgba(207, 100, 123, .2); }
++:root[data-ll-theme="lavender"] .appearance-sheet { box-shadow: 0 -20px 78px rgba(126, 93, 172, .20); }
++:root[data-ll-theme="forest"] .appearance-sheet { box-shadow: 0 -20px 78px rgba(64, 142, 91, .17); }
++:root[data-ll-theme="peach"] .appearance-sheet { box-shadow: 0 -20px 78px rgba(207, 100, 143, .17); }
+ .appearance-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+ .appearance-heading span { color: var(--peach-strong); font-size: 9px; font-weight: 850; letter-spacing: .14em; }
+ .appearance-heading h2 { margin: 4px 0 0; font-size: 24px; letter-spacing: -.045em; }
+-.appearance-heading .icon-button { width: 40px; min-height: 40px; border: 1px solid var(--line); background: rgb(var(--glass-rgb) / .62); color: var(--muted); font-size: 21px; }
++.appearance-heading .icon-button { width: 40px; min-height: 40px; border: 1px solid rgba(255,255,255,.78); background: rgb(var(--glass-rgb) / .34); color: var(--muted); font-size: 21px; backdrop-filter: blur(18px); }
+ .appearance-section {
+   display: grid;
+   gap: 11px;
+   padding: 14px;
+-  border: 1px solid color-mix(in srgb, var(--wood) 10%, var(--line));
++  border: 1px solid rgba(255, 255, 255, .78);
+   border-radius: 20px;
+-  background: rgb(var(--glass-rgb) / var(--glass-panel-opacity));
++  background: linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.02)), rgb(var(--glass-rgb) / var(--glass-panel-opacity));
++  backdrop-filter: blur(calc(var(--glass-blur) - 4px)) saturate(1.55);
++  -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 4px)) saturate(1.55);
+   box-shadow: var(--shadow-soft);
+ }
+ .appearance-section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+@@ -732,7 +758,8 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+   padding: 9px 7px;
+   border: 1px solid var(--line);
+   border-radius: 15px;
+-  background: rgb(var(--glass-rgb) / .6);
++  background: linear-gradient(145deg, rgba(255,255,255,.22), rgba(255,255,255,.02)), rgb(var(--glass-rgb) / .28);
++  backdrop-filter: blur(18px) saturate(1.42);
+   text-align: left;
+ }
+ .theme-choice[aria-pressed="true"] { border-color: var(--wood); box-shadow: inset 0 0 0 1px var(--wood); }
+@@ -755,7 +782,7 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+   accent-color: var(--wood);
+ }
+ .font-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+-.font-choice { display: grid; gap: 3px; justify-items: center; padding: 8px 4px; border: 1px solid var(--line); border-radius: 14px; background: rgb(var(--glass-rgb) / .58); }
++.font-choice { display: grid; gap: 3px; justify-items: center; padding: 8px 4px; border: 1px solid rgba(255,255,255,.72); border-radius: 14px; background: linear-gradient(145deg, rgba(255,255,255,.20), rgba(255,255,255,.02)), rgb(var(--glass-rgb) / .26); backdrop-filter: blur(18px) saturate(1.42); }
+ .font-choice[aria-pressed="true"] { border-color: var(--wood); background: var(--wood); color: var(--paper); }
+ .font-choice b { font-size: 17px; }
+ .font-choice span { font-size: 8px; }
+@@ -773,10 +800,10 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+ .appearance-sheet .source-import-button { display: inline-flex; width: fit-content; padding: 8px 11px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); color: var(--ink); cursor: pointer; font-size: 10px; font-weight: 760; }
+ .appearance-sheet .background-actions .text-button { margin: 0; font-size: 10px; }
+ .appearance-error { margin: 0; color: var(--danger); font-size: 10px; }
+-.appearance-footer { position: sticky; bottom: -1px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 9px; padding: 5px 0 calc(2px + var(--safe-bottom)); background: linear-gradient(transparent, rgb(var(--glass-rgb) / .96) 30%); }
++.appearance-footer { position: sticky; bottom: -1px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 9px; padding: 10px 0 calc(4px + var(--safe-bottom)); background: linear-gradient(transparent, rgb(var(--glass-rgb) / .62) 36%); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+ .appearance-footer .text-button,
+ .appearance-footer .action-primary { width: 100%; min-height: 46px; align-self: stretch; border-radius: 14px; }
+-.appearance-footer .text-button { border: 1px solid var(--line); background: rgb(var(--glass-rgb) / .68); text-align: center; }
++.appearance-footer .text-button { border: 1px solid rgba(255,255,255,.76); background: rgb(var(--glass-rgb) / .36); text-align: center; }
+ 
+ .home-hero,
+ .standalone-note,
+@@ -789,11 +816,12 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+ .font-choice,
+ .background-preview,
+ .background-placeholder {
+-  border-color: rgba(255, 255, 255, .62);
++  border-color: rgba(255, 255, 255, .78);
+   box-shadow:
+-    inset 0 1px 0 rgba(255, 255, 255, .74),
+-    inset 0 -1px 0 color-mix(in srgb, var(--wood) 8%, transparent),
+-    0 16px 38px color-mix(in srgb, var(--wood) 12%, transparent);
++    inset 0 1.5px 0 rgba(255, 255, 255, .88),
++    inset 1px 0 0 rgba(255, 255, 255, .28),
++    inset 0 -1px 0 color-mix(in srgb, var(--wood) 6%, transparent),
++    0 18px 48px color-mix(in srgb, var(--wood) 13%, transparent);
+ }
+ .theme-choice[aria-pressed="true"],
+ .font-choice[aria-pressed="true"] {
+diff --git a/web/src/styles/tokens.css b/web/src/styles/tokens.css
+index f68bf4f..b1e05ef 100644
+--- a/web/src/styles/tokens.css
++++ b/web/src/styles/tokens.css
+@@ -1,34 +1,34 @@
+ :root {
+-  color-scheme: light dark;
+-  --cream: #eff9e9;
+-  --paper: #fbfff9;
+-  --surface: #f5fff8;
+-  --peach: #f7d4df;
+-  --peach-strong: #b9667b;
+-  --sage: #c9f0d1;
+-  --sage-strong: #337653;
+-  --wood: #2f6549;
+-  --ink: #254032;
+-  --muted: #5f786a;
+-  --line: #c8e5d2;
+-  --moon: #f3e89e;
+-  --lilac: #dcd8f5;
+-  --theme-wash: #c9f0d1;
+-  --theme-bg-base: #eef9df;
+-  --theme-bg-a: #c8f0d0;
+-  --theme-bg-b: #e4f6b8;
+-  --theme-bg-c: #bfeee4;
+-  --theme-overlay: #e6fae9;
+-  --glass-rgb: 242 255 247;
+-  --glass-opacity: 0.5;
+-  --glass-panel-opacity: 0.64;
+-  --glass-blur: 24px;
++  color-scheme: light;
++  --cream: #effff4;
++  --paper: #fbfffc;
++  --surface: #f7fffa;
++  --peach: #ffd9e6;
++  --peach-strong: #c96f91;
++  --sage: #c7f6d3;
++  --sage-strong: #429d70;
++  --wood: #397b5e;
++  --ink: #244336;
++  --muted: #668679;
++  --line: #d6efde;
++  --moon: #fff0aa;
++  --lilac: #ddd8ff;
++  --theme-wash: #c8f5d5;
++  --theme-bg-base: #eefff3;
++  --theme-bg-a: #bdf4ce;
++  --theme-bg-b: #e8f8b8;
++  --theme-bg-c: #c5f4e9;
++  --theme-overlay: #f6fff8;
++  --glass-rgb: 250 255 252;
++  --glass-opacity: 0.24;
++  --glass-panel-opacity: 0.38;
++  --glass-blur: 30px;
+   --reader-font-family: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+   --reader-font-scale: 1;
+   --reader-line-height: 1.86;
+   --danger: #9f4f46;
+-  --shadow: 0 20px 52px rgba(92, 66, 57, 0.12);
+-  --shadow-soft: 0 10px 28px rgba(92, 66, 57, 0.08);
++  --shadow: 0 22px 62px rgba(47, 118, 82, 0.13);
++  --shadow-soft: 0 12px 32px rgba(47, 118, 82, 0.09);
+   --radius-lg: 28px;
+   --radius-md: 20px;
+   --safe-top: env(safe-area-inset-top, 0px);
+@@ -41,75 +41,51 @@
+ }
+ 
+ :root[data-ll-theme="lavender"] {
+-  --cream: #f2ecff;
+-  --paper: #fdfaff;
+-  --surface: #faf5ff;
+-  --peach: #f0c6e5;
+-  --peach-strong: #a1519e;
+-  --sage: #d2d5ff;
+-  --sage-strong: #6661a8;
+-  --wood: #5b3f77;
+-  --ink: #372944;
+-  --muted: #786788;
+-  --line: #ddcfef;
+-  --moon: #ffe2a8;
+-  --lilac: #ddc9ff;
+-  --theme-wash: #ddc9ff;
+-  --theme-bg-base: #eee6ff;
+-  --theme-bg-a: #ddc8ff;
++  --cream: #f5f0ff;
++  --paper: #fefcff;
++  --surface: #faf7ff;
++  --peach: #ffd2eb;
++  --peach-strong: #b46fbd;
++  --sage: #d8deff;
++  --sage-strong: #756dc6;
++  --wood: #704d94;
++  --ink: #3d2d50;
++  --muted: #806f92;
++  --line: #e6dcf5;
++  --moon: #fff0bd;
++  --lilac: #dac9ff;
++  --theme-wash: #decfff;
++  --theme-bg-base: #f1ebff;
++  --theme-bg-a: #d9c8ff;
+   --theme-bg-b: #cbdcff;
+-  --theme-bg-c: #f2c5e5;
+-  --theme-overlay: #f4edff;
+-  --glass-rgb: 249 243 255;
++  --theme-bg-c: #ffd0ec;
++  --theme-overlay: #fbf8ff;
++  --glass-rgb: 252 249 255;
++  --shadow: 0 22px 66px rgba(115, 82, 158, 0.15);
++  --shadow-soft: 0 12px 34px rgba(115, 82, 158, 0.1);
+ }
+ 
+ :root[data-ll-theme="peach"] {
+-  --cream: #fff1f6;
+-  --paper: #fffafd;
+-  --surface: #fff6fa;
+-  --peach: #ffd4e2;
+-  --peach-strong: #bf6684;
+-  --sage: #ffe7d8;
+-  --sage-strong: #a56b71;
+-  --wood: #92536a;
+-  --ink: #4c303b;
+-  --muted: #8b6a78;
+-  --line: #f1d3df;
+-  --moon: #ffe5ac;
+-  --lilac: #ead8f4;
+-  --theme-wash: #ffd4e2;
+-  --theme-bg-base: #fff0f6;
+-  --theme-bg-a: #ffd3e2;
+-  --theme-bg-b: #ffe6ee;
+-  --theme-bg-c: #f4d8f1;
+-  --theme-overlay: #fff1f7;
+-  --glass-rgb: 255 246 251;
+-}
+-
+-@media (prefers-color-scheme: dark) {
+-  :root {
+-    --cream: #1f1b1a;
+-    --paper: #282321;
+-    --surface: #302a27;
+-    --peach: #624942;
+-    --peach-strong: #e1a294;
+-    --sage: #38473c;
+-    --sage-strong: #a8c1ad;
+-    --wood: #d4b3a7;
+-    --ink: #f4eae5;
+-    --muted: #c0afa8;
+-    --line: #493e3a;
+-    --moon: #5a5138;
+-    --lilac: #45404a;
+-    --theme-wash: #38473c;
+-    --theme-bg-base: #201d1c;
+-    --theme-bg-a: #39483c;
+-    --theme-bg-b: #473936;
+-    --theme-bg-c: #3f3b4a;
+-    --theme-overlay: #201d1c;
+-    --glass-rgb: 48 42 39;
+-    --danger: #f0a197;
+-    --shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
+-    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.18);
+-  }
++  --cream: #fff3f8;
++  --paper: #fffbfd;
++  --surface: #fff7fb;
++  --peach: #ffd2e2;
++  --peach-strong: #cf7197;
++  --sage: #f8dcec;
++  --sage-strong: #b8789a;
++  --wood: #a65e7d;
++  --ink: #503340;
++  --muted: #926f7f;
++  --line: #f4dbe5;
++  --moon: #ffedbd;
++  --lilac: #eadcff;
++  --theme-wash: #ffd7e6;
++  --theme-bg-base: #fff1f7;
++  --theme-bg-a: #ffd0e1;
++  --theme-bg-b: #ffe6ef;
++  --theme-bg-c: #f6d4ed;
++  --theme-overlay: #fff9fc;
++  --glass-rgb: 255 250 253;
++  --shadow: 0 22px 64px rgba(187, 91, 131, 0.14);
++  --shadow-soft: 0 12px 32px rgba(187, 91, 131, 0.09);
+ }
