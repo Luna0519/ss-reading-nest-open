@@ -510,6 +510,110 @@ index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..ca735b61f2b46ff014abd1d5fe44f83f
  </svg>`;
  }
  
+diff --git a/server/src/widget-assets.test.ts b/server/src/widget-assets.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..eaa21decf9e41ee4f7fcfe2d24306c2dbdea6364
+--- /dev/null
++++ b/server/src/widget-assets.test.ts
+@@ -0,0 +1,51 @@
++import { describe, expect, it } from "vitest";
++import {
++  handleWidgetAsset,
++  WIDGET_SCRIPT_PATH,
++  WIDGET_STYLE_PATH
++} from "./widget-assets.js";
++
++const assets = {
++  script: "console.log('L&L');",
++  styles: ".app{display:block}"
++};
++
++describe("versioned widget assets", () => {
++  it("serves JavaScript and CSS with immutable cross-origin headers", async () => {
++    const script = handleWidgetAsset(
++      new Request(`https://example.workers.dev${WIDGET_SCRIPT_PATH}`),
++      new URL(`https://example.workers.dev${WIDGET_SCRIPT_PATH}`),
++      assets
++    );
++    expect(script.status).toBe(200);
++    expect(script.headers.get("content-type")).toContain("text/javascript");
++    expect(script.headers.get("access-control-allow-origin")).toBe("*");
++    expect(script.headers.get("cache-control")).toContain("immutable");
++    expect(await script.text()).toBe(assets.script);
++
++    const styles = handleWidgetAsset(
++      new Request(`https://example.workers.dev${WIDGET_STYLE_PATH}`),
++      new URL(`https://example.workers.dev${WIDGET_STYLE_PATH}`),
++      assets
++    );
++    expect(styles.status).toBe(200);
++    expect(styles.headers.get("content-type")).toContain("text/css");
++    expect(await styles.text()).toBe(assets.styles);
++  });
++
++  it("supports HEAD and rejects mutation requests", async () => {
++    const head = handleWidgetAsset(
++      new Request(`https://example.workers.dev${WIDGET_SCRIPT_PATH}`, { method: "HEAD" }),
++      new URL(`https://example.workers.dev${WIDGET_SCRIPT_PATH}`),
++      assets
++    );
++    expect(await head.text()).toBe("");
++
++    const post = handleWidgetAsset(
++      new Request(`https://example.workers.dev${WIDGET_STYLE_PATH}`, { method: "POST" }),
++      new URL(`https://example.workers.dev${WIDGET_STYLE_PATH}`),
++      assets
++    );
++    expect(post.status).toBe(405);
++  });
++});
+diff --git a/server/src/widget-assets.ts b/server/src/widget-assets.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..501bbe98864c3fe387d0fbf7e9ec0a247a6fb366
+--- /dev/null
++++ b/server/src/widget-assets.ts
+@@ -0,0 +1,41 @@
++export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v26";
++export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v26.bundle.js`;
++export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v26.css`;
++
++export type WidgetAssetBundle = {
++  script: string;
++  styles: string;
++};
++
++export function handleWidgetAsset(
++  request: Request,
++  url: URL,
++  assets: WidgetAssetBundle
++): Response {
++  if (request.method !== "GET" && request.method !== "HEAD") {
++    return new Response("Method not allowed", {
++      status: 405,
++      headers: { Allow: "GET, HEAD" }
++    });
++  }
++
++  if (url.pathname === WIDGET_SCRIPT_PATH) {
++    return assetResponse(request, assets.script, "text/javascript; charset=utf-8");
++  }
++  if (url.pathname === WIDGET_STYLE_PATH) {
++    return assetResponse(request, assets.styles, "text/css; charset=utf-8");
++  }
++  return new Response("Not found", { status: 404 });
++}
++
++function assetResponse(request: Request, body: string, contentType: string): Response {
++  return new Response(request.method === "HEAD" ? null : body, {
++    headers: {
++      "Content-Type": contentType,
++      "Cache-Control": "public, max-age=31536000, immutable",
++      "Access-Control-Allow-Origin": "*",
++      "Cross-Origin-Resource-Policy": "cross-origin",
++      "X-Content-Type-Options": "nosniff"
++    }
++  });
++}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
 index 1e35705c2ccadfeece1585fb2d379b7846862cae..612dbb43e4f84ef6ddfd13969805e0465e795cd3 100644
 --- a/server/src/worker-router.test.ts
