@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index 0820d9c354353d6f3ddf840442a586491282824a..8765518ab68927338372444d77017956f7e9fe7a 100644
+index 0820d9c354353d6f3ddf840442a586491282824a..4c4378c00a9b7fd218eaf3d2c1a9333adc50d5ae 100644
 --- a/package.json
 +++ b/package.json
 @@ -1,7 +1,7 @@
@@ -7,7 +7,7 @@ index 0820d9c354353d6f3ddf840442a586491282824a..8765518ab68927338372444d77017956
    "name": "ss-reading-nest",
    "private": true,
 -  "version": "0.2.7",
-+  "version": "0.2.10",
++  "version": "0.2.11",
    "packageManager": "pnpm@10.15.1",
    "scripts": {
      "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
@@ -55,19 +55,19 @@ index 0c2e9b4d8c799ee6811774a748c0cb4eae3d05c2..83e81cd6351862db13f90fe34be1ec01
      dependencies:
        lightningcss: 1.32.0
 diff --git a/server/package.json b/server/package.json
-index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..d52a0eb8d2e5a16557ddc020e9208393391596d0 100644
+index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..73df0be2d811f63a6348f48716b5cf5423193046 100644
 --- a/server/package.json
 +++ b/server/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/server",
 -  "version": "0.2.7",
-+  "version": "0.2.10",
++  "version": "0.2.11",
    "private": true,
    "type": "module",
    "scripts": {
 diff --git a/server/scripts/remote-smoke/cloud-source-smoke.mjs b/server/scripts/remote-smoke/cloud-source-smoke.mjs
-index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..a20264849b040c132ed952aaa5ce52e0447fcf74 100644
+index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..5992e572084e05d514f2c5dfb88b4b491e7c2261 100644
 --- a/server/scripts/remote-smoke/cloud-source-smoke.mjs
 +++ b/server/scripts/remote-smoke/cloud-source-smoke.mjs
 @@ -61,7 +61,7 @@ const expectedTools = [
@@ -75,12 +75,12 @@ index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..a20264849b040c132ed952aaa5ce52e0
  ];
  
 -const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.10" });
++const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.11" });
  const cleanup = {
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 81737592c12db53b0f77280f424ac1c7422fed9a..58f97d0850f69506e4f01ac671b240a243192c79 100644
+index 81737592c12db53b0f77280f424ac1c7422fed9a..60851b35e15b40ab621fdb35d472e148cdc84152 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,7 +5,7 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -88,21 +88,31 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..58f97d0850f69506e4f01ac671b240a2
  const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
  const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
 -const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.10" });
++const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.11" });
  
  const healthResponse = await fetch(new URL("/health", workerUrl));
  assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);
-@@ -21,6 +21,59 @@ try {
+@@ -21,6 +21,51 @@ try {
    assert(tools.tools.length === 23, `expected 23 tools, got ${tools.tools.length}`);
    const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
    assert(Boolean(openTool?._meta?.ui), "open_reading_nest is missing its UI resource metadata");
++  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0211.html";
 +  assert(
-+    openTool?._meta?.ui?.resourceUri === "ui://widget/ll-reading-nest-v27.html",
-+    "open_reading_nest is not pointing at the v27 UI resource"
++    openTool?._meta?.ui?.resourceUri === primaryTemplateUri,
++    "open_reading_nest is not pointing at the v0211 UI resource"
++  );
++  assert(
++    openTool?._meta?.["ui/resourceUri"] === primaryTemplateUri,
++    "open_reading_nest ui/resourceUri does not match the primary template"
++  );
++  assert(
++    openTool?._meta?.["openai/outputTemplate"] === primaryTemplateUri,
++    "open_reading_nest outputTemplate does not match the primary template"
 +  );
 +
 +  const resources = await client.listResources();
 +  const expectedTemplateUris = [
++    primaryTemplateUri,
 +    "ui://widget/ll-reading-nest-v27.html",
 +    "ui://widget/ll-reading-nest-v26.html",
 +    "ui://widget/ll-reading-nest-v25.html",
@@ -119,63 +129,32 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..58f97d0850f69506e4f01ac671b240a2
 +      `${uri} MIME is invalid`
 +    );
 +  }
-+  const templateDescriptor = resources.resources.find(
-+    (resource) => resource.uri === "ui://widget/ll-reading-nest-v27.html"
-+  );
-+  assert(Boolean(templateDescriptor), "v27 UI resource was not listed");
++  const templateDescriptor = resources.resources.find((resource) => resource.uri === primaryTemplateUri);
++  assert(Boolean(templateDescriptor), "v0211 UI resource was not listed");
 +
-+  const templateResult = await client.readResource({
-+    uri: "ui://widget/ll-reading-nest-v27.html"
-+  });
-+  const template = templateResult.contents.find(
-+    (content) => content.uri === "ui://widget/ll-reading-nest-v27.html"
-+  );
++  const templateResult = await client.readResource({ uri: primaryTemplateUri });
++  const template = templateResult.contents.find((content) => content.uri === primaryTemplateUri);
 +  assert(template?.mimeType === "text/html;profile=mcp-app", "UI resource MIME is invalid");
 +  assert(typeof template?.text === "string" && template.text.length > 0, "UI template is empty");
-+  assert(template.text.length < 50_000, `UI template is still too large: ${template.text.length} bytes`);
-+
-+  const scriptUrl = extractAssetUrl(template.text, /<script[^>]+src="([^"]+\.bundle\.js)"/i);
-+  const styleUrl = extractAssetUrl(template.text, /<link[^>]+href="([^"]+\.css)"/i);
-+  assert(scriptUrl.origin === workerUrl.origin, "UI script is not served by the Worker origin");
-+  assert(styleUrl.origin === workerUrl.origin, "UI styles are not served by the Worker origin");
-+  const [scriptResponse, styleResponse] = await Promise.all([fetch(scriptUrl), fetch(styleUrl)]);
-+  assert(scriptResponse.ok, `UI script returned HTTP ${scriptResponse.status}`);
-+  assert(styleResponse.ok, `UI styles returned HTTP ${styleResponse.status}`);
-+  assert(
-+    scriptResponse.headers.get("content-type")?.includes("text/javascript"),
-+    "UI script content type is invalid"
-+  );
-+  assert(
-+    styleResponse.headers.get("content-type")?.includes("text/css"),
-+    "UI stylesheet content type is invalid"
-+  );
++  assert(template.text.length < 2_000_000, `UI template is unexpectedly large: ${template.text.length} bytes`);
++  assert(template.text.includes("data-ll-widget-styles"), "UI template is missing inline styles");
++  assert(template.text.includes("data-ll-widget-script"), "UI template is missing inline JavaScript");
++  assert(!/<script\b[^>]*\bsrc=/i.test(template.text), "UI template still depends on an external script");
++  assert(!/<link\b[^>]*\brel=["']stylesheet["']/i.test(template.text), "UI template still depends on an external stylesheet");
  
    const opened = await client.callTool({ name: "open_reading_nest", arguments: {} });
    assert(Array.isArray(opened.structuredContent?.bookshelfSessions), "bookshelf result is missing");
-@@ -41,6 +94,8 @@ try {
+@@ -41,6 +86,8 @@ try {
        workerOrigin: workerUrl.origin,
        appVersion: health.version,
        toolCount: tools.tools.length,
 +      templateBytes: template.text.length,
-+      widgetAssetsReachable: true,
++      templateSelfContained: true,
        cloudSourceEnabled: expectCloudSource,
        tokenHiddenFromModel: true
      })
-@@ -61,6 +116,12 @@ function requireUrl(name) {
-   return value;
- }
- 
-+function extractAssetUrl(html, pattern) {
-+  const match = html.match(pattern);
-+  if (!match?.[1]) throw new Error(`UI template is missing asset matching ${pattern}`);
-+  return new URL(match[1]);
-+}
-+
- function assert(condition, message) {
-   if (!condition) throw new Error(message);
- }
 diff --git a/server/src/app.test.ts b/server/src/app.test.ts
-index 629ce2403058a7ad53676da31823633d2f35ccec..67217712089191c88582917a5b42e92d3e18c070 100644
+index 629ce2403058a7ad53676da31823633d2f35ccec..b776929dd30568923c2c3de6b29745fa8862999e 100644
 --- a/server/src/app.test.ts
 +++ b/server/src/app.test.ts
 @@ -6,7 +6,7 @@ describe("server app", () => {
@@ -183,12 +162,12 @@ index 629ce2403058a7ad53676da31823633d2f35ccec..67217712089191c88582917a5b42e92d
      const response = await request(createApp()).get("/health");
      expect(response.status).toBe(200);
 -    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.10" });
++    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.11" });
    });
  
    it("accepts an MCP initialize request", async () => {
 diff --git a/server/src/app.ts b/server/src/app.ts
-index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..df24f80141e936528afea4ebb701be06900316d3 100644
+index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..1f9254c05449aaa0c34ad794a0064b83782bfbe9 100644
 --- a/server/src/app.ts
 +++ b/server/src/app.ts
 @@ -12,7 +12,7 @@ export function createApp() {
@@ -196,7 +175,7 @@ index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..df24f80141e936528afea4ebb701be06
  
    app.get("/health", (_request, response) => {
 -    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.10" });
++    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.11" });
    });
  
    app.post("/mcp", async (request: Request, response: Response) => {
@@ -219,10 +198,10 @@ index 3a031d8f71be198d6852d79a24240a8200c0f4e7..7a79428938f473d23d1c44301a55ba57
 +  export default content;
 +}
 diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
-index e4c685d13228068801b94b092509e01e9a00c149..5bae4b3e9af89a1098449be212841bc6b7614d27 100644
+index e4c685d13228068801b94b092509e01e9a00c149..43f960015cffec494e5411331c89a038557af81c 100644
 --- a/server/src/mcp/register-resource.test.ts
 +++ b/server/src/mcp/register-resource.test.ts
-@@ -3,34 +3,76 @@ import { describe, expect, it, vi } from "vitest";
+@@ -3,34 +3,63 @@ import { describe, expect, it, vi } from "vitest";
  const registerAppResource = vi.fn();
  
  vi.mock("@modelcontextprotocol/ext-apps/server", () => ({
@@ -241,15 +220,15 @@ index e4c685d13228068801b94b092509e01e9a00c149..5bae4b3e9af89a1098449be212841bc6
 -    registerReadingResource({} as never, "<html></html>", "https://reading-nest.example.workers.dev");
 +    registerReadingResource(
 +      {} as never,
-+      '<link rel="stylesheet" href="/widget-assets/v26/ll-reading-nest-v26.css"><script src="/widget-assets/v26/ll-reading-nest-v26.bundle.js"></script>',
++      '<!doctype html><html><head><style data-ll-widget-styles>.app{display:block}</style></head><body><div id="root"></div><script type="module" data-ll-widget-script>console.log("ready")</script></body></html>',
 +      "https://reading-nest.example.workers.dev/private/path"
 +    );
      const [, , uri, descriptor, loader] = registerAppResource.mock.calls[0];
  
 -    expect(READING_NEST_URI).toBe("ui://ss-reading-nest/app-v24.html");
 -    expect(uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v27.html");
-+    expect(uri).toBe("ui://widget/ll-reading-nest-v27.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0211.html");
++    expect(uri).toBe("ui://widget/ll-reading-nest-v0211.html");
 +    expect(registerAppResource.mock.calls.map((call) => call[2])).toEqual([
 +      READING_NEST_URI,
 +      ...READING_NEST_COMPAT_URIS
@@ -257,39 +236,26 @@ index e4c685d13228068801b94b092509e01e9a00c149..5bae4b3e9af89a1098449be212841bc6
      expect(descriptor._meta.ui.csp.connectDomains).toContain(
        "https://reading-nest.example.workers.dev"
      );
-+    expect(descriptor._meta.ui.csp.resourceDomains).toContain(
-+      "https://reading-nest.example.workers.dev"
-+    );
-+    expect(descriptor._meta.ui.domain).toBe("https://reading-nest.example.workers.dev");
-+    expect(descriptor._meta["openai/widgetDomain"]).toBe(
-+      "https://reading-nest.example.workers.dev"
-+    );
++    expect(descriptor._meta.ui.csp.resourceDomains).toEqual([]);
++    expect(descriptor._meta.ui.domain).toBeUndefined();
++    expect(descriptor._meta["openai/widgetDomain"]).toBeUndefined();
      expect(descriptor._meta["openai/widgetCSP"].connect_domains).toContain(
        "https://reading-nest.example.workers.dev"
      );
-+    expect(descriptor._meta["openai/widgetCSP"].resource_domains).toContain(
-+      "https://reading-nest.example.workers.dev"
-+    );
++    expect(descriptor._meta["openai/widgetCSP"].resource_domains).toEqual([]);
  
      const loaded = await loader();
 -    expect(loaded.contents[0].uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v27.html");
++    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0211.html");
 +    expect(loaded.contents[0].mimeType).toBe("text/html;profile=mcp-app");
-+    expect(loaded.contents[0].text).toContain(
-+      'href="https://reading-nest.example.workers.dev/widget-assets/v26/ll-reading-nest-v26.css"'
-+    );
-+    expect(loaded.contents[0].text).toContain(
-+      'src="https://reading-nest.example.workers.dev/widget-assets/v26/ll-reading-nest-v26.bundle.js"'
-+    );
++    expect(loaded.contents[0].text).toContain("data-ll-widget-styles");
++    expect(loaded.contents[0].text).toContain("data-ll-widget-script");
++    expect(loaded.contents[0].text).not.toMatch(/<(?:script|link)\b[^>]*(?:src|href)=/i);
      expect(loaded.contents[0]._meta.ui.csp.connectDomains).toContain(
        "https://reading-nest.example.workers.dev"
      );
-+    expect(loaded.contents[0]._meta.ui.csp.resourceDomains).toContain(
-+      "https://reading-nest.example.workers.dev"
-+    );
-+    expect(loaded.contents[0]._meta.ui.domain).toBe(
-+      "https://reading-nest.example.workers.dev"
-+    );
++    expect(loaded.contents[0]._meta.ui.csp.resourceDomains).toEqual([]);
++    expect(loaded.contents[0]._meta.ui.domain).toBeUndefined();
      expect(loaded.contents[0]._meta["openai/widgetCSP"].connect_domains).toContain(
        "https://reading-nest.example.workers.dev"
      );
@@ -307,10 +273,10 @@ index e4c685d13228068801b94b092509e01e9a00c149..5bae4b3e9af89a1098449be212841bc6
    });
  });
 diff --git a/server/src/mcp/register-resource.ts b/server/src/mcp/register-resource.ts
-index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..6df60124ec9547c088800f90ef0f8ab1198065ce 100644
+index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..2f022f6c82556f1e52ae08313ea8c769863cc95d 100644
 --- a/server/src/mcp/register-resource.ts
 +++ b/server/src/mcp/register-resource.ts
-@@ -1,53 +1,72 @@
+@@ -1,38 +1,40 @@
  import { registerAppResource, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
  import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 -import { READING_NEST_URI } from "./register-tools.js";
@@ -320,7 +286,7 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..6df60124ec9547c088800f90ef0f8ab1
 -  const connectDomains = [workerOrigin ?? "http://localhost:8787"];
 +  const appOrigin = normalizeOrigin(workerOrigin ?? "http://localhost:8787");
 +  const connectDomains = [appOrigin];
-+  const resourceDomains = [appOrigin];
++  const resourceDomains: string[] = [];
    const resourceCsp = {
      connectDomains,
 -    resourceDomains: []
@@ -349,7 +315,6 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..6df60124ec9547c088800f90ef0f8ab1
 -    },
 -    async () => {
 -      return {
-+  const resolvedWidgetHtml = resolveWidgetAssetUrls(widgetHtml, appOrigin);
 +  for (const [index, resourceUri] of [READING_NEST_URI, ...READING_NEST_COMPAT_URIS].entries()) {
 +    registerAppResource(
 +      server,
@@ -360,11 +325,9 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..6df60124ec9547c088800f90ef0f8ab1
 +        _meta: {
 +          ui: {
 +            csp: resourceCsp,
-+            domain: appOrigin,
 +            prefersBorder: true
 +          },
 +          "openai/widgetCSP": openaiWidgetCsp,
-+          "openai/widgetDomain": appOrigin,
 +          "openai/widgetDescription":
 +            "L&L 的私人共读小窝，用于阅读自己粘贴的小说文本或导入的漫画图片。"
 +        }
@@ -375,42 +338,25 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..6df60124ec9547c088800f90ef0f8ab1
 -            uri: READING_NEST_URI,
 +            uri: resourceUri,
              mimeType: RESOURCE_MIME_TYPE,
--            text: widgetHtml,
-+            text: resolvedWidgetHtml,
+             text: widgetHtml,
              _meta: {
-               ui: {
-                 csp: resourceCsp,
-+                domain: appOrigin,
-                 prefersBorder: true
-               },
-               "openai/widgetCSP": openaiWidgetCsp,
-+              "openai/widgetDomain": appOrigin,
-               "openai/widgetDescription":
-                 "L&L 的私人共读小窝，用于阅读自己粘贴的小说文本或导入的漫画图片。",
-               "openai/widgetPrefersBorder": true
+@@ -47,7 +49,11 @@ export function registerReadingResource(server: McpServer, widgetHtml: string, w
              }
            }
          ]
 -      };
 -    }
+-  );
 +      })
 +    );
 +  }
 +}
 +
-+export function resolveWidgetAssetUrls(widgetHtml: string, workerOrigin: string): string {
-+  const origin = normalizeOrigin(workerOrigin);
-+  return widgetHtml.replace(
-+    /(["'])\/widget-assets\/v26\//g,
-+    `$1${origin}/widget-assets/v26/`
-   );
- }
-+
 +function normalizeOrigin(value: string): string {
 +  return new URL(value).origin;
-+}
+ }
 diff --git a/server/src/mcp/register-tools.test.ts b/server/src/mcp/register-tools.test.ts
-index 764054784994f1f1ca68789fa9c713a8133d132a..99d817cfabb64b9f41b54dc4490ceaafe2daa9fb 100644
+index 764054784994f1f1ca68789fa9c713a8133d132a..c4f0d06742f9e7efb736100bcd841f2118186b10 100644
 --- a/server/src/mcp/register-tools.test.ts
 +++ b/server/src/mcp/register-tools.test.ts
 @@ -1,6 +1,7 @@
@@ -421,26 +367,34 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..99d817cfabb64b9f41b54dc4490ceaaf
    READING_NEST_URI,
    registerReadingTools,
    TOOL_CONFIGS
-@@ -11,6 +12,8 @@ describe("tool descriptors", () => {
+@@ -11,6 +12,15 @@ describe("tool descriptors", () => {
      expect(TOOL_CONFIGS.open_reading_nest._meta?.ui).toEqual({
        resourceUri: READING_NEST_URI
      });
-+    expect(READING_NEST_URI).toContain("v27");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0211.html");
++    expect(TOOL_CONFIGS.open_reading_nest._meta?.["ui/resourceUri"]).toBe(
++      READING_NEST_URI
++    );
++    expect(TOOL_CONFIGS.open_reading_nest._meta?.["openai/outputTemplate"]).toBe(
++      READING_NEST_URI
++    );
++    expect(READING_NEST_COMPAT_URIS).toContain("ui://widget/ll-reading-nest-v27.html");
 +    expect(READING_NEST_COMPAT_URIS).toContain("ui://widget/ll-reading-nest-v25.html");
      for (const [name, config] of Object.entries(TOOL_CONFIGS)) {
        if (name !== "open_reading_nest" && name !== "upload_cloud_source") {
          const meta = "_meta" in config ? (config._meta as Record<string, unknown>) : undefined;
 diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
-index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..37f0adf8208675412708510111bc2d730dcde402 100644
+index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..5cfaf6c1ce884026b1eeb5d4d96120bce47e4b41 100644
 --- a/server/src/mcp/register-tools.ts
 +++ b/server/src/mcp/register-tools.ts
-@@ -30,7 +30,12 @@ import { ReadingService } from "../services/reading-service.js";
+@@ -30,7 +30,13 @@ import { ReadingService } from "../services/reading-service.js";
  import type { CloudSourceService } from "../services/cloud-source-service.js";
  import { toolResult } from "./tool-result.js";
  
 -export const READING_NEST_URI = "ui://ss-reading-nest/app-v24.html";
-+export const READING_NEST_URI = "ui://widget/ll-reading-nest-v27.html";
++export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0211.html";
 +export const READING_NEST_COMPAT_URIS = [
++  "ui://widget/ll-reading-nest-v27.html",
 +  "ui://widget/ll-reading-nest-v26.html",
 +  "ui://widget/ll-reading-nest-v25.html",
 +  "ui://ss-reading-nest/app-v24.html"
@@ -448,7 +402,15 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..37f0adf8208675412708510111bc2d73
  
  const readOnly = {
    readOnlyHint: true,
-@@ -69,7 +74,7 @@ export const TOOL_CONFIGS = {
+@@ -51,6 +57,7 @@ export const TOOL_CONFIGS = {
+     annotations: readOnly,
+     _meta: {
+       ui: { resourceUri: READING_NEST_URI },
++      "ui/resourceUri": READING_NEST_URI,
+       "openai/outputTemplate": READING_NEST_URI,
+       "openai/toolInvocation/invoking": "正在点亮小窝…",
+       "openai/toolInvocation/invoked": "小窝已经准备好"
+@@ -69,7 +76,7 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    confirm_assistant_synced_position: {
@@ -457,7 +419,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..37f0adf8208675412708510111bc2d73
      description:
        "Use this only after the user explicitly confirms that ChatGPT replied it has read through a batch end.",
      inputSchema: confirmAssistantSyncedPositionInputSchema,
-@@ -124,21 +129,21 @@ export const TOOL_CONFIGS = {
+@@ -124,21 +131,21 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    publish_companion_comment: {
@@ -482,7 +444,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..37f0adf8208675412708510111bc2d73
      description:
        "Use this when the user explicitly clears recent, historical, or all companion comments for one session.",
      inputSchema: clearCompanionCommentsInputSchema,
-@@ -282,7 +287,7 @@ export function registerReadingTools(
+@@ -282,7 +289,7 @@ export function registerReadingTools(
            confirmedBatchId: input.batchId,
            updatedAt: session.updatedAt
          },
@@ -491,7 +453,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..37f0adf8208675412708510111bc2d73
        );
      }
    );
-@@ -412,7 +417,7 @@ export function registerReadingTools(
+@@ -412,7 +419,7 @@ export function registerReadingTools(
      TOOL_CONFIGS.list_companion_comments,
      async (input) => {
        const result = await service.listCompanionComments(input);
@@ -501,7 +463,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..37f0adf8208675412708510111bc2d73
    );
  
 diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
-index 9e7643489cce7180588313ad4033028420ff60f4..c52f1110251e12b19516a1b1f744f26875648c96 100644
+index 9e7643489cce7180588313ad4033028420ff60f4..5f27324aa0bff9e2e5329d4d57c99b14719ebb43 100644
 --- a/server/src/mcp/server-factory.ts
 +++ b/server/src/mcp/server-factory.ts
 @@ -13,7 +13,7 @@ export function createMcpServerFromRepository(
@@ -509,10 +471,75 @@ index 9e7643489cce7180588313ad4033028420ff60f4..c52f1110251e12b19516a1b1f744f268
    const server = new McpServer({
      name: "L&L 共读小窝",
 -    version: "0.2.7"
-+    version: "0.2.10"
++    version: "0.2.11"
    });
    const service = new ReadingService(repository);
    registerReadingResource(server, widgetHtml, options.workerOrigin);
+diff --git a/server/src/mcp/ui-template.integration.test.ts b/server/src/mcp/ui-template.integration.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..b17868dac4f05989bfb75fd890afbde7f3f6b092
+--- /dev/null
++++ b/server/src/mcp/ui-template.integration.test.ts
+@@ -0,0 +1,59 @@
++import { Client } from "@modelcontextprotocol/sdk/client/index.js";
++import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
++import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
++import { describe, expect, it } from "vitest";
++import {
++  buildInlineWidgetHtml,
++  WIDGET_SCRIPT_PATH,
++  WIDGET_STYLE_PATH
++} from "../widget-assets.js";
++import { registerReadingResource } from "./register-resource.js";
++import { READING_NEST_URI, registerReadingTools } from "./register-tools.js";
++
++describe("ChatGPT UI template MCP chain", () => {
++  it("keeps the tool, listed resource, and readable HTML on one exact URI", async () => {
++    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.11" });
++    const widgetHtml = buildInlineWidgetHtml(
++      `<!doctype html><html><head><link rel="stylesheet" href="${WIDGET_STYLE_PATH}"></head><body><div id="root"></div><script type="module" src="${WIDGET_SCRIPT_PATH}"></script></body></html>`,
++      {
++        script: "document.querySelector('#root')?.setAttribute('data-ready', 'true');",
++        styles: "#root{display:block}"
++      }
++    );
++    registerReadingResource(server, widgetHtml, "https://reading-nest.example.workers.dev");
++    registerReadingTools(server, {} as never);
++
++    const client = new Client({ name: "L&L UI integration client", version: "0.2.11" });
++    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
++
++    try {
++      await server.connect(serverTransport);
++      await client.connect(clientTransport);
++
++      const tools = await client.listTools();
++      const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
++      expect(openTool?._meta?.ui).toEqual({ resourceUri: READING_NEST_URI });
++      expect(openTool?._meta?.["ui/resourceUri"]).toBe(READING_NEST_URI);
++      expect(openTool?._meta?.["openai/outputTemplate"]).toBe(READING_NEST_URI);
++
++      const resources = await client.listResources();
++      expect(resources.resources.some((resource) => resource.uri === READING_NEST_URI)).toBe(true);
++
++      const result = await client.readResource({ uri: READING_NEST_URI });
++      const template = result.contents.find((content) => content.uri === READING_NEST_URI);
++      expect(template?.uri).toBe(READING_NEST_URI);
++      expect(template?.mimeType).toBe("text/html;profile=mcp-app");
++      expect("text" in (template ?? {}) ? template?.text : undefined).toBe(widgetHtml);
++      expect("text" in (template ?? {}) ? template?.text : "").toMatch(/^<!doctype html>/i);
++      expect("text" in (template ?? {}) ? template?.text : "").toContain(
++        "data-ll-widget-script"
++      );
++      expect("text" in (template ?? {}) ? template?.text : "").not.toMatch(
++        /<(?:script|link)\b[^>]*(?:src|href)=/i
++      );
++    } finally {
++      await client.close();
++      await server.close();
++    }
++  });
++});
 diff --git a/server/src/services/reading-service.ts b/server/src/services/reading-service.ts
 index 31d174121a7b30f0dce89f598d33ed5a339c9926..38cd6fc248088ad8b2cb2a57cb64ad7805c44ce5 100644
 --- a/server/src/services/reading-service.ts
@@ -534,7 +561,7 @@ index 31d174121a7b30f0dce89f598d33ed5a339c9926..38cd6fc248088ad8b2cb2a57cb64ad78
        const now = this.deps.now().toISOString();
        session.assistantSyncedPosition = input.confirmedPosition;
 diff --git a/server/src/standalone-pwa.test.ts b/server/src/standalone-pwa.test.ts
-index ea35efc2291adbaa285eb936597afa90b5fee935..21584fa5011f7e9bce99fc5235276e54941647a6 100644
+index ea35efc2291adbaa285eb936597afa90b5fee935..43cb4a33d7071563b1b0928a339bc92102877e17 100644
 --- a/server/src/standalone-pwa.test.ts
 +++ b/server/src/standalone-pwa.test.ts
 @@ -1,10 +1,27 @@
@@ -571,20 +598,20 @@ index ea35efc2291adbaa285eb936597afa90b5fee935..21584fa5011f7e9bce99fc5235276e54
      const response = handleStandaloneApp(new Request(swUrl), new URL(swUrl), token, "");
      const script = await response.text();
 -    expect(script).toContain('const SHELL = ["./", "./manifest.webmanifest", "./icon.svg"]');
-+    expect(script).toContain("/widget-assets/v26/ll-reading-nest-v26.bundle.js");
-+    expect(script).toContain("/widget-assets/v26/ll-reading-nest-v26.css");
++    expect(script).toContain("/widget-assets/v0211/ll-reading-nest-v0211.bundle.js");
++    expect(script).toContain("/widget-assets/v0211/ll-reading-nest-v0211.css");
      expect(script).not.toContain("/mcp/");
      expect(script).not.toContain("/source/");
    });
 diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
-index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..19020a4269b1c8dafb75a0b8cfbbc2fe45c313a5 100644
+index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..b5d98f983006904f657ae5a74a477d009b41e2e9 100644
 --- a/server/src/standalone-pwa.ts
 +++ b/server/src/standalone-pwa.ts
 @@ -1,4 +1,80 @@
 -const SHELL_CACHE_VERSION = "v24";
 +import { WIDGET_SCRIPT_PATH, WIDGET_STYLE_PATH } from "./widget-assets.js";
 +
-+const SHELL_CACHE_VERSION = "v26";
++const SHELL_CACHE_VERSION = "v0211";
 +
 +export function handleStandaloneEntry(request: Request, url: URL): Response {
 +  if (request.method !== "GET" && request.method !== "HEAD") {
@@ -708,23 +735,46 @@ index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..19020a4269b1c8dafb75a0b8cfbbc2fe
  
 diff --git a/server/src/widget-assets.test.ts b/server/src/widget-assets.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..eaa21decf9e41ee4f7fcfe2d24306c2dbdea6364
+index 0000000000000000000000000000000000000000..8aede011b26588158d9b7328f1f1d37945ba9d8f
 --- /dev/null
 +++ b/server/src/widget-assets.test.ts
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,74 @@
 +import { describe, expect, it } from "vitest";
 +import {
++  buildInlineWidgetHtml,
 +  handleWidgetAsset,
 +  WIDGET_SCRIPT_PATH,
 +  WIDGET_STYLE_PATH
 +} from "./widget-assets.js";
 +
 +const assets = {
-+  script: "console.log('L&L');",
-+  styles: ".app{display:block}"
++  script: "const price = '$&'; console.log('</script>', price);",
++  styles: ".app{display:block}/* </style> */"
 +};
 +
 +describe("versioned widget assets", () => {
++  it("builds a self-contained HTML template for the ChatGPT iframe", () => {
++    const html = buildInlineWidgetHtml(
++      `<!doctype html><html><head><script type="module" crossorigin src="${WIDGET_SCRIPT_PATH}"></script><link rel="stylesheet" crossorigin href="${WIDGET_STYLE_PATH}"></head><body><div id="root"></div></body></html>`,
++      assets
++    );
++
++    expect(html).toContain(
++      '<style data-ll-widget-styles>.app{display:block}/* <\\/style> */</style>'
++    );
++    expect(html).toContain(
++      '<script type="module" data-ll-widget-script>const price = \'$&\'; console.log(\'<\\/script>\', price);</script>'
++    );
++    expect(html).not.toContain(`src="${WIDGET_SCRIPT_PATH}"`);
++    expect(html).not.toContain(`href="${WIDGET_STYLE_PATH}"`);
++  });
++
++  it("rejects an incomplete HTML shell instead of publishing a broken template", () => {
++    expect(() => buildInlineWidgetHtml("<div id=\"root\"></div>", assets)).toThrow(
++      /missing its versioned JavaScript or stylesheet/
++    );
++  });
++
 +  it("serves JavaScript and CSS with immutable cross-origin headers", async () => {
 +    const script = handleWidgetAsset(
 +      new Request(`https://example.workers.dev${WIDGET_SCRIPT_PATH}`),
@@ -765,18 +815,41 @@ index 0000000000000000000000000000000000000000..eaa21decf9e41ee4f7fcfe2d24306c2d
 +});
 diff --git a/server/src/widget-assets.ts b/server/src/widget-assets.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..501bbe98864c3fe387d0fbf7e9ec0a247a6fb366
+index 0000000000000000000000000000000000000000..768287508bc6bca32a89d272c7d12d225c253cff
 --- /dev/null
 +++ b/server/src/widget-assets.ts
-@@ -0,0 +1,41 @@
-+export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v26";
-+export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v26.bundle.js`;
-+export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v26.css`;
+@@ -0,0 +1,76 @@
++export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0211";
++export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0211.bundle.js`;
++export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0211.css`;
 +
 +export type WidgetAssetBundle = {
 +  script: string;
 +  styles: string;
 +};
++
++export function buildInlineWidgetHtml(widgetHtml: string, assets: WidgetAssetBundle): string {
++  const stylesheetPattern = new RegExp(
++    `<link\\b[^>]*href=["'][^"']*${escapeRegExp(WIDGET_STYLE_PATH)}["'][^>]*>`,
++    "i"
++  );
++  const scriptPattern = new RegExp(
++    `<script\\b[^>]*src=["'][^"']*${escapeRegExp(WIDGET_SCRIPT_PATH)}["'][^>]*><\\/script>`,
++    "i"
++  );
++  if (!stylesheetPattern.test(widgetHtml) || !scriptPattern.test(widgetHtml)) {
++    throw new Error("Widget HTML is missing its versioned JavaScript or stylesheet entry");
++  }
++  return widgetHtml
++    .replace(
++      stylesheetPattern,
++      () => `<style data-ll-widget-styles>${escapeInlineStyle(assets.styles)}</style>`
++    )
++    .replace(
++      scriptPattern,
++      () => `<script type="module" data-ll-widget-script>${escapeInlineScript(assets.script)}</script>`
++    );
++}
 +
 +export function handleWidgetAsset(
 +  request: Request,
@@ -810,8 +883,20 @@ index 0000000000000000000000000000000000000000..501bbe98864c3fe387d0fbf7e9ec0a24
 +    }
 +  });
 +}
++
++function escapeRegExp(value: string): string {
++  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
++}
++
++function escapeInlineScript(value: string): string {
++  return value.replace(/<\/script/gi, "<\\/script");
++}
++
++function escapeInlineStyle(value: string): string {
++  return value.replace(/<\/style/gi, "<\\/style");
++}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705c2ccadfeece1585fb2d379b7846862cae..236306cb58e805541794b9bc5931f422fa7fedb9 100644
+index 1e35705c2ccadfeece1585fb2d379b7846862cae..ad4c43a1034716225f3189b071d9af65b9be3f2b 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
 @@ -6,6 +6,27 @@ describe("getWorkerRoute", () => {
@@ -821,19 +906,19 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..236306cb58e805541794b9bc5931f422
 +  it("serves only the versioned public widget assets without requiring the private token", () => {
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v26/ll-reading-nest-v26.bundle.js"),
++        new URL("https://example.workers.dev/widget-assets/v0211/ll-reading-nest-v0211.bundle.js"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v26/ll-reading-nest-v26.css"),
++        new URL("https://example.workers.dev/widget-assets/v0211/ll-reading-nest-v0211.css"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v26/private.json"),
++        new URL("https://example.workers.dev/widget-assets/v0211/private.json"),
 +        undefined
 +      )
 +    ).toBe("misconfigured");
@@ -880,14 +965,14 @@ index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..5666eccb848a58cc5a16ba2cb3c30778
      url.pathname === `/app/${token}` ||
      url.pathname === `/app/${token}/` ||
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..f75b89c4337cfeabbacccabbdefa568888ef4848 100644
+index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..7280a0658d2952cabdfb22c5fc583e65248753a1 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
-@@ -1,11 +1,14 @@
+@@ -1,22 +1,36 @@
  import { createMcpHandler } from "agents/mcp";
  import widgetHtml from "../../web/dist/index.html";
-+import widgetScript from "../../web/dist/ll-reading-nest-v26.bundle.js";
-+import widgetStyles from "../../web/dist/ll-reading-nest-v26.css";
++import widgetScript from "../../web/dist/ll-reading-nest-v0211.bundle.js";
++import widgetStyles from "../../web/dist/ll-reading-nest-v0211.css";
  import { createMcpServerFromRepository } from "./mcp/server-factory.js";
  import { D1ReadingRepository } from "./repositories/d1-reading-repository.js";
  import { CloudSourceService } from "./services/cloud-source-service.js";
@@ -895,16 +980,24 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..f75b89c4337cfeabbacccabbdefa5688
  import { R2SourceObjectStorage } from "./storage/r2-source-object-storage.js";
 -import { handleStandaloneApp } from "./standalone-pwa.js";
 +import { handleStandaloneApp, handleStandaloneEntry } from "./standalone-pwa.js";
-+import { handleWidgetAsset } from "./widget-assets.js";
++import { buildInlineWidgetHtml, handleWidgetAsset } from "./widget-assets.js";
  import { getWorkerRoute } from "./worker-router.js";
  
  type WorkerEnv = Env & { SOURCES_BUCKET?: R2Bucket };
-@@ -16,7 +19,13 @@ export default {
+ 
++const inlineWidgetHtml = buildInlineWidgetHtml(widgetHtml, {
++  script: widgetScript,
++  styles: widgetStyles
++});
++
+ export default {
+   async fetch(request, env, ctx): Promise<Response> {
+     const url = new URL(request.url);
      const route = getWorkerRoute(url, env.MCP_PATH_TOKEN);
  
      if (route === "health") {
 -      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.10" });
++      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.11" });
 +    }
 +    if (route === "widget-asset") {
 +      return handleWidgetAsset(request, url, {
@@ -914,7 +1007,7 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..f75b89c4337cfeabbacccabbdefa5688
      }
      if (route === "misconfigured") {
        console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
-@@ -25,6 +34,9 @@ export default {
+@@ -25,6 +39,9 @@ export default {
      if (route === "not-found") {
        return new Response("Not found", { status: 404 });
      }
@@ -924,6 +1017,15 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..f75b89c4337cfeabbacccabbdefa5688
      if (route === "app") {
        return handleStandaloneApp(request, url, env.MCP_PATH_TOKEN, widgetHtml);
      }
+@@ -39,7 +56,7 @@ export default {
+           ? handleSourceRoute(request, sourceService)
+           : new Response("Not found", { status: 404 });
+       }
+-      const server = createMcpServerFromRepository(repository, widgetHtml, sourceService, {
++      const server = createMcpServerFromRepository(repository, inlineWidgetHtml, sourceService, {
+         workerOrigin: url.origin,
+         ...(sourceService
+           ? { sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}` }
 diff --git a/server/wrangler.jsonc b/server/wrangler.jsonc
 index 7aab7e42427e60a97ed07e9095de236c53b29b6b..773289d3427e1b970ce3fe8565db4718ad53afc4 100644
 --- a/server/wrangler.jsonc
@@ -938,19 +1040,19 @@ index 7aab7e42427e60a97ed07e9095de236c53b29b6b..773289d3427e1b970ce3fe8565db4718
      }
    ],
 diff --git a/shared/package.json b/shared/package.json
-index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..e3bbb44cb1e4d1a5f565df5811e71e70801ec40b 100644
+index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..6598e62266086331d671228f6aa66a7a3febfcbd 100644
 --- a/shared/package.json
 +++ b/shared/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/shared",
 -  "version": "0.2.7",
-+  "version": "0.2.10",
++  "version": "0.2.11",
    "private": true,
    "type": "module",
    "main": "./dist/index.js",
 diff --git a/web/index.html b/web/index.html
-index b26131350103fa1e2f004ff508fea591ef27e284..1ca19387d68c40c17c869e52887ee6129bba64bc 100644
+index b26131350103fa1e2f004ff508fea591ef27e284..593b9275eb7945de64ec13762d98cfeead659daa 100644
 --- a/web/index.html
 +++ b/web/index.html
 @@ -3,14 +3,14 @@
@@ -975,19 +1077,19 @@ index b26131350103fa1e2f004ff508fea591ef27e284..1ca19387d68c40c17c869e52887ee612
          <dl style="display:grid;grid-template-columns:max-content 1fr;gap:8px 14px">
            <dt>resourceVersion</dt>
 -          <dd>app-v24</dd>
-+          <dd>app-v26</dd>
++          <dd>app-v0211</dd>
            <dt>bootStage</dt>
            <dd>html-loaded</dd>
          </dl>
 diff --git a/web/package.json b/web/package.json
-index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..3adb2600c9ebd348d6812e16fb48da5dbb3c2cab 100644
+index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..57c394e14e54339ce8295fb858a735db10431a60 100644
 --- a/web/package.json
 +++ b/web/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/web",
 -  "version": "0.2.7",
-+  "version": "0.2.10",
++  "version": "0.2.11",
    "private": true,
    "type": "module",
    "scripts": {
@@ -1218,7 +1320,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3465496b12dad4e16ebf86043bf85863
                {!companionLoading && !companionError
                  ? companionComments.slice(0, 3).map((comment) => (
 diff --git a/web/src/Boot.test.tsx b/web/src/Boot.test.tsx
-index abd502381499a52c09052f004b1ebb609a5639f1..96088a96a0b1262c69441317e65c24dd92368217 100644
+index abd502381499a52c09052f004b1ebb609a5639f1..a9b06157b8a1f991129657c930fbbfb27f2af31c 100644
 --- a/web/src/Boot.test.tsx
 +++ b/web/src/Boot.test.tsx
 @@ -46,7 +46,7 @@ describe("Boot", () => {
@@ -1226,7 +1328,7 @@ index abd502381499a52c09052f004b1ebb609a5639f1..96088a96a0b1262c69441317e65c24dd
  
      expect(await screen.findByText("failed")).toBeInTheDocument();
 -    expect(screen.getByText("app-v24")).toBeInTheDocument();
-+    expect(screen.getByText("app-v26")).toBeInTheDocument();
++    expect(screen.getByText("app-v0211")).toBeInTheDocument();
      expect(screen.getAllByText("present")).toHaveLength(3);
      expect(screen.getByText("1")).toBeInTheDocument();
      const diagnosticText = screen.getByRole("alert").textContent ?? "";
@@ -1235,12 +1337,12 @@ index abd502381499a52c09052f004b1ebb609a5639f1..96088a96a0b1262c69441317e65c24dd
  
      expect(html).toContain("data-startup-fallback");
 -    expect(html).toContain("app-v24");
-+    expect(html).toContain("app-v26");
++    expect(html).toContain("app-v0211");
      expect(html).not.toContain("sourceText");
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37b0c0ac24d0be3669363489c7474aed801..c69791ce5f61e58e7942da05a130d37de5665391 100644
+index c23bd37b0c0ac24d0be3669363489c7474aed801..f0dc344ceab9c8056fd956b4b30ffb84adfdaa19 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -1249,13 +1351,13 @@ index c23bd37b0c0ac24d0be3669363489c7474aed801..c69791ce5f61e58e7942da05a130d37d
  
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
-+const RESOURCE_VERSION = "app-v26";
-+const APP_VERSION = "0.2.10";
++const RESOURCE_VERSION = "app-v0211";
++const APP_VERSION = "0.2.11";
  
  type AppModule = {
    App: ComponentType;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28caba9ed1572f1b58d39264eed2545953d76..0bf9b40c4b5a0a9105bdf4d53affc5f88b3b3c53 100644
+index 08a28caba9ed1572f1b58d39264eed2545953d76..c9b6ae4381de1de61f06c7c98ad5c51b0b138f2b 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -1263,12 +1365,12 @@ index 08a28caba9ed1572f1b58d39264eed2545953d76..0bf9b40c4b5a0a9105bdf4d53affc5f8
    if (typeof window === "undefined" || window.parent === window) return undefined;
    if (!app) {
 -    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
-+    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.10" });
++    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.11" });
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
 diff --git a/web/src/bridge/standalone.ts b/web/src/bridge/standalone.ts
-index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..e0e6b66ab49dda19b5908c4983c0f7a6fbf0115f 100644
+index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..95e4cad36c55455854e9e2fd46bf1f3c07a2d18e 100644
 --- a/web/src/bridge/standalone.ts
 +++ b/web/src/bridge/standalone.ts
 @@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
@@ -1276,7 +1378,7 @@ index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..e0e6b66ab49dda19b5908c4983c0f7a6
    if (!config) throw new Error("Standalone reader path is unavailable");
    standaloneClient ??= (async () => {
 -    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.7" });
-+    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.10" });
++    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.11" });
      await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
      return client;
    })();
@@ -1959,7 +2061,7 @@ index d6fc26f0671c933c4b04b98900aebaa38f40b4b8..cc36228656be332fbe2b9dca68b506fe
      "",
      batch.text
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197e6ba2317df34567a63db060563be71fcc..04da05e417a34ad66f670009c46fb145df1e9905 100644
+index 2523197e6ba2317df34567a63db060563be71fcc..e9ff160b17cb0f4b75fee14d98c2f942060dc82d 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
 @@ -247,8 +247,8 @@ describe("CloudSourceClient", () => {
@@ -1968,13 +2070,13 @@ index 2523197e6ba2317df34567a63db060563be71fcc..04da05e417a34ad66f670009c46fb145
  
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
-+    expect(message).toContain("resourceVersion=app-v26");
-+    expect(message).toContain("appVersion=0.2.10");
++    expect(message).toContain("resourceVersion=app-v0211");
++    expect(message).toContain("appVersion=0.2.11");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..7f8959678113580257f7d98ac568cf18381132dc 100644
+index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..3b32b57f07f52ca645eecbef0a719965e73dfb12 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
 @@ -20,8 +20,8 @@ export interface CloudSourceUploadResult {
@@ -1983,13 +2085,13 @@ index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..7f8959678113580257f7d98ac568cf18
  
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
-+const RESOURCE_VERSION = "app-v26";
-+const APP_VERSION = "0.2.10";
++const RESOURCE_VERSION = "app-v0211";
++const APP_VERSION = "0.2.11";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
  export class CloudSourceClient {
 diff --git a/web/src/main.tsx b/web/src/main.tsx
-index b9391dda60310d338ab66c41abb279614aae667b..8ee79fad928dad538e341c623fcb629f99a76498 100644
+index b9391dda60310d338ab66c41abb279614aae667b..a0dfb24afda314e0d906f87b6257330ae4682f8b 100644
 --- a/web/src/main.tsx
 +++ b/web/src/main.tsx
 @@ -15,6 +15,6 @@ if (rootElement) {
@@ -1997,7 +2099,7 @@ index b9391dda60310d338ab66c41abb279614aae667b..8ee79fad928dad538e341c623fcb629f
    document.body.insertAdjacentHTML(
      "afterbegin",
 -    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v24</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
-+    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v26</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
++    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0211</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
    );
  }
 diff --git a/web/src/pages/Home.test.tsx b/web/src/pages/Home.test.tsx
@@ -2894,7 +2996,7 @@ index f68bf4f0daa48f16dc61904941146c825a41511c..16c04968c00bdc992be31d77e7655bc3
 +  background: var(--backdrop-base);
  }
 diff --git a/web/vite.config.ts b/web/vite.config.ts
-index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..531b012802ad83233304e4b8c957ca538c5b4260 100644
+index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..646867c23fe350bed577ecbf569eb9045a1ed617 100644
 --- a/web/vite.config.ts
 +++ b/web/vite.config.ts
 @@ -1,14 +1,27 @@
@@ -2902,7 +3004,7 @@ index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..531b012802ad83233304e4b8c957ca53
  import react from "@vitejs/plugin-react";
 -import { viteSingleFile } from "vite-plugin-singlefile";
 +
-+const WIDGET_ASSET_BASE = "/widget-assets/v26/";
++const WIDGET_ASSET_BASE = "/widget-assets/v0211/";
  
  export default defineConfig({
 -  plugins: [react(), viteSingleFile()],
@@ -2919,10 +3021,10 @@ index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..531b012802ad83233304e4b8c957ca53
 +    rollupOptions: {
 +      output: {
 +        codeSplitting: false,
-+        entryFileNames: "ll-reading-nest-v26.bundle.js",
++        entryFileNames: "ll-reading-nest-v0211.bundle.js",
 +        assetFileNames: (assetInfo) =>
 +          assetInfo.names.some((name) => name.endsWith(".css"))
-+            ? "ll-reading-nest-v26.css"
++            ? "ll-reading-nest-v0211.css"
 +            : "assets/[name]-[hash][extname]"
 +      }
 +    }
