@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index 0820d9c354353d6f3ddf840442a586491282824a..4c4378c00a9b7fd218eaf3d2c1a9333adc50d5ae 100644
+index 0820d9c354353d6f3ddf840442a586491282824a..0ca3c0bf82ec20621b8c7e8f407db73111d8f934 100644
 --- a/package.json
 +++ b/package.json
 @@ -1,7 +1,7 @@
@@ -7,7 +7,7 @@ index 0820d9c354353d6f3ddf840442a586491282824a..4c4378c00a9b7fd218eaf3d2c1a9333a
    "name": "ss-reading-nest",
    "private": true,
 -  "version": "0.2.7",
-+  "version": "0.2.11",
++  "version": "0.2.12",
    "packageManager": "pnpm@10.15.1",
    "scripts": {
      "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
@@ -55,19 +55,19 @@ index 0c2e9b4d8c799ee6811774a748c0cb4eae3d05c2..83e81cd6351862db13f90fe34be1ec01
      dependencies:
        lightningcss: 1.32.0
 diff --git a/server/package.json b/server/package.json
-index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..73df0be2d811f63a6348f48716b5cf5423193046 100644
+index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..f797e1888556fc49fd8d05b910406eac8ebd00e3 100644
 --- a/server/package.json
 +++ b/server/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/server",
 -  "version": "0.2.7",
-+  "version": "0.2.11",
++  "version": "0.2.12",
    "private": true,
    "type": "module",
    "scripts": {
 diff --git a/server/scripts/remote-smoke/cloud-source-smoke.mjs b/server/scripts/remote-smoke/cloud-source-smoke.mjs
-index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..5992e572084e05d514f2c5dfb88b4b491e7c2261 100644
+index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..2cdc18fd7cbc67daf3d111790da1b3750a256f64 100644
 --- a/server/scripts/remote-smoke/cloud-source-smoke.mjs
 +++ b/server/scripts/remote-smoke/cloud-source-smoke.mjs
 @@ -61,7 +61,7 @@ const expectedTools = [
@@ -75,24 +75,45 @@ index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..5992e572084e05d514f2c5dfb88b4b49
  ];
  
 -const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.11" });
++const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.12" });
  const cleanup = {
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 81737592c12db53b0f77280f424ac1c7422fed9a..60851b35e15b40ab621fdb35d472e148cdc84152 100644
+index 81737592c12db53b0f77280f424ac1c7422fed9a..745f4393620b24462550d4166dab2444e5b0a9d6 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
-@@ -5,7 +5,7 @@ const workerUrl = requireUrl("WORKER_URL");
+@@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
  const token = requireEnv("MCP_PATH_TOKEN");
  const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
  const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
 -const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.11" });
++const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.12" });
  
  const healthResponse = await fetch(new URL("/health", workerUrl));
  assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);
-@@ -21,6 +21,51 @@ try {
+ const health = await healthResponse.json();
+ assert(health.ok === true, "health did not return ok=true");
+ 
++const [legacyScriptResponse, legacyStyleResponse] = await Promise.all([
++  fetch(new URL("/widget-assets/v26/ll-reading-nest-v26.bundle.js", workerUrl)),
++  fetch(new URL("/widget-assets/v26/ll-reading-nest-v26.css", workerUrl))
++]);
++assert(legacyScriptResponse.ok, `cached-template script returned HTTP ${legacyScriptResponse.status}`);
++assert(legacyStyleResponse.ok, `cached-template stylesheet returned HTTP ${legacyStyleResponse.status}`);
++assert(
++  legacyScriptResponse.headers.get("content-type")?.includes("text/javascript"),
++  "cached-template script content type is invalid"
++);
++assert(
++  legacyStyleResponse.headers.get("content-type")?.includes("text/css"),
++  "cached-template stylesheet content type is invalid"
++);
++
+ const wrongPath = await fetch(new URL("/mcp/wrong-token", workerUrl), { method: "POST" });
+ assert(wrongPath.status === 404, `wrong MCP path returned HTTP ${wrongPath.status}`);
+ 
+@@ -21,6 +36,51 @@ try {
    assert(tools.tools.length === 23, `expected 23 tools, got ${tools.tools.length}`);
    const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
    assert(Boolean(openTool?._meta?.ui), "open_reading_nest is missing its UI resource metadata");
@@ -144,17 +165,18 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..60851b35e15b40ab621fdb35d472e148
  
    const opened = await client.callTool({ name: "open_reading_nest", arguments: {} });
    assert(Array.isArray(opened.structuredContent?.bookshelfSessions), "bookshelf result is missing");
-@@ -41,6 +86,8 @@ try {
+@@ -41,6 +101,9 @@ try {
        workerOrigin: workerUrl.origin,
        appVersion: health.version,
        toolCount: tools.tools.length,
 +      templateBytes: template.text.length,
 +      templateSelfContained: true,
++      cachedTemplateAssetsReachable: true,
        cloudSourceEnabled: expectCloudSource,
        tokenHiddenFromModel: true
      })
 diff --git a/server/src/app.test.ts b/server/src/app.test.ts
-index 629ce2403058a7ad53676da31823633d2f35ccec..b776929dd30568923c2c3de6b29745fa8862999e 100644
+index 629ce2403058a7ad53676da31823633d2f35ccec..023f2fbee8c6851233c2ce241c9500f49fc7b6ff 100644
 --- a/server/src/app.test.ts
 +++ b/server/src/app.test.ts
 @@ -6,7 +6,7 @@ describe("server app", () => {
@@ -162,12 +184,12 @@ index 629ce2403058a7ad53676da31823633d2f35ccec..b776929dd30568923c2c3de6b29745fa
      const response = await request(createApp()).get("/health");
      expect(response.status).toBe(200);
 -    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.11" });
++    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.12" });
    });
  
    it("accepts an MCP initialize request", async () => {
 diff --git a/server/src/app.ts b/server/src/app.ts
-index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..1f9254c05449aaa0c34ad794a0064b83782bfbe9 100644
+index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..924ffb49f4588ef5388c0781b87dab30c036d6a5 100644
 --- a/server/src/app.ts
 +++ b/server/src/app.ts
 @@ -12,7 +12,7 @@ export function createApp() {
@@ -175,7 +197,7 @@ index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..1f9254c05449aaa0c34ad794a0064b83
  
    app.get("/health", (_request, response) => {
 -    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.11" });
++    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.12" });
    });
  
    app.post("/mcp", async (request: Request, response: Response) => {
@@ -463,7 +485,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..5cfaf6c1ce884026b1eeb5d4d96120bc
    );
  
 diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
-index 9e7643489cce7180588313ad4033028420ff60f4..5f27324aa0bff9e2e5329d4d57c99b14719ebb43 100644
+index 9e7643489cce7180588313ad4033028420ff60f4..505878f51744740782ad97a9a961679a2b756144 100644
 --- a/server/src/mcp/server-factory.ts
 +++ b/server/src/mcp/server-factory.ts
 @@ -13,7 +13,7 @@ export function createMcpServerFromRepository(
@@ -471,13 +493,13 @@ index 9e7643489cce7180588313ad4033028420ff60f4..5f27324aa0bff9e2e5329d4d57c99b14
    const server = new McpServer({
      name: "L&L 共读小窝",
 -    version: "0.2.7"
-+    version: "0.2.11"
++    version: "0.2.12"
    });
    const service = new ReadingService(repository);
    registerReadingResource(server, widgetHtml, options.workerOrigin);
 diff --git a/server/src/mcp/ui-template.integration.test.ts b/server/src/mcp/ui-template.integration.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..b17868dac4f05989bfb75fd890afbde7f3f6b092
+index 0000000000000000000000000000000000000000..7b9679886037da0ecf80abddae19031acf54ac61
 --- /dev/null
 +++ b/server/src/mcp/ui-template.integration.test.ts
 @@ -0,0 +1,59 @@
@@ -495,7 +517,7 @@ index 0000000000000000000000000000000000000000..b17868dac4f05989bfb75fd890afbde7
 +
 +describe("ChatGPT UI template MCP chain", () => {
 +  it("keeps the tool, listed resource, and readable HTML on one exact URI", async () => {
-+    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.11" });
++    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.12" });
 +    const widgetHtml = buildInlineWidgetHtml(
 +      `<!doctype html><html><head><link rel="stylesheet" href="${WIDGET_STYLE_PATH}"></head><body><div id="root"></div><script type="module" src="${WIDGET_SCRIPT_PATH}"></script></body></html>`,
 +      {
@@ -506,7 +528,7 @@ index 0000000000000000000000000000000000000000..b17868dac4f05989bfb75fd890afbde7
 +    registerReadingResource(server, widgetHtml, "https://reading-nest.example.workers.dev");
 +    registerReadingTools(server, {} as never);
 +
-+    const client = new Client({ name: "L&L UI integration client", version: "0.2.11" });
++    const client = new Client({ name: "L&L UI integration client", version: "0.2.12" });
 +    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 +
 +    try {
@@ -735,14 +757,16 @@ index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..b5d98f983006904f657ae5a74a477d00
  
 diff --git a/server/src/widget-assets.test.ts b/server/src/widget-assets.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..8aede011b26588158d9b7328f1f1d37945ba9d8f
+index 0000000000000000000000000000000000000000..db82dd29b7511241134a783cd36d1477525ed9bb
 --- /dev/null
 +++ b/server/src/widget-assets.test.ts
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,96 @@
 +import { describe, expect, it } from "vitest";
 +import {
 +  buildInlineWidgetHtml,
 +  handleWidgetAsset,
++  LEGACY_WIDGET_SCRIPT_PATH,
++  LEGACY_WIDGET_STYLE_PATH,
 +  WIDGET_SCRIPT_PATH,
 +  WIDGET_STYLE_PATH
 +} from "./widget-assets.js";
@@ -797,6 +821,26 @@ index 0000000000000000000000000000000000000000..8aede011b26588158d9b7328f1f1d379
 +    expect(await styles.text()).toBe(assets.styles);
 +  });
 +
++  it("keeps the cached v26 template asset URLs alive", async () => {
++    const script = handleWidgetAsset(
++      new Request(`https://example.workers.dev${LEGACY_WIDGET_SCRIPT_PATH}`),
++      new URL(`https://example.workers.dev${LEGACY_WIDGET_SCRIPT_PATH}`),
++      assets
++    );
++    const styles = handleWidgetAsset(
++      new Request(`https://example.workers.dev${LEGACY_WIDGET_STYLE_PATH}`),
++      new URL(`https://example.workers.dev${LEGACY_WIDGET_STYLE_PATH}`),
++      assets
++    );
++
++    expect(script.status).toBe(200);
++    expect(script.headers.get("content-type")).toContain("text/javascript");
++    expect(await script.text()).toBe(assets.script);
++    expect(styles.status).toBe(200);
++    expect(styles.headers.get("content-type")).toContain("text/css");
++    expect(await styles.text()).toBe(assets.styles);
++  });
++
 +  it("supports HEAD and rejects mutation requests", async () => {
 +    const head = handleWidgetAsset(
 +      new Request(`https://example.workers.dev${WIDGET_SCRIPT_PATH}`, { method: "HEAD" }),
@@ -815,18 +859,30 @@ index 0000000000000000000000000000000000000000..8aede011b26588158d9b7328f1f1d379
 +});
 diff --git a/server/src/widget-assets.ts b/server/src/widget-assets.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..768287508bc6bca32a89d272c7d12d225c253cff
+index 0000000000000000000000000000000000000000..85314631c4035faf38eb7fe13ef11cff09dff86e
 --- /dev/null
 +++ b/server/src/widget-assets.ts
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,91 @@
 +export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0211";
 +export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0211.bundle.js`;
 +export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0211.css`;
++export const LEGACY_WIDGET_SCRIPT_PATH =
++  "/widget-assets/v26/ll-reading-nest-v26.bundle.js";
++export const LEGACY_WIDGET_STYLE_PATH = "/widget-assets/v26/ll-reading-nest-v26.css";
 +
 +export type WidgetAssetBundle = {
 +  script: string;
 +  styles: string;
 +};
++
++export function isWidgetAssetPath(pathname: string): boolean {
++  return (
++    pathname === WIDGET_SCRIPT_PATH ||
++    pathname === WIDGET_STYLE_PATH ||
++    pathname === LEGACY_WIDGET_SCRIPT_PATH ||
++    pathname === LEGACY_WIDGET_STYLE_PATH
++  );
++}
 +
 +export function buildInlineWidgetHtml(widgetHtml: string, assets: WidgetAssetBundle): string {
 +  const stylesheetPattern = new RegExp(
@@ -863,10 +919,13 @@ index 0000000000000000000000000000000000000000..768287508bc6bca32a89d272c7d12d22
 +    });
 +  }
 +
-+  if (url.pathname === WIDGET_SCRIPT_PATH) {
++  if (
++    url.pathname === WIDGET_SCRIPT_PATH ||
++    url.pathname === LEGACY_WIDGET_SCRIPT_PATH
++  ) {
 +    return assetResponse(request, assets.script, "text/javascript; charset=utf-8");
 +  }
-+  if (url.pathname === WIDGET_STYLE_PATH) {
++  if (url.pathname === WIDGET_STYLE_PATH || url.pathname === LEGACY_WIDGET_STYLE_PATH) {
 +    return assetResponse(request, assets.styles, "text/css; charset=utf-8");
 +  }
 +  return new Response("Not found", { status: 404 });
@@ -896,10 +955,10 @@ index 0000000000000000000000000000000000000000..768287508bc6bca32a89d272c7d12d22
 +  return value.replace(/<\/style/gi, "<\\/style");
 +}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705c2ccadfeece1585fb2d379b7846862cae..ad4c43a1034716225f3189b071d9af65b9be3f2b 100644
+index 1e35705c2ccadfeece1585fb2d379b7846862cae..0e8289fe10490f06a4091b3a0ab62608a7aba020 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
-@@ -6,6 +6,27 @@ describe("getWorkerRoute", () => {
+@@ -6,6 +6,39 @@ describe("getWorkerRoute", () => {
      expect(getWorkerRoute(new URL("https://example.workers.dev/health"), "secret")).toBe("health");
    });
  
@@ -918,6 +977,18 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..ad4c43a1034716225f3189b071d9af65
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
++        new URL("https://example.workers.dev/widget-assets/v26/ll-reading-nest-v26.bundle.js"),
++        undefined
++      )
++    ).toBe("widget-asset");
++    expect(
++      getWorkerRoute(
++        new URL("https://example.workers.dev/widget-assets/v26/ll-reading-nest-v26.css"),
++        undefined
++      )
++    ).toBe("widget-asset");
++    expect(
++      getWorkerRoute(
 +        new URL("https://example.workers.dev/widget-assets/v0211/private.json"),
 +        undefined
 +      )
@@ -927,7 +998,7 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..ad4c43a1034716225f3189b071d9af65
    it("accepts only the exact private MCP path", () => {
      expect(getWorkerRoute(new URL("https://example.workers.dev/mcp/secret"), "secret")).toBe("mcp");
      expect(getWorkerRoute(new URL("https://example.workers.dev/mcp/wrong"), "secret")).toBe("not-found");
-@@ -13,6 +34,8 @@ describe("getWorkerRoute", () => {
+@@ -13,6 +46,8 @@ describe("getWorkerRoute", () => {
    });
  
    it("routes only the private standalone reader shell", () => {
@@ -937,12 +1008,12 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..ad4c43a1034716225f3189b071d9af65
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/manifest.webmanifest"), "secret")).toBe("app");
 diff --git a/server/src/worker-router.ts b/server/src/worker-router.ts
-index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..5666eccb848a58cc5a16ba2cb3c3077835e5ff2b 100644
+index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..6e4bc1fb46332526473a8fcdcceeaa34f5aaf5ff 100644
 --- a/server/src/worker-router.ts
 +++ b/server/src/worker-router.ts
-@@ -1,8 +1,22 @@
+@@ -1,8 +1,20 @@
 -export type WorkerRoute = "health" | "app" | "mcp" | "source" | "not-found" | "misconfigured";
-+import { WIDGET_SCRIPT_PATH, WIDGET_STYLE_PATH } from "./widget-assets.js";
++import { isWidgetAssetPath } from "./widget-assets.js";
 +
 +export type WorkerRoute =
 +  | "health"
@@ -956,16 +1027,14 @@ index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..5666eccb848a58cc5a16ba2cb3c30778
  
  export function getWorkerRoute(url: URL, token: string | undefined): WorkerRoute {
    if (url.pathname === "/health") return "health";
-+  if (url.pathname === WIDGET_SCRIPT_PATH || url.pathname === WIDGET_STYLE_PATH) {
-+    return "widget-asset";
-+  }
++  if (isWidgetAssetPath(url.pathname)) return "widget-asset";
    if (!token) return "misconfigured";
 +  if (url.pathname === "/app" || url.pathname === "/app/") return "app-entry";
    if (
      url.pathname === `/app/${token}` ||
      url.pathname === `/app/${token}/` ||
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..7280a0658d2952cabdfb22c5fc583e65248753a1 100644
+index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..7260729bb7878d7c6ce4a225a561481740d1dec4 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
 @@ -1,22 +1,36 @@
@@ -997,7 +1066,7 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..7280a0658d2952cabdfb22c5fc583e65
  
      if (route === "health") {
 -      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.11" });
++      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.12" });
 +    }
 +    if (route === "widget-asset") {
 +      return handleWidgetAsset(request, url, {
@@ -1040,14 +1109,14 @@ index 7aab7e42427e60a97ed07e9095de236c53b29b6b..773289d3427e1b970ce3fe8565db4718
      }
    ],
 diff --git a/shared/package.json b/shared/package.json
-index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..6598e62266086331d671228f6aa66a7a3febfcbd 100644
+index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..e2917626c6a69d87cbedc2932cab0f148dd453e7 100644
 --- a/shared/package.json
 +++ b/shared/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/shared",
 -  "version": "0.2.7",
-+  "version": "0.2.11",
++  "version": "0.2.12",
    "private": true,
    "type": "module",
    "main": "./dist/index.js",
@@ -1082,14 +1151,14 @@ index b26131350103fa1e2f004ff508fea591ef27e284..593b9275eb7945de64ec13762d98cfee
            <dd>html-loaded</dd>
          </dl>
 diff --git a/web/package.json b/web/package.json
-index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..57c394e14e54339ce8295fb858a735db10431a60 100644
+index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..13a904110b023642c28ef00c2c34ecea09cb9d35 100644
 --- a/web/package.json
 +++ b/web/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/web",
 -  "version": "0.2.7",
-+  "version": "0.2.11",
++  "version": "0.2.12",
    "private": true,
    "type": "module",
    "scripts": {
@@ -1342,7 +1411,7 @@ index abd502381499a52c09052f004b1ebb609a5639f1..a9b06157b8a1f991129657c930fbbfb2
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37b0c0ac24d0be3669363489c7474aed801..f0dc344ceab9c8056fd956b4b30ffb84adfdaa19 100644
+index c23bd37b0c0ac24d0be3669363489c7474aed801..1acc3b4ac99b56fd4afbdd43b305694899dec942 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -1352,12 +1421,12 @@ index c23bd37b0c0ac24d0be3669363489c7474aed801..f0dc344ceab9c8056fd956b4b30ffb84
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
 +const RESOURCE_VERSION = "app-v0211";
-+const APP_VERSION = "0.2.11";
++const APP_VERSION = "0.2.12";
  
  type AppModule = {
    App: ComponentType;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28caba9ed1572f1b58d39264eed2545953d76..c9b6ae4381de1de61f06c7c98ad5c51b0b138f2b 100644
+index 08a28caba9ed1572f1b58d39264eed2545953d76..87a659c4cce44b3e732f5ba45a768c1392078200 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -1365,12 +1434,12 @@ index 08a28caba9ed1572f1b58d39264eed2545953d76..c9b6ae4381de1de61f06c7c98ad5c51b
    if (typeof window === "undefined" || window.parent === window) return undefined;
    if (!app) {
 -    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
-+    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.11" });
++    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.12" });
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
 diff --git a/web/src/bridge/standalone.ts b/web/src/bridge/standalone.ts
-index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..95e4cad36c55455854e9e2fd46bf1f3c07a2d18e 100644
+index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..f2cbe542f026adf3c630f759349f7b67dd53c43c 100644
 --- a/web/src/bridge/standalone.ts
 +++ b/web/src/bridge/standalone.ts
 @@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
@@ -1378,7 +1447,7 @@ index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..95e4cad36c55455854e9e2fd46bf1f3c
    if (!config) throw new Error("Standalone reader path is unavailable");
    standaloneClient ??= (async () => {
 -    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.7" });
-+    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.11" });
++    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.12" });
      await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
      return client;
    })();
@@ -2061,7 +2130,7 @@ index d6fc26f0671c933c4b04b98900aebaa38f40b4b8..cc36228656be332fbe2b9dca68b506fe
      "",
      batch.text
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197e6ba2317df34567a63db060563be71fcc..e9ff160b17cb0f4b75fee14d98c2f942060dc82d 100644
+index 2523197e6ba2317df34567a63db060563be71fcc..10285b446e965bcbe929ab1f2c04634f307d6363 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
 @@ -247,8 +247,8 @@ describe("CloudSourceClient", () => {
@@ -2071,12 +2140,12 @@ index 2523197e6ba2317df34567a63db060563be71fcc..e9ff160b17cb0f4b75fee14d98c2f942
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
 +    expect(message).toContain("resourceVersion=app-v0211");
-+    expect(message).toContain("appVersion=0.2.11");
++    expect(message).toContain("appVersion=0.2.12");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..3b32b57f07f52ca645eecbef0a719965e73dfb12 100644
+index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..5de31fc4c9ac8e8cf9c953ea35af4c4a3a99450c 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
 @@ -20,8 +20,8 @@ export interface CloudSourceUploadResult {
@@ -2086,7 +2155,7 @@ index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..3b32b57f07f52ca645eecbef0a719965
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
 +const RESOURCE_VERSION = "app-v0211";
-+const APP_VERSION = "0.2.11";
++const APP_VERSION = "0.2.12";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
  export class CloudSourceClient {
