@@ -633,15 +633,76 @@ index 0000000..87dab2a
 +    }
 +  });
 +});
+diff --git a/server/src/repositories/d1-reading-repository.test.ts b/server/src/repositories/d1-reading-repository.test.ts
+index 239df47..b4d1e9c 100644
+--- a/server/src/repositories/d1-reading-repository.test.ts
++++ b/server/src/repositories/d1-reading-repository.test.ts
+@@ -170,6 +170,37 @@ describe("D1ReadingRepository", () => {
+     expect(db.state.data).not.toMatch(/不要保存的 prompt|不要保存的正文|不要保存的聊天/);
+   });
+ 
++  it("repairs the short-lived D1 provider tag for cached ChatGPT schemas", async () => {
++    const db = new FakeD1();
++    db.state = {
++      version: 14,
++      data: JSON.stringify({
++        ...incompleteV3Database,
++        schemaVersion: 4,
++        sessions: [
++          {
++            ...incompleteV3Database.sessions[0],
++            sourceManifest: {
++              ...sourceManifest,
++              cloudSync: {
++                enabled: true,
++                provider: "d1",
++                objectKey: "private/sources/source-1/source.txt"
++              }
++            }
++          }
++        ]
++      })
++    };
++    const repository = new D1ReadingRepository(db);
++
++    const state = await repository.read();
++
++    expect(state.sessions[0].sourceManifest?.cloudSync.provider).toBe("r2");
++    expect(JSON.parse(db.state.data).sessions[0].sourceManifest.cloudSync.provider).toBe("r2");
++    expect(db.state.version).toBe(15);
++  });
++
+   it("persists a mutation with optimistic versioning", async () => {
+     const db = new FakeD1();
+     const repository = new D1ReadingRepository(db);
+diff --git a/server/src/repositories/normalize-reading-database.ts b/server/src/repositories/normalize-reading-database.ts
+index 7210487..742abff 100644
+--- a/server/src/repositories/normalize-reading-database.ts
++++ b/server/src/repositories/normalize-reading-database.ts
+@@ -63,7 +63,13 @@ function copySourceManifest(manifest: SourceManifest | null): SourceManifest | n
+       ? { paragraphCount: manifest.paragraphCount }
+       : {}),
+     ...(manifest.pageCount !== undefined ? { pageCount: manifest.pageCount } : {}),
+-    cloudSync: structuredClone(manifest.cloudSync),
++    cloudSync: {
++      ...structuredClone(manifest.cloudSync),
++      // D1 is the storage implementation, not a new public provider value. Repair
++      // the short-lived `d1` wire value so cached ChatGPT schemas that require the
++      // original literal `r2` can read every existing session again.
++      provider: "r2"
++    },
+     ...(manifest.createdOnDeviceId
+       ? { createdOnDeviceId: manifest.createdOnDeviceId }
+       : {}),
 diff --git a/server/src/services/cloud-source-service.test.ts b/server/src/services/cloud-source-service.test.ts
-index d9770a5..279273d 100644
+index d9770a5..1cc52e0 100644
 --- a/server/src/services/cloud-source-service.test.ts
 +++ b/server/src/services/cloud-source-service.test.ts
 @@ -56,6 +56,34 @@ describe("CloudSourceService", () => {
      expect(stored).not.toContain("第二段");
    });
  
-+  it("uses the D1 provider for novel recovery without enabling unsupported manga blobs", async () => {
++  it("uses D1 storage while preserving the legacy public provider tag", async () => {
 +    const repository = new MemoryReadingRepository();
 +    const storage = new MemorySourceObjectStorage();
 +    const cloudSource = new CloudSourceService(
@@ -656,7 +717,7 @@ index d9770a5..279273d 100644
 +      sourceText: "跨窗口保存的正文",
 +      sourceKind: "pasted_text"
 +    });
-+    expect(uploaded.sourceManifest.cloudSync.provider).toBe("d1");
++    expect(uploaded.sourceManifest.cloudSync.provider).toBe("r2");
 +    await expect(cloudSource.restoreNovelSource("session-1")).resolves.toMatchObject({
 +      sourceText: "跨窗口保存的正文"
 +    });
@@ -673,22 +734,29 @@ index d9770a5..279273d 100644
      const { cloudSource, sessionId } = setup();
  
 diff --git a/server/src/services/cloud-source-service.ts b/server/src/services/cloud-source-service.ts
-index abc8084..5afd4f5 100644
+index abc8084..4620d65 100644
 --- a/server/src/services/cloud-source-service.ts
 +++ b/server/src/services/cloud-source-service.ts
-@@ -24,6 +24,11 @@ type Dependencies = {
+@@ -24,6 +24,18 @@ type Dependencies = {
    id: () => string;
  };
  
 +type CloudSourceOptions = {
++  /** Internal object-storage backend. This must not leak into the public MCP schema. */
 +  provider: "r2" | "d1";
 +  allowManga: boolean;
 +};
 +
++// `provider` shipped as the literal `r2` in the public MCP schema. Older ChatGPT
++// windows cache that schema, so exposing the newer D1 backend name makes otherwise
++// valid tool results fail before the UI can render. Keep the wire value stable;
++// the injected storage implementation remains the source of truth for the backend.
++const PUBLIC_CLOUD_PROVIDER = "r2" as const;
++
  const defaultDependencies: Dependencies = {
    now: () => new Date(),
    id: () => randomUUID()
-@@ -33,9 +38,17 @@ export class CloudSourceService {
+@@ -33,9 +45,17 @@ export class CloudSourceService {
    constructor(
      private readonly repository: ReadingRepository,
      private readonly storage: SourceObjectStorage,
@@ -707,16 +775,16 @@ index abc8084..5afd4f5 100644
    async uploadNovelSource(input: {
      sessionId: string;
      sourceText: string;
-@@ -56,7 +69,7 @@ export class CloudSourceService {
+@@ -56,7 +76,7 @@ export class CloudSourceService {
        paragraphCount: splitNovelText(normalizedText).length,
        cloudSync: {
          enabled: true,
 -        provider: "r2",
-+        provider: this.options.provider,
++        provider: PUBLIC_CLOUD_PROVIDER,
          objectKey,
          manifestObjectKey,
          uploadedAt: this.deps.now().toISOString(),
-@@ -126,6 +139,12 @@ export class CloudSourceService {
+@@ -126,6 +146,12 @@ export class CloudSourceService {
        fileName?: string;
      }>;
    }): Promise<{ sourceManifest: SourceManifest }> {
@@ -729,12 +797,12 @@ index abc8084..5afd4f5 100644
      if (input.pages.length === 0) {
        throw new AppError("INVALID_OPERATION", "请至少上传一页漫画。");
      }
-@@ -168,7 +187,7 @@ export class CloudSourceService {
+@@ -168,7 +194,7 @@ export class CloudSourceService {
        pageCount: pageMetadata.length,
        cloudSync: {
          enabled: true,
 -        provider: "r2",
-+        provider: this.options.provider,
++        provider: PUBLIC_CLOUD_PROVIDER,
          manifestObjectKey,
          uploadedAt,
          pages: pageMetadata
