@@ -88,7 +88,7 @@ index e719dcd..9222d20 100644
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 8173759..ed6fd22 100644
+index 8173759..c920bfa 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -121,7 +121,7 @@ index 8173759..ed6fd22 100644
  const wrongPath = await fetch(new URL("/mcp/wrong-token", workerUrl), { method: "POST" });
  assert(wrongPath.status === 404, `wrong MCP path returned HTTP ${wrongPath.status}`);
  
-@@ -21,6 +36,61 @@ try {
+@@ -21,6 +36,62 @@ try {
    assert(tools.tools.length === 23, `expected 23 tools, got ${tools.tools.length}`);
    const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
    assert(Boolean(openTool?._meta?.ui), "open_reading_nest is missing its UI resource metadata");
@@ -151,6 +151,7 @@ index 8173759..ed6fd22 100644
 +  const resources = await client.listResources();
 +  const expectedTemplateUris = [
 +    primaryTemplateUri,
++    "ui://widget/ll-reading-nest-v0213.html",
 +    "ui://widget/ll-reading-nest-v0211.html",
 +    "ui://widget/ll-reading-nest-v27.html",
 +    "ui://widget/ll-reading-nest-v26.html",
@@ -183,7 +184,7 @@ index 8173759..ed6fd22 100644
  
    const opened = await client.callTool({ name: "open_reading_nest", arguments: {} });
    assert(Array.isArray(opened.structuredContent?.bookshelfSessions), "bookshelf result is missing");
-@@ -41,6 +111,9 @@ try {
+@@ -41,6 +112,9 @@ try {
        workerOrigin: workerUrl.origin,
        appVersion: health.version,
        toolCount: tools.tools.length,
@@ -1315,16 +1316,18 @@ index e509afa..199f726 100644
 +}
 diff --git a/server/src/widget-assets.test.ts b/server/src/widget-assets.test.ts
 new file mode 100644
-index 0000000..db82dd2
+index 0000000..62d1b2f
 --- /dev/null
 +++ b/server/src/widget-assets.test.ts
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,116 @@
 +import { describe, expect, it } from "vitest";
 +import {
 +  buildInlineWidgetHtml,
 +  handleWidgetAsset,
 +  LEGACY_WIDGET_SCRIPT_PATH,
 +  LEGACY_WIDGET_STYLE_PATH,
++  PREVIOUS_WIDGET_SCRIPT_PATH,
++  PREVIOUS_WIDGET_STYLE_PATH,
 +  WIDGET_SCRIPT_PATH,
 +  WIDGET_STYLE_PATH
 +} from "./widget-assets.js";
@@ -1396,6 +1399,24 @@ index 0000000..db82dd2
 +    expect(await script.text()).toBe(assets.script);
 +    expect(styles.status).toBe(200);
 +    expect(styles.headers.get("content-type")).toContain("text/css");
++    expect(await styles.text()).toBe(assets.styles);
++  });
++
++  it("keeps the immediately previous v0213 asset URLs alive", async () => {
++    const script = handleWidgetAsset(
++      new Request(`https://example.workers.dev${PREVIOUS_WIDGET_SCRIPT_PATH}`),
++      new URL(`https://example.workers.dev${PREVIOUS_WIDGET_SCRIPT_PATH}`),
++      assets
++    );
++    const styles = handleWidgetAsset(
++      new Request(`https://example.workers.dev${PREVIOUS_WIDGET_STYLE_PATH}`),
++      new URL(`https://example.workers.dev${PREVIOUS_WIDGET_STYLE_PATH}`),
++      assets
++    );
++
++    expect(script.status).toBe(200);
++    expect(await script.text()).toBe(assets.script);
++    expect(styles.status).toBe(200);
 +    expect(await styles.text()).toBe(assets.styles);
 +  });
 +
