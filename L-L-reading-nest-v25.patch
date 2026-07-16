@@ -5912,7 +5912,7 @@ index 0000000..31a1673
 +}
 diff --git a/server/src/storage/d1-source-object-storage.test.ts b/server/src/storage/d1-source-object-storage.test.ts
 new file mode 100644
-index 0000000..661a019
+index 0000000..8ae7d1e
 --- /dev/null
 +++ b/server/src/storage/d1-source-object-storage.test.ts
 @@ -0,0 +1,141 @@
@@ -6006,7 +6006,7 @@ index 0000000..661a019
 +      success: true,
 +      results: [...chunks.entries()]
 +        .sort(([left], [right]) => left - right)
-+        .map(([, body]) => ({ body: body.slice(0) } as T))
++        .map(([, body]) => ({ body: Array.from(new Uint8Array(body)) } as T))
 +    };
 +  }
 +
@@ -6017,7 +6017,7 @@ index 0000000..661a019
 +    if (sql.includes("SELECT content_type, size_bytes")) {
 +      return { content_type: asset.content_type, size_bytes: asset.size_bytes } as T;
 +    }
-+    return { ...asset, body: asset.body.slice(0) } as T;
++    return { ...asset, body: Array.from(new Uint8Array(asset.body)) } as T;
 +  }
 +
 +  private async run(sql: string, values: unknown[]) {
@@ -6059,10 +6059,10 @@ index 0000000..661a019
 +};
 diff --git a/server/src/storage/d1-source-object-storage.ts b/server/src/storage/d1-source-object-storage.ts
 new file mode 100644
-index 0000000..d242432
+index 0000000..567e623
 --- /dev/null
 +++ b/server/src/storage/d1-source-object-storage.ts
-@@ -0,0 +1,175 @@
+@@ -0,0 +1,178 @@
 +import {
 +  SourceObjectNotFoundError,
 +  sourceBytesToArrayBuffer,
@@ -6090,14 +6090,16 @@ index 0000000..d242432
 +  prepare(sql: string): D1StatementLike;
 +}
 +
++type D1BlobValue = ArrayBuffer | Uint8Array | number[];
++
 +type AssetRow = {
-+  body: ArrayBuffer | Uint8Array;
++  body: D1BlobValue;
 +  content_type: string | null;
 +  size_bytes: number;
 +  metadata_json: string | null;
 +};
 +
-+type AssetChunkRow = { body: ArrayBuffer | Uint8Array };
++type AssetChunkRow = { body: D1BlobValue };
 +
 +const D1_PRIVATE_ASSET_CHUNK_BYTES = 512 * 1024;
 +const MAX_D1_PRIVATE_ASSET_BYTES = 5 * 1024 * 1024;
@@ -6232,9 +6234,10 @@ index 0000000..d242432
 +  return joined.buffer;
 +}
 +
-+function copyArrayBuffer(value: ArrayBuffer | Uint8Array): ArrayBuffer {
++function copyArrayBuffer(value: D1BlobValue): ArrayBuffer {
 +  if (value instanceof ArrayBuffer) return value.slice(0);
-+  const copy = new Uint8Array(value.byteLength);
-+  copy.set(value);
++  const source = value instanceof Uint8Array ? value : Uint8Array.from(value);
++  const copy = new Uint8Array(source.byteLength);
++  copy.set(source);
 +  return copy.buffer;
 +}
