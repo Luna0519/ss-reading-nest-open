@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index 0820d9c..2c06c97 100644
+index 0820d9c..836f332 100644
 --- a/package.json
 +++ b/package.json
 @@ -1,7 +1,7 @@
@@ -7,7 +7,7 @@ index 0820d9c..2c06c97 100644
    "name": "ss-reading-nest",
    "private": true,
 -  "version": "0.2.7",
-+  "version": "0.2.13",
++  "version": "0.2.14",
    "packageManager": "pnpm@10.15.1",
    "scripts": {
      "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
@@ -55,19 +55,27 @@ index 0c2e9b4..83e81cd 100644
      dependencies:
        lightningcss: 1.32.0
 diff --git a/server/package.json b/server/package.json
-index c1ce2a3..3d54e42 100644
+index c1ce2a3..3bc1342 100644
 --- a/server/package.json
 +++ b/server/package.json
-@@ -1,6 +1,6 @@
+@@ -1,13 +1,13 @@
  {
    "name": "@ss/server",
 -  "version": "0.2.7",
-+  "version": "0.2.13",
++  "version": "0.2.14",
    "private": true,
    "type": "module",
    "scripts": {
+     "build": "tsc -p tsconfig.json",
+     "dev": "tsx watch src/index.ts",
+     "dev:cloud": "wrangler dev",
+-    "deploy": "wrangler deploy",
++    "deploy": "wrangler d1 migrations apply ournest --remote && wrangler deploy",
+     "deploy:dry": "wrangler deploy --dry-run",
+     "smoke:mcp": "node scripts/remote-smoke/mcp-smoke.mjs",
+     "cf-types": "wrangler types",
 diff --git a/server/scripts/remote-smoke/cloud-source-smoke.mjs b/server/scripts/remote-smoke/cloud-source-smoke.mjs
-index e719dcd..4030767 100644
+index e719dcd..9222d20 100644
 --- a/server/scripts/remote-smoke/cloud-source-smoke.mjs
 +++ b/server/scripts/remote-smoke/cloud-source-smoke.mjs
 @@ -61,7 +61,7 @@ const expectedTools = [
@@ -75,12 +83,12 @@ index e719dcd..4030767 100644
  ];
  
 -const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.13" });
++const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.14" });
  const cleanup = {
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 8173759..339e885 100644
+index 8173759..ed6fd22 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -88,7 +96,7 @@ index 8173759..339e885 100644
  const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
  const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
 -const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.13" });
++const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.14" });
  
  const healthResponse = await fetch(new URL("/health", workerUrl));
  assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);
@@ -117,10 +125,10 @@ index 8173759..339e885 100644
    assert(tools.tools.length === 23, `expected 23 tools, got ${tools.tools.length}`);
    const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
    assert(Boolean(openTool?._meta?.ui), "open_reading_nest is missing its UI resource metadata");
-+  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0213.html";
++  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0214.html";
 +  assert(
 +    openTool?._meta?.ui?.resourceUri === primaryTemplateUri,
-+    "open_reading_nest is not pointing at the v0213 UI resource"
++    "open_reading_nest is not pointing at the v0214 UI resource"
 +  );
 +  assert(
 +    openTool?._meta?.["ui/resourceUri"] === primaryTemplateUri,
@@ -161,7 +169,7 @@ index 8173759..339e885 100644
 +    );
 +  }
 +  const templateDescriptor = resources.resources.find((resource) => resource.uri === primaryTemplateUri);
-+  assert(Boolean(templateDescriptor), "v0213 UI resource was not listed");
++  assert(Boolean(templateDescriptor), "v0214 UI resource was not listed");
 +
 +  const templateResult = await client.readResource({ uri: primaryTemplateUri });
 +  const template = templateResult.contents.find((content) => content.uri === primaryTemplateUri);
@@ -186,7 +194,7 @@ index 8173759..339e885 100644
        tokenHiddenFromModel: true
      })
 diff --git a/server/src/app.test.ts b/server/src/app.test.ts
-index 629ce24..70c9dec 100644
+index 629ce24..cce2827 100644
 --- a/server/src/app.test.ts
 +++ b/server/src/app.test.ts
 @@ -6,7 +6,7 @@ describe("server app", () => {
@@ -194,12 +202,12 @@ index 629ce24..70c9dec 100644
      const response = await request(createApp()).get("/health");
      expect(response.status).toBe(200);
 -    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.13" });
++    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.14" });
    });
  
    it("accepts an MCP initialize request", async () => {
 diff --git a/server/src/app.ts b/server/src/app.ts
-index f4e9bd5..9d3b309 100644
+index f4e9bd5..dc9ec58 100644
 --- a/server/src/app.ts
 +++ b/server/src/app.ts
 @@ -12,7 +12,7 @@ export function createApp() {
@@ -207,7 +215,7 @@ index f4e9bd5..9d3b309 100644
  
    app.get("/health", (_request, response) => {
 -    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.13" });
++    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.14" });
    });
  
    app.post("/mcp", async (request: Request, response: Response) => {
@@ -230,7 +238,7 @@ index 3a031d8..7a79428 100644
 +  export default content;
 +}
 diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
-index e4c685d..26baeca 100644
+index e4c685d..43512df 100644
 --- a/server/src/mcp/register-resource.test.ts
 +++ b/server/src/mcp/register-resource.test.ts
 @@ -3,34 +3,63 @@ import { describe, expect, it, vi } from "vitest";
@@ -259,8 +267,8 @@ index e4c685d..26baeca 100644
  
 -    expect(READING_NEST_URI).toBe("ui://ss-reading-nest/app-v24.html");
 -    expect(uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0213.html");
-+    expect(uri).toBe("ui://widget/ll-reading-nest-v0213.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0214.html");
++    expect(uri).toBe("ui://widget/ll-reading-nest-v0214.html");
 +    expect(registerAppResource.mock.calls.map((call) => call[2])).toEqual([
 +      READING_NEST_URI,
 +      ...READING_NEST_COMPAT_URIS
@@ -278,7 +286,7 @@ index e4c685d..26baeca 100644
  
      const loaded = await loader();
 -    expect(loaded.contents[0].uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0213.html");
++    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0214.html");
 +    expect(loaded.contents[0].mimeType).toBe("text/html;profile=mcp-app");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-styles");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-script");
@@ -388,7 +396,7 @@ index 35b4bd0..2f022f6 100644
 +  return new URL(value).origin;
  }
 diff --git a/server/src/mcp/register-tools.test.ts b/server/src/mcp/register-tools.test.ts
-index 7640547..73c29f5 100644
+index 7640547..4bc2400 100644
 --- a/server/src/mcp/register-tools.test.ts
 +++ b/server/src/mcp/register-tools.test.ts
 @@ -1,6 +1,7 @@
@@ -407,7 +415,7 @@ index 7640547..73c29f5 100644
 +      resourceUri: READING_NEST_URI,
 +      visibility: ["model", "app"]
      });
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0213.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0214.html");
 +    expect(TOOL_CONFIGS.open_reading_nest._meta?.["ui/resourceUri"]).toBe(
 +      READING_NEST_URI
 +    );
@@ -422,8 +430,20 @@ index 7640547..73c29f5 100644
      for (const [name, config] of Object.entries(TOOL_CONFIGS)) {
        if (name !== "open_reading_nest" && name !== "upload_cloud_source") {
          const meta = "_meta" in config ? (config._meta as Record<string, unknown>) : undefined;
+@@ -103,7 +117,10 @@ describe("tool descriptors", () => {
+       _meta?: Record<string, unknown>;
+     };
+ 
+-    expect(result._meta).toEqual({ cloudSourceEnabled: false });
++    expect(result._meta).toEqual({
++      cloudSourceEnabled: false,
++      cloudMangaSourceEnabled: false
++    });
+     expect(result.structuredContent).not.toHaveProperty("sourceEndpointBase");
+   });
+ 
 diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
-index 21a3b3d..26e4568 100644
+index 21a3b3d..0b49148 100644
 --- a/server/src/mcp/register-tools.ts
 +++ b/server/src/mcp/register-tools.ts
 @@ -8,6 +8,7 @@ import {
@@ -434,13 +454,14 @@ index 21a3b3d..26e4568 100644
    listCompanionCommentsInputSchema,
    publishCompanionCommentInputSchema,
    renameReadingSessionInputSchema,
-@@ -30,7 +31,14 @@ import { ReadingService } from "../services/reading-service.js";
+@@ -30,7 +31,15 @@ import { ReadingService } from "../services/reading-service.js";
  import type { CloudSourceService } from "../services/cloud-source-service.js";
  import { toolResult } from "./tool-result.js";
  
 -export const READING_NEST_URI = "ui://ss-reading-nest/app-v24.html";
-+export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0213.html";
++export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0214.html";
 +export const READING_NEST_COMPAT_URIS = [
++  "ui://widget/ll-reading-nest-v0213.html",
 +  "ui://widget/ll-reading-nest-v0211.html",
 +  "ui://widget/ll-reading-nest-v27.html",
 +  "ui://widget/ll-reading-nest-v26.html",
@@ -450,7 +471,7 @@ index 21a3b3d..26e4568 100644
  
  const readOnly = {
    readOnlyHint: true,
-@@ -48,10 +56,13 @@ export const TOOL_CONFIGS = {
+@@ -48,10 +57,13 @@ export const TOOL_CONFIGS = {
      title: "打开 L&L 共读小窝",
      description: "Use this when the user wants to open the reading nest or continue recent reading.",
      inputSchema: openReadingNestInputSchema,
@@ -465,7 +486,7 @@ index 21a3b3d..26e4568 100644
        "openai/toolInvocation/invoking": "正在点亮小窝…",
        "openai/toolInvocation/invoked": "小窝已经准备好"
      }
-@@ -69,7 +80,7 @@ export const TOOL_CONFIGS = {
+@@ -69,7 +81,7 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    confirm_assistant_synced_position: {
@@ -474,7 +495,7 @@ index 21a3b3d..26e4568 100644
      description:
        "Use this only after the user explicitly confirms that ChatGPT replied it has read through a batch end.",
      inputSchema: confirmAssistantSyncedPositionInputSchema,
-@@ -124,21 +135,21 @@ export const TOOL_CONFIGS = {
+@@ -124,21 +136,21 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    publish_companion_comment: {
@@ -499,7 +520,15 @@ index 21a3b3d..26e4568 100644
      description:
        "Use this when the user explicitly clears recent, historical, or all companion comments for one session.",
      inputSchema: clearCompanionCommentsInputSchema,
-@@ -282,7 +293,7 @@ export function registerReadingTools(
+@@ -239,6 +251,7 @@ export function registerReadingTools(
+       ...response,
+       _meta: {
+         cloudSourceEnabled: Boolean(cloudSourceService),
++        cloudMangaSourceEnabled: cloudSourceService?.supportsManga ?? false,
+         ...(options.sourceEndpointBase ? { sourceEndpointBase: options.sourceEndpointBase } : {})
+       }
+     };
+@@ -282,7 +295,7 @@ export function registerReadingTools(
            confirmedBatchId: input.batchId,
            updatedAt: session.updatedAt
          },
@@ -508,7 +537,7 @@ index 21a3b3d..26e4568 100644
        );
      }
    );
-@@ -412,7 +423,7 @@ export function registerReadingTools(
+@@ -412,7 +425,7 @@ export function registerReadingTools(
      TOOL_CONFIGS.list_companion_comments,
      async (input) => {
        const result = await service.listCompanionComments(input);
@@ -518,7 +547,7 @@ index 21a3b3d..26e4568 100644
    );
  
 diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
-index 9e76434..c13531a 100644
+index 9e76434..e0a49c1 100644
 --- a/server/src/mcp/server-factory.ts
 +++ b/server/src/mcp/server-factory.ts
 @@ -13,7 +13,7 @@ export function createMcpServerFromRepository(
@@ -526,13 +555,13 @@ index 9e76434..c13531a 100644
    const server = new McpServer({
      name: "L&L 共读小窝",
 -    version: "0.2.7"
-+    version: "0.2.13"
++    version: "0.2.14"
    });
    const service = new ReadingService(repository);
    registerReadingResource(server, widgetHtml, options.workerOrigin);
 diff --git a/server/src/mcp/ui-template.integration.test.ts b/server/src/mcp/ui-template.integration.test.ts
 new file mode 100644
-index 0000000..f223d15
+index 0000000..87dab2a
 --- /dev/null
 +++ b/server/src/mcp/ui-template.integration.test.ts
 @@ -0,0 +1,67 @@
@@ -550,7 +579,7 @@ index 0000000..f223d15
 +
 +describe("ChatGPT UI template MCP chain", () => {
 +  it("keeps the tool, listed resource, and readable HTML on one exact URI", async () => {
-+    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.13" });
++    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.14" });
 +    const widgetHtml = buildInlineWidgetHtml(
 +      `<!doctype html><html><head><link rel="stylesheet" href="${WIDGET_STYLE_PATH}"></head><body><div id="root"></div><script type="module" src="${WIDGET_SCRIPT_PATH}"></script></body></html>`,
 +      {
@@ -561,7 +590,7 @@ index 0000000..f223d15
 +    registerReadingResource(server, widgetHtml, "https://reading-nest.example.workers.dev");
 +    registerReadingTools(server, {} as never);
 +
-+    const client = new Client({ name: "L&L UI integration client", version: "0.2.13" });
++    const client = new Client({ name: "L&L UI integration client", version: "0.2.14" });
 +    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 +
 +    try {
@@ -603,8 +632,213 @@ index 0000000..f223d15
 +    }
 +  });
 +});
+diff --git a/server/src/services/cloud-source-service.test.ts b/server/src/services/cloud-source-service.test.ts
+index d9770a5..279273d 100644
+--- a/server/src/services/cloud-source-service.test.ts
++++ b/server/src/services/cloud-source-service.test.ts
+@@ -56,6 +56,34 @@ describe("CloudSourceService", () => {
+     expect(stored).not.toContain("第二段");
+   });
+ 
++  it("uses the D1 provider for novel recovery without enabling unsupported manga blobs", async () => {
++    const repository = new MemoryReadingRepository();
++    const storage = new MemorySourceObjectStorage();
++    const cloudSource = new CloudSourceService(
++      repository,
++      storage,
++      { now: () => new Date(NOW), id: () => "source-d1" },
++      { provider: "d1", allowManga: false }
++    );
++
++    const uploaded = await cloudSource.uploadNovelSource({
++      sessionId: "session-1",
++      sourceText: "跨窗口保存的正文",
++      sourceKind: "pasted_text"
++    });
++    expect(uploaded.sourceManifest.cloudSync.provider).toBe("d1");
++    await expect(cloudSource.restoreNovelSource("session-1")).resolves.toMatchObject({
++      sourceText: "跨窗口保存的正文"
++    });
++    expect(cloudSource.supportsManga).toBe(false);
++    await expect(
++      cloudSource.uploadMangaSource({
++        sessionId: "session-1",
++        pages: [{ index: 1, bytes: new Uint8Array([1]), mimeType: "image/png" }]
++      })
++    ).rejects.toMatchObject({ code: "INVALID_OPERATION" });
++  });
++
+   it("counts numbered platform-style novel sections as separate cloud reading units", async () => {
+     const { cloudSource, sessionId } = setup();
+ 
+diff --git a/server/src/services/cloud-source-service.ts b/server/src/services/cloud-source-service.ts
+index abc8084..5afd4f5 100644
+--- a/server/src/services/cloud-source-service.ts
++++ b/server/src/services/cloud-source-service.ts
+@@ -24,6 +24,11 @@ type Dependencies = {
+   id: () => string;
+ };
+ 
++type CloudSourceOptions = {
++  provider: "r2" | "d1";
++  allowManga: boolean;
++};
++
+ const defaultDependencies: Dependencies = {
+   now: () => new Date(),
+   id: () => randomUUID()
+@@ -33,9 +38,17 @@ export class CloudSourceService {
+   constructor(
+     private readonly repository: ReadingRepository,
+     private readonly storage: SourceObjectStorage,
+-    private readonly deps: Dependencies = defaultDependencies
++    private readonly deps: Dependencies = defaultDependencies,
++    private readonly options: CloudSourceOptions = {
++      provider: "r2",
++      allowManga: true
++    }
+   ) {}
+ 
++  get supportsManga(): boolean {
++    return this.options.allowManga;
++  }
++
+   async uploadNovelSource(input: {
+     sessionId: string;
+     sourceText: string;
+@@ -56,7 +69,7 @@ export class CloudSourceService {
+       paragraphCount: splitNovelText(normalizedText).length,
+       cloudSync: {
+         enabled: true,
+-        provider: "r2",
++        provider: this.options.provider,
+         objectKey,
+         manifestObjectKey,
+         uploadedAt: this.deps.now().toISOString(),
+@@ -126,6 +139,12 @@ export class CloudSourceService {
+       fileName?: string;
+     }>;
+   }): Promise<{ sourceManifest: SourceManifest }> {
++    if (!this.options.allowManga) {
++      throw new AppError(
++        "INVALID_OPERATION",
++        "漫画图片仍只保存在当前设备；D1 仅保存小说正文与压缩背景。"
++      );
++    }
+     if (input.pages.length === 0) {
+       throw new AppError("INVALID_OPERATION", "请至少上传一页漫画。");
+     }
+@@ -168,7 +187,7 @@ export class CloudSourceService {
+       pageCount: pageMetadata.length,
+       cloudSync: {
+         enabled: true,
+-        provider: "r2",
++        provider: this.options.provider,
+         manifestObjectKey,
+         uploadedAt,
+         pages: pageMetadata
+diff --git a/server/src/services/companion-comments.test.ts b/server/src/services/companion-comments.test.ts
+index 858e173..4da9ef3 100644
+--- a/server/src/services/companion-comments.test.ts
++++ b/server/src/services/companion-comments.test.ts
+@@ -112,6 +112,24 @@ describe("ReadingService companion comments", () => {
+     });
+   });
+ 
++  it("keeps explicit current and catch-up replies in history even when passive auto-save is off", async () => {
++    const { service } = createService();
++    const session = await service.startSession("第一本", "novel");
++    await service.updateUserPosition(session.id, position(8));
++
++    const current = await service.publishCompanionComment({
++      ...commentInput(session.id, "explicit-current", 7),
++      source: "current_context"
++    });
++    const catchUp = await service.publishCompanionComment({
++      ...commentInput(session.id, "explicit-catch-up", 8),
++      source: "catch_up_completion"
++    });
++
++    expect(current).toMatchObject({ inRecent: true, inHistory: true });
++    expect(catchUp).toMatchObject({ inRecent: true, inHistory: true });
++  });
++
+   it("limits recent to 20 while preserving older history", async () => {
+     const { repository, service } = createService();
+     const session = await startSessionWithHistory(service);
+diff --git a/server/src/services/reading-service.test.ts b/server/src/services/reading-service.test.ts
+index f759d2d..79a7c6f 100644
+--- a/server/src/services/reading-service.test.ts
++++ b/server/src/services/reading-service.test.ts
+@@ -296,6 +296,66 @@ describe("ReadingService", () => {
+     expect(second.lastAssistantConfirmation?.operationId).toBe("confirm-1");
+   });
+ 
++  it("confirms catch-up progress only when the final companion comment is actually saved", async () => {
++    const session = await service.startSession("雨夜里的信", "novel");
++    await service.updateUserPosition(session.id, {
++      kind: "paragraph",
++      index: 8,
++      label: "第 8 段"
++    });
++
++    await service.publishCompanionComment({
++      sessionId: session.id,
++      position: { kind: "paragraph", index: 8, label: "第 8 段" },
++      mode: "light_chat",
++      length: "normal",
++      text: "补完以后真正留下的正式短评。",
++      source: "catch_up_completion",
++      operationId: "auto-catch-up-8"
++    });
++
++    const bundle = await service.getSessionBundle(session.id);
++    expect(bundle.session.assistantSyncedPosition).toEqual({
++      kind: "paragraph",
++      index: 8,
++      label: "第 8 段"
++    });
++    expect(bundle.session.lastAssistantConfirmation).toMatchObject({
++      operationId: "comment-auto-catch-up-8",
++      batchId: "auto-catch-up-8"
++    });
++  });
++
++  it("confirms catch-up progress only when the final companion comment is actually saved", async () => {
++    const session = await service.startSession("雨夜里的信", "novel");
++    await service.updateUserPosition(session.id, {
++      kind: "paragraph",
++      index: 8,
++      label: "第 8 段"
++    });
++
++    await service.publishCompanionComment({
++      sessionId: session.id,
++      position: { kind: "paragraph", index: 8, label: "第 8 段" },
++      mode: "light_chat",
++      length: "normal",
++      text: "补完以后真正留下的正式短评。",
++      source: "catch_up_completion",
++      operationId: "auto-catch-up-8"
++    });
++
++    const bundle = await service.getSessionBundle(session.id);
++    expect(bundle.session.assistantSyncedPosition).toEqual({
++      kind: "paragraph",
++      index: 8,
++      label: "第 8 段"
++    });
++    expect(bundle.session.lastAssistantConfirmation).toMatchObject({
++      operationId: "comment-auto-catch-up-8",
++      batchId: "auto-catch-up-8"
++    });
++  });
++
+   it("rejects confirmations beyond the user or behind the confirmed position", async () => {
+     const session = await service.startSession("雨夜里的信", "novel");
+     await service.updateUserPosition(session.id, {
 diff --git a/server/src/services/reading-service.ts b/server/src/services/reading-service.ts
-index 31d1741..38cd6fc 100644
+index 31d1741..3e3ddf6 100644
 --- a/server/src/services/reading-service.ts
 +++ b/server/src/services/reading-service.ts
 @@ -130,13 +130,13 @@ export class ReadingService {
@@ -623,8 +857,188 @@ index 31d1741..38cd6fc 100644
        }
        const now = this.deps.now().toISOString();
        session.assistantSyncedPosition = input.confirmedPosition;
+@@ -221,6 +221,7 @@ export class ReadingService {
+           item.operationId === input.operationId
+       );
+       if (existing) return existing;
++      const createdAt = this.deps.now().toISOString();
+       const comment: CompanionComment = {
+         id: this.deps.id(),
+         sessionId: input.sessionId,
+@@ -232,11 +233,28 @@ export class ReadingService {
+         inRecent: true,
+         inHistory:
+           input.source === "manual_save" ||
++          input.source === "current_context" ||
++          input.source === "catch_up_completion" ||
+           session.sessionPreferences.autoSaveCompanionComments,
+         operationId: input.operationId,
+-        createdAt: this.deps.now().toISOString()
++        createdAt
+       };
+       database.companionComments.push(comment);
++      if (
++        input.source === "catch_up_completion" &&
++        input.position.kind === session.userCurrentPosition.kind &&
++        input.position.index <= session.userCurrentPosition.index &&
++        (!session.assistantSyncedPosition ||
++          input.position.index >= session.assistantSyncedPosition.index)
++      ) {
++        session.assistantSyncedPosition = structuredClone(input.position);
++        session.lastAssistantConfirmation = {
++          operationId: `comment-${input.operationId}`,
++          batchId: input.operationId,
++          confirmedAt: createdAt
++        };
++        session.updatedAt = createdAt;
++      }
+       this.pruneCompanionComments(database, input.sessionId, "recent");
+       if (comment.inHistory) {
+         this.pruneCompanionComments(database, input.sessionId, "history");
+diff --git a/server/src/source-routes.test.ts b/server/src/source-routes.test.ts
+index 49e9b2c..719dd86 100644
+--- a/server/src/source-routes.test.ts
++++ b/server/src/source-routes.test.ts
+@@ -3,6 +3,7 @@ import { DEFAULT_SESSION_PREFERENCES, type ReadingDatabase } from "@ss/shared";
+ import type { ReadingRepository } from "./repositories/reading-repository.js";
+ import { MemorySourceObjectStorage } from "./storage/memory-source-object-storage.js";
+ import { CloudSourceService } from "./services/cloud-source-service.js";
++import { AppearanceStorageService } from "./services/appearance-storage-service.js";
+ import { handleSourceRoute } from "./source-routes.js";
+ 
+ const NOW = "2026-06-24T00:00:00.000Z";
+@@ -118,6 +119,70 @@ describe("handleSourceRoute", () => {
+     expect(await missing.text()).not.toContain("第一段");
+   });
+ 
++  it("persists appearance and its compressed background through the private component route", async () => {
++    const { service, storage } = setup();
++    const appearance = new AppearanceStorageService(storage, () => new Date(NOW));
++    const preferences = {
++      glassOpacity: 0.05,
++      glassBlur: 14,
++      readerFont: "serif",
++      readerScale: 1,
++      readerLineHeight: 1.86
++    };
++    const backgroundDataUrl = "data:image/jpeg;base64,AQID";
++
++    const saved = await handleSourceRoute(
++      new Request("https://example.test/source/secret/appearance/save", {
++        method: "POST",
++        body: JSON.stringify({ preferences, backgroundDataUrl })
++      }),
++      service,
++      appearance
++    );
++    expect(saved.status).toBe(200);
++    await expect(saved.json()).resolves.toMatchObject({
++      preferences,
++      backgroundDataUrl,
++      updatedAt: NOW
++    });
++
++    const loaded = await handleSourceRoute(
++      new Request("https://example.test/source/secret/appearance/load", {
++        method: "POST",
++        body: "{}"
++      }),
++      service,
++      appearance
++    );
++    await expect(loaded.json()).resolves.toMatchObject({ preferences, backgroundDataUrl });
++
++    const cleared = await handleSourceRoute(
++      new Request("https://example.test/source/secret/appearance/delete-background", {
++        method: "POST",
++        body: "{}"
++      }),
++      service,
++      appearance
++    );
++    expect(await cleared.json()).not.toHaveProperty("backgroundDataUrl");
++  });
++
++  it("rejects invalid appearance payloads without overwriting the stored profile", async () => {
++    const { service, storage } = setup();
++    const appearance = new AppearanceStorageService(storage);
++    const response = await handleSourceRoute(
++      new Request("https://example.test/source/secret/appearance/save", {
++        method: "POST",
++        body: JSON.stringify({ preferences: { glassOpacity: "opaque" } })
++      }),
++      service,
++      appearance
++    );
++    expect(response.status).toBe(400);
++    expect(await response.json()).toEqual({ error: "外观设置格式无效。" });
++    await expect(appearance.load()).resolves.toEqual({});
++  });
++
+   it("rejects unsupported source routes without leaking details", async () => {
+     const { service } = setup();
+     const response = await handleSourceRoute(
+diff --git a/server/src/source-routes.ts b/server/src/source-routes.ts
+index 282f116..cda04df 100644
+--- a/server/src/source-routes.ts
++++ b/server/src/source-routes.ts
+@@ -1,15 +1,38 @@
+ import { AppError } from "./errors/app-error.js";
++import type { AppearanceStorageService } from "./services/appearance-storage-service.js";
+ import type { CloudSourceService } from "./services/cloud-source-service.js";
+ 
+ export async function handleSourceRoute(
+   request: Request,
+-  service: CloudSourceService
++  service: CloudSourceService,
++  appearanceService?: AppearanceStorageService
+ ): Promise<Response> {
+   const url = new URL(request.url);
+   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders() });
+   if (request.method !== "POST") return new Response("Not found", { status: 404, headers: corsHeaders() });
+ 
+   try {
++    if (url.pathname.endsWith("/appearance/load")) {
++      if (!appearanceService) return new Response("Not found", { status: 404, headers: corsHeaders() });
++      return json(await appearanceService.load());
++    }
++    if (url.pathname.endsWith("/appearance/save")) {
++      if (!appearanceService) return new Response("Not found", { status: 404, headers: corsHeaders() });
++      const input = await readJson(request);
++      return json(
++        await appearanceService.save({
++          ...(input.preferences !== undefined ? { preferences: input.preferences } : {}),
++          ...(input.backgroundDataUrl !== undefined
++            ? { backgroundDataUrl: input.backgroundDataUrl }
++            : {}),
++          ...(input.removeBackground === true ? { removeBackground: true } : {})
++        })
++      );
++    }
++    if (url.pathname.endsWith("/appearance/delete-background")) {
++      if (!appearanceService) return new Response("Not found", { status: 404, headers: corsHeaders() });
++      return json(await appearanceService.clearBackground());
++    }
+     if (url.pathname.endsWith("/upload")) {
+       const input = await readJson(request);
+       const sourceKind = readSourceKind(input);
+@@ -57,7 +80,13 @@ export async function handleSourceRoute(
+     return new Response("Not found", { status: 404, headers: corsHeaders() });
+   } catch (error) {
+     logSourceRoute({
+-      route: url.pathname.endsWith("/upload") ? "upload" : url.pathname.endsWith("/restore") ? "restore" : "unknown",
++      route: url.pathname.endsWith("/upload")
++        ? "upload"
++        : url.pathname.endsWith("/restore")
++          ? "restore"
++          : url.pathname.includes("/appearance/")
++            ? "appearance"
++            : "unknown",
+       status: error instanceof AppError ? 400 : 500,
+       errorCode: error instanceof AppError ? error.code : "UNEXPECTED"
+     });
 diff --git a/server/src/standalone-pwa.test.ts b/server/src/standalone-pwa.test.ts
-index ea35efc..4537e78 100644
+index ea35efc..af52c4c 100644
 --- a/server/src/standalone-pwa.test.ts
 +++ b/server/src/standalone-pwa.test.ts
 @@ -1,15 +1,51 @@
@@ -671,13 +1085,13 @@ index ea35efc..4537e78 100644
    it("adds install metadata and service-worker registration to the widget shell", () => {
 -    const html = buildStandaloneHtml("<html><head><title>Nest</title></head><body>reader</body></html>");
 +    const html = buildStandaloneHtml(
-+      '<html><head><title>Nest</title><link rel="stylesheet" href="/widget-assets/v0213/ll-reading-nest-v0213.css"></head><body>reader<script src="/widget-assets/v0213/ll-reading-nest-v0213.bundle.js"></script></body></html>'
++      '<html><head><title>Nest</title><link rel="stylesheet" href="/widget-assets/v0214/ll-reading-nest-v0214.css"></head><body>reader<script src="/widget-assets/v0214/ll-reading-nest-v0214.bundle.js"></script></body></html>'
 +    );
      expect(html).toContain('name="sxs-standalone"');
      expect(html).toContain('rel="manifest" href="./manifest.webmanifest"');
      expect(html).toContain('navigator.serviceWorker.register("./sw.js"');
-+    expect(html).toContain("ll-reading-nest-v0213.css?v=glass2");
-+    expect(html).toContain("ll-reading-nest-v0213.bundle.js?v=glass2");
++    expect(html).toContain("ll-reading-nest-v0214.css?v=glass3");
++    expect(html).toContain("ll-reading-nest-v0214.bundle.js?v=glass3");
      expect(html).toContain("reader");
    });
  
@@ -696,21 +1110,21 @@ index ea35efc..4537e78 100644
      const response = handleStandaloneApp(new Request(swUrl), new URL(swUrl), token, "");
      const script = await response.text();
 -    expect(script).toContain('const SHELL = ["./", "./manifest.webmanifest", "./icon.svg"]');
-+    expect(script).toContain("/widget-assets/v0213/ll-reading-nest-v0213.bundle.js?v=glass2");
-+    expect(script).toContain("/widget-assets/v0213/ll-reading-nest-v0213.css?v=glass2");
++    expect(script).toContain("/widget-assets/v0214/ll-reading-nest-v0214.bundle.js?v=glass3");
++    expect(script).toContain("/widget-assets/v0214/ll-reading-nest-v0214.css?v=glass3");
      expect(script).not.toContain("/mcp/");
      expect(script).not.toContain("/source/");
    });
 diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
-index e509afa..df1ca10 100644
+index e509afa..199f726 100644
 --- a/server/src/standalone-pwa.ts
 +++ b/server/src/standalone-pwa.ts
 @@ -1,4 +1,107 @@
 -const SHELL_CACHE_VERSION = "v24";
 +import { WIDGET_SCRIPT_PATH, WIDGET_STYLE_PATH } from "./widget-assets.js";
 +
-+const SHELL_CACHE_VERSION = "v0213-glass2";
-+const STANDALONE_ASSET_REVISION = "glass2";
++const SHELL_CACHE_VERSION = "v0214-glass3";
++const STANDALONE_ASSET_REVISION = "glass3";
 +const SESSION_COOKIE_NAME = "__Secure-ll_nest_session";
 +const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 +
@@ -1003,13 +1417,16 @@ index 0000000..db82dd2
 +});
 diff --git a/server/src/widget-assets.ts b/server/src/widget-assets.ts
 new file mode 100644
-index 0000000..dd3b2e4
+index 0000000..3a088a2
 --- /dev/null
 +++ b/server/src/widget-assets.ts
-@@ -0,0 +1,91 @@
-+export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0213";
-+export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0213.bundle.js`;
-+export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0213.css`;
+@@ -0,0 +1,101 @@
++export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0214";
++export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0214.bundle.js`;
++export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0214.css`;
++export const PREVIOUS_WIDGET_SCRIPT_PATH =
++  "/widget-assets/v0213/ll-reading-nest-v0213.bundle.js";
++export const PREVIOUS_WIDGET_STYLE_PATH = "/widget-assets/v0213/ll-reading-nest-v0213.css";
 +export const LEGACY_WIDGET_SCRIPT_PATH =
 +  "/widget-assets/v26/ll-reading-nest-v26.bundle.js";
 +export const LEGACY_WIDGET_STYLE_PATH = "/widget-assets/v26/ll-reading-nest-v26.css";
@@ -1023,6 +1440,8 @@ index 0000000..dd3b2e4
 +  return (
 +    pathname === WIDGET_SCRIPT_PATH ||
 +    pathname === WIDGET_STYLE_PATH ||
++    pathname === PREVIOUS_WIDGET_SCRIPT_PATH ||
++    pathname === PREVIOUS_WIDGET_STYLE_PATH ||
 +    pathname === LEGACY_WIDGET_SCRIPT_PATH ||
 +    pathname === LEGACY_WIDGET_STYLE_PATH
 +  );
@@ -1065,11 +1484,16 @@ index 0000000..dd3b2e4
 +
 +  if (
 +    url.pathname === WIDGET_SCRIPT_PATH ||
++    url.pathname === PREVIOUS_WIDGET_SCRIPT_PATH ||
 +    url.pathname === LEGACY_WIDGET_SCRIPT_PATH
 +  ) {
 +    return assetResponse(request, assets.script, "text/javascript; charset=utf-8");
 +  }
-+  if (url.pathname === WIDGET_STYLE_PATH || url.pathname === LEGACY_WIDGET_STYLE_PATH) {
++  if (
++    url.pathname === WIDGET_STYLE_PATH ||
++    url.pathname === PREVIOUS_WIDGET_STYLE_PATH ||
++    url.pathname === LEGACY_WIDGET_STYLE_PATH
++  ) {
 +    return assetResponse(request, assets.styles, "text/css; charset=utf-8");
 +  }
 +  return new Response("Not found", { status: 404 });
@@ -1099,7 +1523,7 @@ index 0000000..dd3b2e4
 +  return value.replace(/<\/style/gi, "<\\/style");
 +}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705..36a0cfb 100644
+index 1e35705..ba436d1 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
 @@ -6,6 +6,39 @@ describe("getWorkerRoute", () => {
@@ -1109,13 +1533,13 @@ index 1e35705..36a0cfb 100644
 +  it("serves only the versioned public widget assets without requiring the private token", () => {
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0213/ll-reading-nest-v0213.bundle.js"),
++        new URL("https://example.workers.dev/widget-assets/v0214/ll-reading-nest-v0214.bundle.js"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0213/ll-reading-nest-v0213.css"),
++        new URL("https://example.workers.dev/widget-assets/v0214/ll-reading-nest-v0214.css"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
@@ -1133,7 +1557,7 @@ index 1e35705..36a0cfb 100644
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0213/private.json"),
++        new URL("https://example.workers.dev/widget-assets/v0214/private.json"),
 +        undefined
 +      )
 +    ).toBe("misconfigured");
@@ -1151,8 +1575,18 @@ index 1e35705..36a0cfb 100644
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/manifest.webmanifest"), "secret")).toBe("app");
+@@ -25,6 +60,9 @@ describe("getWorkerRoute", () => {
+   it("routes only exact private source paths", () => {
+     expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/upload"), "secret")).toBe("source");
+     expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/restore"), "secret")).toBe("source");
++    expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/appearance/load"), "secret")).toBe("source");
++    expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/appearance/save"), "secret")).toBe("source");
++    expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/appearance/delete-background"), "secret")).toBe("source");
+     expect(getWorkerRoute(new URL("https://example.workers.dev/source/wrong/upload"), "secret")).toBe("not-found");
+     expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret"), "secret")).toBe("not-found");
+   });
 diff --git a/server/src/worker-router.ts b/server/src/worker-router.ts
-index 1f8027f..6e4bc1f 100644
+index 1f8027f..cafaebc 100644
 --- a/server/src/worker-router.ts
 +++ b/server/src/worker-router.ts
 @@ -1,8 +1,20 @@
@@ -1177,19 +1611,33 @@ index 1f8027f..6e4bc1f 100644
    if (
      url.pathname === `/app/${token}` ||
      url.pathname === `/app/${token}/` ||
+@@ -14,7 +26,10 @@ export function getWorkerRoute(url: URL, token: string | undefined): WorkerRoute
+   }
+   if (
+     url.pathname === `/source/${token}/upload` ||
+-    url.pathname === `/source/${token}/restore`
++    url.pathname === `/source/${token}/restore` ||
++    url.pathname === `/source/${token}/appearance/load` ||
++    url.pathname === `/source/${token}/appearance/save` ||
++    url.pathname === `/source/${token}/appearance/delete-background`
+   ) {
+     return "source";
+   }
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2..784955b 100644
+index 6f84bb2..aa3eb43 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
-@@ -1,22 +1,36 @@
+@@ -1,22 +1,38 @@
  import { createMcpHandler } from "agents/mcp";
  import widgetHtml from "../../web/dist/index.html";
-+import widgetScript from "../../web/dist/ll-reading-nest-v0213.bundle.js";
-+import widgetStyles from "../../web/dist/ll-reading-nest-v0213.css";
++import widgetScript from "../../web/dist/ll-reading-nest-v0214.bundle.js";
++import widgetStyles from "../../web/dist/ll-reading-nest-v0214.css";
  import { createMcpServerFromRepository } from "./mcp/server-factory.js";
  import { D1ReadingRepository } from "./repositories/d1-reading-repository.js";
++import { AppearanceStorageService } from "./services/appearance-storage-service.js";
  import { CloudSourceService } from "./services/cloud-source-service.js";
  import { handleSourceRoute } from "./source-routes.js";
++import { D1SourceObjectStorage } from "./storage/d1-source-object-storage.js";
  import { R2SourceObjectStorage } from "./storage/r2-source-object-storage.js";
 -import { handleStandaloneApp } from "./standalone-pwa.js";
 +import { handleStandaloneApp, handleStandaloneEntry } from "./standalone-pwa.js";
@@ -1210,7 +1658,7 @@ index 6f84bb2..784955b 100644
  
      if (route === "health") {
 -      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.13" });
++      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.14" });
 +    }
 +    if (route === "widget-asset") {
 +      return handleWidgetAsset(request, url, {
@@ -1220,7 +1668,7 @@ index 6f84bb2..784955b 100644
      }
      if (route === "misconfigured") {
        console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
-@@ -25,6 +39,9 @@ export default {
+@@ -25,25 +41,36 @@ export default {
      if (route === "not-found") {
        return new Response("Not found", { status: 404 });
      }
@@ -1230,15 +1678,42 @@ index 6f84bb2..784955b 100644
      if (route === "app") {
        return handleStandaloneApp(request, url, env.MCP_PATH_TOKEN, widgetHtml);
      }
-@@ -39,7 +56,7 @@ export default {
-           ? handleSourceRoute(request, sourceService)
-           : new Response("Not found", { status: 404 });
+ 
+     try {
+       const repository = new D1ReadingRepository(env.DB);
++      const d1AssetStorage = new D1SourceObjectStorage(env.DB);
+       const sourceService = env.SOURCES_BUCKET
+-        ? new CloudSourceService(repository, new R2SourceObjectStorage(env.SOURCES_BUCKET))
+-        : undefined;
++        ? new CloudSourceService(
++            repository,
++            new R2SourceObjectStorage(env.SOURCES_BUCKET),
++            undefined,
++            { provider: "r2", allowManga: true }
++          )
++        : new CloudSourceService(
++            repository,
++            d1AssetStorage,
++            undefined,
++            { provider: "d1", allowManga: false }
++          );
++      const appearanceService = new AppearanceStorageService(d1AssetStorage);
+       if (route === "source") {
+-        return sourceService
+-          ? handleSourceRoute(request, sourceService)
+-          : new Response("Not found", { status: 404 });
++        return handleSourceRoute(request, sourceService, appearanceService);
        }
 -      const server = createMcpServerFromRepository(repository, widgetHtml, sourceService, {
 +      const server = createMcpServerFromRepository(repository, inlineWidgetHtml, sourceService, {
          workerOrigin: url.origin,
-         ...(sourceService
-           ? { sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}` }
+-        ...(sourceService
+-          ? { sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}` }
+-          : {})
++        sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}`
+       });
+       return createMcpHandler(server, {
+         route: url.pathname,
 diff --git a/server/wrangler.jsonc b/server/wrangler.jsonc
 index 7aab7e4..773289d 100644
 --- a/server/wrangler.jsonc
@@ -1253,17 +1728,30 @@ index 7aab7e4..773289d 100644
      }
    ],
 diff --git a/shared/package.json b/shared/package.json
-index d2cbeca..670e9b1 100644
+index d2cbeca..cc8c167 100644
 --- a/shared/package.json
 +++ b/shared/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/shared",
 -  "version": "0.2.7",
-+  "version": "0.2.13",
++  "version": "0.2.14",
    "private": true,
    "type": "module",
    "main": "./dist/index.js",
+diff --git a/shared/src/models.ts b/shared/src/models.ts
+index b213058..196764d 100644
+--- a/shared/src/models.ts
++++ b/shared/src/models.ts
+@@ -69,7 +69,7 @@ export interface SourceManifest {
+ 
+ export interface CloudSyncMetadata {
+   enabled: boolean;
+-  provider: "r2";
++  provider: "r2" | "d1";
+   objectKey?: string;
+   manifestObjectKey?: string;
+   uploadedAt?: string;
 diff --git a/shared/src/tool-schemas.test.ts b/shared/src/tool-schemas.test.ts
 index 03860ff..d22caf0 100644
 --- a/shared/src/tool-schemas.test.ts
@@ -1430,7 +1918,7 @@ index d5e154d..13f5ddb 100644
    title: z.string().trim().min(1).max(200),
    type: readingTypeSchema
 diff --git a/web/index.html b/web/index.html
-index b261313..a9902ba 100644
+index b261313..d283626 100644
 --- a/web/index.html
 +++ b/web/index.html
 @@ -3,14 +3,14 @@
@@ -1455,19 +1943,19 @@ index b261313..a9902ba 100644
          <dl style="display:grid;grid-template-columns:max-content 1fr;gap:8px 14px">
            <dt>resourceVersion</dt>
 -          <dd>app-v24</dd>
-+          <dd>app-v0213</dd>
++          <dd>app-v0214</dd>
            <dt>bootStage</dt>
            <dd>html-loaded</dd>
          </dl>
 diff --git a/web/package.json b/web/package.json
-index 088c892..2a541a8 100644
+index 088c892..4bdca2b 100644
 --- a/web/package.json
 +++ b/web/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/web",
 -  "version": "0.2.7",
-+  "version": "0.2.13",
++  "version": "0.2.14",
    "private": true,
    "type": "module",
    "scripts": {
@@ -1480,7 +1968,7 @@ index 088c892..2a541a8 100644
    }
  }
 diff --git a/web/src/App.test.tsx b/web/src/App.test.tsx
-index 7b93b47..4af7202 100644
+index 7b93b47..574eaca 100644
 --- a/web/src/App.test.tsx
 +++ b/web/src/App.test.tsx
 @@ -32,20 +32,23 @@ describe("App", () => {
@@ -1508,13 +1996,76 @@ index 7b93b47..4af7202 100644
 -      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.50");
 -      expect(localStorage.getItem("ll:appearance:v1")).toContain('"theme":"lavender"');
 +      expect(document.documentElement.dataset.llTheme).toBeUndefined();
-+      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.30");
-+      expect(localStorage.getItem("ll:appearance:v3")).toContain('"glassOpacity":0.3');
-+      expect(localStorage.getItem("ll:appearance:v3")).not.toContain("theme");
++      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.24");
++      expect(localStorage.getItem("ll:appearance:v4")).toContain('"glassOpacity":0.24');
++      expect(localStorage.getItem("ll:appearance:v4")).not.toContain("theme");
      });
    });
  
-@@ -748,7 +751,7 @@ describe("App", () => {
+@@ -261,7 +264,7 @@ describe("App", () => {
+ 
+     fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
+ 
+-    expect(await screen.findByText(/用户读到：第 1 段/)).toBeInTheDocument();
++    expect(await screen.findByText(/用户读到：第 1 段/, {}, { timeout: 5000 })).toBeInTheDocument();
+     expect(screen.getByText(content.slice(0, 20), { exact: false })).toBeInTheDocument();
+     expect(await deviceCache.get("large-file-session")).toMatchObject({
+       metadata: {
+@@ -517,7 +520,7 @@ describe("App", () => {
+     });
+   });
+ 
+-  it("does not ask ChatGPT to publish a Dock comment when companion auto-save is off", async () => {
++  it("always saves the explicit '陪我看看这里' reply into companion comments", async () => {
+     const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
+       if (name === "start_reading_session") {
+         return {
+@@ -605,10 +608,8 @@ describe("App", () => {
+ 
+     await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalled());
+     const prompt = String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt ?? "");
+-    expect(prompt).not.toContain("publish_companion_comment");
+-    expect(prompt).toContain("不自动保存短评到 Dock");
+-    expect(prompt).toContain("不要调用任何应用写回工具");
+-    expect(prompt).toContain("直接在聊天区回复短评");
++    expect(prompt).toContain("publish_companion_comment");
++    expect(prompt).toContain("工具成功后，再在聊天区回复完全相同的短评");
+   });
+ 
+   it("disables the current-paragraph action while a sync request is in flight", async () => {
+@@ -701,7 +702,8 @@ describe("App", () => {
+     await waitFor(() => expect(action).not.toBeDisabled());
+   });
+ 
+-  it("shows dual-position status and asks before a large catch-up", async () => {
++  it("automatically reads every missing range and emits one formal reply", async () => {
++    const sendFollowUpMessage = vi.fn().mockResolvedValue(undefined);
+     const callTool = vi.fn(async (name: string) => {
+       if (name === "start_reading_session") {
+         return {
+@@ -726,6 +728,12 @@ describe("App", () => {
+           }
+         };
+       }
++      if (name === "send_current_context") {
++        return { structuredContent: { context: { accepted: true } } };
++      }
++      if (name === "confirm_assistant_synced_position") {
++        return { structuredContent: { confirmed: true } };
++      }
+       return { structuredContent: {} };
+     });
+     Object.defineProperty(window, "openai", {
+@@ -733,7 +741,7 @@ describe("App", () => {
+       value: {
+         toolOutput: { recentSessions: [] },
+         callTool,
+-        sendFollowUpMessage: vi.fn(),
++        sendFollowUpMessage,
+         requestDisplayMode: vi.fn(),
+         setWidgetState: vi.fn()
+       }
+@@ -748,7 +756,7 @@ describe("App", () => {
        }
      });
      fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
@@ -1523,19 +2074,89 @@ index 7b93b47..4af7202 100644
  
      for (let index = 0; index < 27; index += 1) {
        fireEvent.click(screen.getByRole("button", { name: "下一段" }));
-@@ -764,7 +767,7 @@ describe("App", () => {
+@@ -756,33 +764,18 @@ describe("App", () => {
+     await screen.findByText(/用户读到：第 28 段/);
+     fireEvent.click(screen.getByRole("button", { name: "陪我看看这里" }));
  
-     fireEvent.click(screen.getByRole("button", { name: /完整补课后再陪读/ }));
-     const confirmButton = await screen.findByRole("button", {
+-    expect(await screen.findByText("中间有较多剧情，要怎么同步？")).toBeInTheDocument();
+-    expect(screen.getByRole("button", { name: /完整补课后再陪读/ })).toBeInTheDocument();
+-    expect(screen.getByRole("button", { name: "只看当前段" })).toBeInTheDocument();
+-    expect(screen.getByRole("button", { name: "补最近 5 段" })).toBeInTheDocument();
+-    expect(screen.getByRole("button", { name: "取消" })).toBeInTheDocument();
+-
+-    fireEvent.click(screen.getByRole("button", { name: /完整补课后再陪读/ }));
+-    const confirmButton = await screen.findByRole("button", {
 -      name: /我看到烁构回复“已读到第 28 段”，开始正式陪读/
-+      name: /我看到林序言回复“已读到第 28 段”，开始正式陪读/
-     });
+-    });
++    await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalledTimes(1));
++    expect(screen.queryByText("中间有较多剧情，要怎么同步？")).not.toBeInTheDocument();
++    expect(sendFollowUpMessage).toHaveBeenCalledTimes(1);
++    expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain("第 28");
++    expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain("不要先回复");
      expect(callTool).not.toHaveBeenCalledWith(
        "confirm_assistant_synced_position",
-@@ -870,8 +873,8 @@ describe("App", () => {
-     await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalledTimes(2));
-     expect(String(sendFollowUpMessage.mock.calls[1]?.[0]?.prompt)).toContain("补课已确认完成");
-     expect(String(sendFollowUpMessage.mock.calls[1]?.[0]?.prompt)).not.toContain("只简短回复");
+       expect.anything()
+     );
+-
+-    fireEvent.click(confirmButton);
+-    await waitFor(() => {
+-      expect(callTool).toHaveBeenCalledWith(
+-        "confirm_assistant_synced_position",
+-        expect.objectContaining({
+-          confirmedPosition: expect.objectContaining({ index: 28 })
+-        })
+-      );
+-    });
+   });
+ 
+-  it("serializes catch-up and formal comments without resending the same batch", async () => {
++  it("serializes automatic catch-up into one reply and forces companion-comment saving", async () => {
+     const deviceCache = new IndexedDbReadingCache();
+     const sourceManifest = {
+       ...manifest("sequence-source", "8"),
+@@ -832,10 +825,10 @@ describe("App", () => {
+       }
+       return { structuredContent: {} };
+     });
+-    const sendFollowUpMessage = vi.fn((input: { prompt: string }) =>
+-      input.prompt.includes("补课已确认完成")
+-        ? new Promise(() => undefined)
+-        : Promise.resolve(undefined)
++    let resolveFollowUp: (() => void) | undefined;
++    const sendFollowUpMessage = vi.fn(
++      (_input: { prompt: string }) =>
++        new Promise<void>((resolve) => { resolveFollowUp = resolve; })
+     );
+     Object.defineProperty(window, "openai", {
+       configurable: true,
+@@ -856,22 +849,24 @@ describe("App", () => {
+     await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalledTimes(1));
+     expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain("第 7");
+     expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain("第 8");
+-    expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain("只简短回复");
++    expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain("不要先回复");
++    expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain(
++      "先调用 publish_companion_comment"
++    );
+ 
+     fireEvent.click(lookButton);
+     await new Promise((resolve) => setTimeout(resolve, 0));
+     expect(sendFollowUpMessage).toHaveBeenCalledTimes(1);
+ 
+-    fireEvent.click(
+-      await screen.findByRole("button", {
+-        name: /已读到第 8 段.*正式陪读/
+-      })
++    resolveFollowUp?.();
++    await waitFor(() => expect(screen.queryByText("林序言补课中")).not.toBeInTheDocument());
++    expect(sendFollowUpMessage).toHaveBeenCalledTimes(1);
++    expect(callTool).not.toHaveBeenCalledWith(
++      "confirm_assistant_synced_position",
++      expect.anything()
+     );
+-    await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalledTimes(2));
+-    expect(String(sendFollowUpMessage.mock.calls[1]?.[0]?.prompt)).toContain("补课已确认完成");
+-    expect(String(sendFollowUpMessage.mock.calls[1]?.[0]?.prompt)).not.toContain("只简短回复");
 -    expect(screen.queryByText("烁构补课中")).not.toBeInTheDocument();
 -    expect(await screen.findByRole("button", { name: "保存烁构短评" })).toBeInTheDocument();
 +    expect(screen.queryByText("林序言补课中")).not.toBeInTheDocument();
@@ -1543,7 +2164,7 @@ index 7b93b47..4af7202 100644
  
      await deviceCache.remove("sequence-session");
    });
-@@ -957,13 +960,13 @@ describe("App", () => {
+@@ -957,13 +952,13 @@ describe("App", () => {
        expect(screen.getByRole("button", { name: "长评" })).toBeEnabled();
      });
  
@@ -1559,7 +2180,7 @@ index 7b93b47..4af7202 100644
      });
  
      fireEvent.click(screen.getByRole("button", { name: "立即吐槽" }));
-@@ -1204,11 +1207,11 @@ describe("App", () => {
+@@ -1204,11 +1199,11 @@ describe("App", () => {
      fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
      fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "短评保存测试" } });
      fireEvent.change(screen.getByPlaceholderText("粘贴 TXT 或 Markdown 文本"), {
@@ -1573,7 +2194,7 @@ index 7b93b47..4af7202 100644
      fireEvent.click(screen.getByRole("button", { name: "全屏阅读" }));
      expect(await screen.findByRole("button", { name: "退出全屏" })).toBeInTheDocument();
  
-@@ -1219,11 +1222,11 @@ describe("App", () => {
+@@ -1219,11 +1214,11 @@ describe("App", () => {
        expect.anything()
      );
  
@@ -1587,7 +2208,7 @@ index 7b93b47..4af7202 100644
  
      await waitFor(() => {
        expect(callTool).toHaveBeenCalledWith(
-@@ -1239,11 +1242,11 @@ describe("App", () => {
+@@ -1239,11 +1234,11 @@ describe("App", () => {
      expect(await screen.findByText("这句吐槽值得贴到小窝。")).toBeInTheDocument();
      expect(screen.getByRole("button", { name: "退出全屏" })).toBeInTheDocument();
      expect(screen.getByLabelText("短评内容")).toHaveValue("");
@@ -1601,7 +2222,7 @@ index 7b93b47..4af7202 100644
      await waitFor(() => {
        expect(
          callTool.mock.calls.filter(([name]) => name === "publish_companion_comment")
-@@ -1253,7 +1256,7 @@ describe("App", () => {
+@@ -1253,7 +1248,7 @@ describe("App", () => {
  
      fireEvent.click(screen.getByRole("button", { name: "返回首页" }));
      fireEvent.click(await screen.findByRole("button", { name: "管理《短评保存测试》" }));
@@ -1610,7 +2231,7 @@ index 7b93b47..4af7202 100644
      expect(screen.getByText("这句吐槽值得贴到小窝。")).toBeInTheDocument();
    });
  
-@@ -1573,7 +1576,7 @@ describe("App", () => {
+@@ -1573,7 +1568,7 @@ describe("App", () => {
                  position: { kind: "paragraph", index: 8, label: "第 8 段" },
                  mode: "light_chat",
                  length: "normal",
@@ -1619,7 +2240,7 @@ index 7b93b47..4af7202 100644
                  source: "catch_up_complete",
                  inRecent: true,
                  inHistory: true,
-@@ -1600,7 +1603,7 @@ describe("App", () => {
+@@ -1600,7 +1595,7 @@ describe("App", () => {
      fireEvent.click(await screen.findByRole("button", { name: "继续阅读《Reader Comment Book》" }));
  
      expect(await screen.findByText("用户读到：第 3 段")).toBeInTheDocument();
@@ -1628,11 +2249,632 @@ index 7b93b47..4af7202 100644
      expect(screen.getByText("第 8 段")).toBeInTheDocument();
      await deviceCache.remove("reader-comment-session");
    });
+@@ -1681,8 +1676,10 @@ describe("App", () => {
+         manifestObjectKey: "private/sources/cloud-upload-source/manifest.json"
+       }
+     };
+-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+-      jsonResponse({ sourceManifest: cloudManifest })
++    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) =>
++      url.endsWith("/appearance/load")
++        ? jsonResponse({ updatedAt: "2026-07-16T00:00:00.000Z" })
++        : jsonResponse({ sourceManifest: cloudManifest })
+     );
+     vi.stubGlobal("fetch", fetchMock);
+     const setWidgetState = vi.fn();
+@@ -1738,8 +1735,10 @@ describe("App", () => {
+       "https://worker.example.test/source/secret/upload",
+       expect.objectContaining({ method: "POST" })
+     );
+-    const firstUploadCall = fetchMock.mock.calls[0] as [string, RequestInit] | undefined;
+-    const uploadRequest = firstUploadCall?.[1];
++    const uploadCall = fetchMock.mock.calls.find(([url]) => url.endsWith("/upload")) as
++      | [string, RequestInit]
++      | undefined;
++    const uploadRequest = uploadCall?.[1];
+     expect(JSON.parse(String(uploadRequest?.body))).toMatchObject({
+       sessionId: "cloud-upload-session",
+       sourceKind: "pasted_text",
+@@ -1785,7 +1784,11 @@ describe("App", () => {
+         mimeType: "text/plain; charset=utf-8"
+       }
+     };
+-    const fetchMock = vi.fn(async () => jsonResponse({ sourceManifest: cloudManifest }));
++    const fetchMock = vi.fn(async (url: string) =>
++      url.endsWith("/appearance/load")
++        ? jsonResponse({ updatedAt: "2026-07-16T00:00:00.000Z" })
++        : jsonResponse({ sourceManifest: cloudManifest })
++    );
+     vi.stubGlobal("fetch", fetchMock);
+     const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
+       if (name === "start_reading_session") {
+@@ -1833,7 +1836,7 @@ describe("App", () => {
+     });
+     fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
+ 
+-    expect(await screen.findByText(/用户读到：第 1 段/)).toBeInTheDocument();
++    expect(await screen.findByText(/用户读到：第 1 段/, {}, { timeout: 5000 })).toBeInTheDocument();
+     expect(fetchMock).toHaveBeenCalledWith(
+       "https://worker.example.test/source/secret/upload",
+       expect.objectContaining({ method: "POST" })
+@@ -1953,8 +1956,10 @@ describe("App", () => {
+     });
+     const cloudManifest = withCloudSync(baseManifest, "cloud-restore-source");
+     const bundle = bookshelfBundle("cloud-restore-session", "云端恢复书", 2, "light_chat", cloudManifest);
+-    const fetchMock = vi.fn(async () =>
+-      jsonResponse({ sourceText, sourceManifest: cloudManifest })
++    const fetchMock = vi.fn(async (url: string) =>
++      url.endsWith("/appearance/load")
++        ? jsonResponse({ updatedAt: "2026-07-16T00:00:00.000Z" })
++        : jsonResponse({ sourceText, sourceManifest: cloudManifest })
+     );
+     vi.stubGlobal("fetch", fetchMock);
+     const callTool = vi.fn(async (name: string) => {
+@@ -2019,8 +2024,10 @@ describe("App", () => {
+       "light_chat",
+       legacyManifest
+     );
+-    const fetchMock = vi.fn(async () =>
+-      jsonResponse({ sourceText, sourceManifest: legacyManifest })
++    const fetchMock = vi.fn(async (url: string) =>
++      url.endsWith("/appearance/load")
++        ? jsonResponse({ updatedAt: "2026-07-16T00:00:00.000Z" })
++        : jsonResponse({ sourceText, sourceManifest: legacyManifest })
+     );
+     vi.stubGlobal("fetch", fetchMock);
+     const callTool = vi.fn(async (name: string) => {
+@@ -2097,7 +2104,11 @@ describe("App", () => {
+     });
+     const cloudManifest = withCloudSync(baseManifest, "ipad-cloud-source");
+     const bundle = bookshelfBundle("ipad-cloud-session", "iPad 云端书", 2, "light_chat", cloudManifest);
+-    const fetchMock = vi.fn(async () => jsonResponse({ sourceText, sourceManifest: cloudManifest }));
++    const fetchMock = vi.fn(async (url: string) =>
++      url.endsWith("/appearance/load")
++        ? jsonResponse({ updatedAt: "2026-07-16T00:00:00.000Z" })
++        : jsonResponse({ sourceText, sourceManifest: cloudManifest })
++    );
+     vi.stubGlobal("fetch", fetchMock);
+     const callTool = vi.fn(async (name: string) => {
+       if (name === "list_companion_comments") return { structuredContent: { comments: [] } };
+@@ -2116,18 +2127,18 @@ describe("App", () => {
+ 
+     const firstRender = render(<App />);
+     expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
+-    expect(fetchMock).toHaveBeenCalledTimes(1);
++    expect(fetchMock.mock.calls.filter(([url]) => url.endsWith("/restore"))).toHaveLength(1);
+ 
+     firstRender.unmount();
+     const secondRender = render(<App />);
+     expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
+-    expect(fetchMock).toHaveBeenCalledTimes(1);
++    expect(fetchMock.mock.calls.filter(([url]) => url.endsWith("/restore"))).toHaveLength(1);
+ 
+     await deviceCache.remove("ipad-cloud-session");
+     secondRender.unmount();
+     const thirdRender = render(<App />);
+     expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
+-    expect(fetchMock).toHaveBeenCalledTimes(2);
++    expect(fetchMock.mock.calls.filter(([url]) => url.endsWith("/restore"))).toHaveLength(2);
+     expect(screen.queryByText(/必须重新导入正文/)).not.toBeInTheDocument();
+     thirdRender.unmount();
+     await deviceCache.remove("ipad-cloud-session");
+@@ -2232,8 +2243,10 @@ describe("App", () => {
+         mimeType: "image/png"
+       }
+     ]);
+-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+-      jsonResponse({ sourceManifest: cloudManifest })
++    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) =>
++      url.endsWith("/appearance/load")
++        ? jsonResponse({ updatedAt: "2026-07-16T00:00:00.000Z" })
++        : jsonResponse({ sourceManifest: cloudManifest })
+     );
+     vi.stubGlobal("fetch", fetchMock);
+     const setWidgetState = vi.fn();
+@@ -2281,7 +2294,13 @@ describe("App", () => {
+       value: {
+         toolOutput: { recentSessions: [] },
+         toolResponseMetadata: {
+-          mcp_tool_result: { _meta: { sourceEndpointBase: "/source/secret" } }
++          mcp_tool_result: {
++            _meta: {
++              sourceEndpointBase: "/source/secret",
++              cloudSourceEnabled: true,
++              cloudMangaSourceEnabled: true
++            }
++          }
+         },
+         callTool,
+         requestDisplayMode: vi.fn(),
+@@ -2302,7 +2321,8 @@ describe("App", () => {
+       "/source/secret/upload",
+       expect.objectContaining({ method: "POST" })
+     );
+-    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject(
++    const mangaUploadCall = fetchMock.mock.calls.find(([url]) => url.endsWith("/upload"));
++    expect(JSON.parse(String(mangaUploadCall?.[1]?.body))).toMatchObject(
+       expect.objectContaining({
+         sessionId: "cloud-manga-session",
+         sourceKind: "manga_import",
+@@ -2354,7 +2374,10 @@ describe("App", () => {
+         userCurrentPosition: { kind: "page" as const, index: 2, total: 2, label: "第 2 页" }
+       }
+     };
+-    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
++    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
++      if (url.endsWith("/appearance/load")) {
++        return jsonResponse({ updatedAt: "2026-07-16T00:00:00.000Z" });
++      }
+       const body = JSON.parse(String(init?.body ?? "{}")) as { pageIndex?: number };
+       return jsonResponse({
+         pageIndex: body.pageIndex,
+@@ -2384,7 +2407,9 @@ describe("App", () => {
+ 
+     expect(await screen.findByText("正在从私人云端恢复正文")).toBeInTheDocument();
+     expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
+-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
++    await waitFor(() => {
++      expect(fetchMock.mock.calls.filter(([url]) => url.endsWith("/restore"))).toHaveLength(2);
++    });
+     const cacheValue = (await deviceCache.get("cloud-manga-restore-session")) as MangaLocalCache | null;
+     expect(cacheValue?.pages).toHaveLength(2);
+     expect(cacheValue?.metadata.sourceManifest.sourceKind).toBe("manga_import");
 diff --git a/web/src/App.tsx b/web/src/App.tsx
-index e200d4e..3465496 100644
+index e200d4e..dd02809 100644
 --- a/web/src/App.tsx
 +++ b/web/src/App.tsx
-@@ -608,7 +608,7 @@ export function App() {
+@@ -35,7 +35,6 @@ import { CacheSettings } from "./components/CacheSettings.js";
+ import { BookManagementSheet } from "./components/BookManagementSheet.js";
+ import { DiaryPreview } from "./components/DiaryPreview.js";
+ import { MoreActions } from "./components/MoreActions.js";
+-import { SyncChoiceSheet } from "./components/SyncChoiceSheet.js";
+ import { SyncProgressSheet } from "./components/SyncProgressSheet.js";
+ import type { PendingCompanionCommentDraft } from "./components/CompanionDock.js";
+ import { prepareCurrentPageContext } from "./features/manga/image-sync.js";
+@@ -56,6 +55,7 @@ import { buildSyncBatches } from "./features/reading-sync/build-batches.js";
+ import {
+   buildBatchChatMessage,
+   buildBatchUserNote,
++  buildAutomaticCatchUpFallbackPrompt,
+   buildCurrentOnlyPrompt,
+   buildFormalReadingPrompt,
+   buildRecentOnlyPrompt
+@@ -68,8 +68,10 @@ import {
+   applyAppearance,
+   loadAppearanceBackground,
+   loadAppearancePreferences,
++  normalizeAppearance,
+   saveAppearanceBackground,
+-  saveAppearancePreferences
++  saveAppearancePreferences,
++  type AppearancePreferences
+ } from "./features/appearance/appearance.js";
+ import {
+   cancelSyncJob,
+@@ -122,6 +124,7 @@ type OpenOutput = {
+ type OpenMetadata = {
+   sourceEndpointBase?: string;
+   cloudSourceEnabled?: boolean;
++  cloudMangaSourceEnabled?: boolean;
+ };
+ 
+ const cache = new IndexedDbReadingCache();
+@@ -150,6 +153,13 @@ export function App() {
+       initialMetadata?.cloudSourceEnabled ??
+       hasPrivateSourceEndpoint(initialSourceEndpointBase)
+   );
++  const [cloudMangaSourceEnabled, setCloudMangaSourceEnabled] = useState(
++    () => initialMetadata?.cloudMangaSourceEnabled ?? false
++  );
++  const [appearanceCloudReady, setAppearanceCloudReady] = useState(false);
++  const [appearanceSyncState, setAppearanceSyncState] = useState<
++    "loading" | "saving" | "saved" | "error"
++  >("loading");
+   const cloudSourceClient = useMemo(
+     () => new CloudSourceClient(sourceEndpointBase, undefined, callTool),
+     [sourceEndpointBase]
+@@ -193,13 +203,15 @@ export function App() {
+   const [historyComments, setHistoryComments] = useState<CompanionComment[]>([]);
+   const [historyCursor, setHistoryCursor] = useState<string | undefined>();
+   const [historyLoading, setHistoryLoading] = useState(false);
+-  const [syncChoiceOpen, setSyncChoiceOpen] = useState(false);
+   const [syncJob, setSyncJob] = useState<ReadingSyncJob | null>(null);
+   const [sourceAvailability, setSourceAvailability] =
+     useState<SourceAvailability>("unknown");
+   const [readerScrollTop, setReaderScrollTop] = useState(restoredWidgetState?.scrollTop ?? 0);
+   const restoreAttempted = useRef(false);
+   const syncJobRef = useRef<ReadingSyncJob | null>(null);
++  const appearanceAtBoot = useRef(appearance);
++  const appearanceBackgroundAtBoot = useRef(appearanceBackground);
++  const lastCloudAppearanceSignature = useRef("");
+   const hostLayout = useReadingHostLayout();
+ 
+   useLayoutEffect(() => {
+@@ -207,6 +219,91 @@ export function App() {
+     saveAppearancePreferences(appearance);
+   }, [appearance, appearanceBackground]);
+ 
++  useEffect(() => {
++    if (!hasPrivateSourceEndpoint(sourceEndpointBase)) {
++      setAppearanceCloudReady(true);
++      setAppearanceSyncState("error");
++      return;
++    }
++    let cancelled = false;
++    setAppearanceCloudReady(false);
++    setAppearanceSyncState("loading");
++    void cloudSourceClient
++      .loadAppearance()
++      .then(async (stored) => {
++        if (cancelled) return;
++        if (stored.updatedAt) {
++          const nextAppearance = stored.preferences
++            ? normalizeAppearance(stored.preferences)
++            : appearanceAtBoot.current;
++          const nextBackground = stored.backgroundDataUrl;
++          lastCloudAppearanceSignature.current = appearanceSignature(
++            nextAppearance,
++            nextBackground
++          );
++          setAppearance(nextAppearance);
++          setAppearanceBackground(nextBackground);
++          saveAppearancePreferences(nextAppearance);
++          saveAppearanceBackground(nextBackground);
++        } else {
++          await cloudSourceClient.saveAppearance({
++            preferences: appearanceAtBoot.current,
++            ...(appearanceBackgroundAtBoot.current
++              ? { backgroundDataUrl: appearanceBackgroundAtBoot.current }
++              : { removeBackground: true })
++          });
++          lastCloudAppearanceSignature.current = appearanceSignature(
++            appearanceAtBoot.current,
++            appearanceBackgroundAtBoot.current
++          );
++        }
++        if (!cancelled) {
++          setAppearanceCloudReady(true);
++          setAppearanceSyncState("saved");
++        }
++      })
++      .catch(() => {
++        if (!cancelled) {
++          setAppearanceCloudReady(true);
++          setAppearanceSyncState("error");
++        }
++      });
++    return () => {
++      cancelled = true;
++    };
++  }, [cloudSourceClient, sourceEndpointBase]);
++
++  useEffect(() => {
++    if (!appearanceCloudReady || !hasPrivateSourceEndpoint(sourceEndpointBase)) return;
++    const signature = appearanceSignature(appearance, appearanceBackground);
++    if (signature === lastCloudAppearanceSignature.current) {
++      setAppearanceSyncState("saved");
++      return;
++    }
++    setAppearanceSyncState("saving");
++    const timer = window.setTimeout(() => {
++      void cloudSourceClient
++        .saveAppearance({
++          preferences: appearance,
++          ...(appearanceBackground
++            ? { backgroundDataUrl: appearanceBackground }
++            : { removeBackground: true })
++        })
++        .then(() => {
++          lastCloudAppearanceSignature.current = signature;
++          setAppearanceSyncState("saved");
++        })
++        .catch(() => setAppearanceSyncState("error"));
++    }, 450);
++    return () => window.clearTimeout(timer);
++  }, [
++    appearance,
++    appearanceBackground,
++    appearanceCloudReady,
++    cloudSourceClient,
++    sourceEndpointBase
++  ]);
++
+   useEffect(
+     () =>
+       subscribeToolResults((result) => {
+@@ -219,6 +316,9 @@ export function App() {
+         if (typeof result._meta?.cloudSourceEnabled === "boolean") {
+           setCloudSourceEnabled(result._meta.cloudSourceEnabled);
+         }
++        if (typeof result._meta?.cloudMangaSourceEnabled === "boolean") {
++          setCloudMangaSourceEnabled(result._meta.cloudMangaSourceEnabled);
++        }
+         if (output?.bookshelfSessions || output?.recentSessions) {
+           setRecent(toBookshelfItems(output));
+         }
+@@ -275,6 +375,45 @@ export function App() {
+           .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+           .slice(0, 20)
+       );
++      const catchUpComment = comments.find(
++        (comment) =>
++          comment.sessionId === sessionId &&
++          comment.source === "catch_up_completion"
++      );
++      if (catchUpComment) {
++        setSessionBundle((current) =>
++          current?.session.id === sessionId &&
++          catchUpComment.position.kind === current.session.userCurrentPosition.kind &&
++          catchUpComment.position.index >
++            (current.session.assistantSyncedPosition?.index ?? 0)
++            ? {
++                ...current,
++                session: {
++                  ...current.session,
++                  assistantSyncedPosition: catchUpComment.position,
++                  updatedAt: catchUpComment.createdAt
++                }
++              }
++            : current
++        );
++        setRecent((items) =>
++          items.map((item) =>
++            item.session.id === sessionId &&
++            catchUpComment.position.kind === item.session.userCurrentPosition.kind &&
++            catchUpComment.position.index >
++              (item.session.assistantSyncedPosition?.index ?? 0)
++              ? {
++                  ...item,
++                  session: {
++                    ...item.session,
++                    assistantSyncedPosition: catchUpComment.position,
++                    updatedAt: catchUpComment.createdAt
++                  }
++                }
++              : item
++          )
++        );
++      }
+       setCompanionError("");
+     } catch {
+       if (!background) {
+@@ -323,7 +462,6 @@ export function App() {
+   useEffect(() => {
+     if (screen !== "novel" && screen !== "manga") return;
+     setOverlay(null);
+-    setSyncChoiceOpen(false);
+   }, [hostLayout.revision]);
+ 
+   useEffect(() => {
+@@ -343,6 +481,31 @@ export function App() {
+             sourceManifest: local.metadata.sourceManifest
+           };
+         }
++        if (
++          cloudSourceEnabled &&
++          local &&
++          "chunks" in local &&
++          !session.sourceManifest?.cloudSync.enabled
++        ) {
++          try {
++            const upload = await cloudSourceClient.uploadNovelSource({
++              sessionId: session.id,
++              title: session.title,
++              sourceText: local.sourceText
++            });
++            if (upload.sourceManifest?.cloudSync.enabled) {
++              session = { ...session, sourceManifest: upload.sourceManifest };
++              await rememberNovel(
++                session,
++                local.sourceText,
++                local.chunks,
++                upload.sourceManifest
++              );
++            }
++          } catch {
++            // Keep the local copy usable; the next home visit can safely retry migration.
++          }
++        }
+         let sourceAvailability = getSourceAvailability(
+           session.sourceManifest ?? null,
+           local?.metadata.sourceManifest ?? null
+@@ -421,19 +584,21 @@ export function App() {
+           ...(latestComment ? { latestComment } : {})
+         };
+       })
+-    ).then((items) => {
+-      if (!cancelled) {
+-        setRecent((current) =>
+-          items.filter((item) =>
+-            current.some((candidate) => candidate.session.id === item.session.id)
+-          )
+-        );
+-      }
+-    });
++    )
++      .then((items) => {
++        if (!cancelled) {
++          setRecent((current) =>
++            items.filter((item) =>
++              current.some((candidate) => candidate.session.id === item.session.id)
++            )
++          );
++        }
++      })
++      .catch(() => undefined);
+     return () => {
+       cancelled = true;
+     };
+-  }, [cloudSourceClient, recent.length, screen]);
++  }, [cloudSourceClient, cloudSourceEnabled, recent.length, screen]);
+ 
+   useEffect(() => {
+     if (!toast) return;
+@@ -473,7 +638,7 @@ export function App() {
+     setScreen("setup");
+   }
+ 
+-  async function continueReading(item: BookshelfItem) {
++  async function continueReading(item: BookshelfItem, requestedPositionIndex?: number) {
+     let nextItem = item;
+     const local = await cache.get(item.session.id).catch(() => undefined);
+     if (local && !item.session.sourceManifest) {
+@@ -489,13 +654,18 @@ export function App() {
+         }
+       };
+     }
+-    setSessionBundle(nextItem);
+-    const availability = getSourceAvailability(
++    let availability = getSourceAvailability(
+       nextItem.session.sourceManifest ?? null,
+       local === null ? null : local?.metadata.sourceManifest
+     );
+     setSourceAvailability(availability);
+     if (local && "chunks" in local && (availability === "available_local" || availability === "unknown")) {
++      nextItem = await moveBookshelfItemToPosition(
++        nextItem,
++        requestedPositionIndex,
++        local.chunks.length
++      );
++      setSessionBundle(nextItem);
+       setChunks(local.chunks);
+       setSourceText(local.sourceText);
+       setRemembered(true);
+@@ -503,6 +673,12 @@ export function App() {
+       return;
+     }
+     if (local && "pages" in local && (availability === "available_local" || availability === "unknown")) {
++      nextItem = await moveBookshelfItemToPosition(
++        nextItem,
++        requestedPositionIndex,
++        local.pages.length
++      );
++      setSessionBundle(nextItem);
+       setMangaPages(
+         local.pages.map((page) => ({
+           file: new File([page.blob], page.fileName, { type: page.mimeType }),
+@@ -513,6 +689,64 @@ export function App() {
+       setScreen("manga");
+       return;
+     }
++    if (
++      (availability === "available_cloud" || availability === "restoring_from_cloud") &&
++      nextItem.session.sourceManifest?.cloudSync.enabled
++    ) {
++      setSourceAvailability("restoring_from_cloud");
++      try {
++        if (nextItem.session.type === "novel") {
++          const restored = await cloudSourceClient.restoreNovelSource({
++            sessionId: nextItem.session.id
++          });
++          const restoredChunks = splitNovelTextForVersion(
++            restored.sourceText,
++            restored.sourceManifest.segmentationVersion
++          );
++          nextItem = {
++            ...nextItem,
++            session: {
++              ...nextItem.session,
++              sourceManifest: restored.sourceManifest
++            }
++          };
++          nextItem = await moveBookshelfItemToPosition(
++            nextItem,
++            requestedPositionIndex,
++            restoredChunks.length
++          );
++          await rememberNovel(
++            nextItem.session,
++            restored.sourceText,
++            restoredChunks,
++            restored.sourceManifest
++          );
++          setSessionBundle(nextItem);
++          setChunks(restoredChunks);
++          setSourceText(restored.sourceText);
++          setRemembered(true);
++          setSourceAvailability("available_local");
++          setScreen("novel");
++          return;
++        }
++        const restoredPages = await restoreMangaPages(nextItem.session, cloudSourceClient);
++        nextItem = await moveBookshelfItemToPosition(
++          nextItem,
++          requestedPositionIndex,
++          restoredPages.length
++        );
++        setSessionBundle(nextItem);
++        setMangaPages(restoredPages);
++        setRemembered(true);
++        setSourceAvailability("available_local");
++        setScreen("manga");
++        return;
++      } catch {
++        availability = "cloud_restore_failed";
++        setSourceAvailability(availability);
++      }
++    }
++    setSessionBundle(nextItem);
+     setExistingSession(nextItem.session);
+     setTitle(nextItem.session.title);
+     setSetupType(nextItem.session.type);
+@@ -527,6 +761,39 @@ export function App() {
+     );
+   }
+ 
++  async function moveBookshelfItemToPosition(
++    item: BookshelfItem,
++    requestedPositionIndex: number | undefined,
++    total: number
++  ): Promise<BookshelfItem> {
++    if (!requestedPositionIndex) return item;
++    const index = Math.min(total, Math.max(1, requestedPositionIndex));
++    const userCurrentPosition = makePosition(item.session.type, index, total);
++    const result = await callTool("update_reading_position", {
++      sessionId: item.session.id,
++      userCurrentPosition
++    });
++    const updatedAt =
++      typeof result.structuredContent?.updatedAt === "string"
++        ? result.structuredContent.updatedAt
++        : new Date().toISOString();
++    const nextItem = {
++      ...item,
++      session: {
++        ...item.session,
++        userCurrentPosition,
++        updatedAt,
++        lastReadAt: updatedAt
++      }
++    };
++    setRecent((items) =>
++      items.map((candidate) =>
++        candidate.session.id === nextItem.session.id ? nextItem : candidate
++      )
++    );
++    return nextItem;
++  }
++
+   function prepareReimport(item: BookshelfItem) {
+     setSessionBundle(item);
+     setSourceAvailability(item.sourceAvailability);
+@@ -548,6 +815,15 @@ export function App() {
+     await loadMoreCommentHistory(item.session.id, undefined, true);
+   }
+ 
++  async function jumpToManagedPosition(positionIndex: number) {
++    const item = managedBook;
++    if (!item) return;
++    setManagedBook(null);
++    setOverlay(null);
++    await continueReading(item, positionIndex);
++    setToast(`已经跳到${makePosition(item.session.type, positionIndex).label}。`);
++  }
++
+   async function openFullscreenReader() {
+     if (!sessionBundle || !position) return;
+     const saveFullscreenIntent = (immersive: boolean) =>
+@@ -608,7 +884,7 @@ export function App() {
          result.structuredContent?.nextCursor as string | undefined
        );
      } catch {
@@ -1641,7 +2883,37 @@ index e200d4e..3465496 100644
      } finally {
        setHistoryLoading(false);
      }
-@@ -1188,7 +1188,7 @@ export function App() {
+@@ -910,7 +1186,7 @@ export function App() {
+     let cloudUploadError = "";
+     let cloudDiagnostics: CloudUploadDiagnostics | undefined;
+     let serverSideCloudUploadOnly = false;
+-    if (cloudSourceEnabled) {
++    if (cloudSourceEnabled && (setupType === "novel" || cloudMangaSourceEnabled)) {
+       if (setupType === "novel") {
+         const sessionId = session.id;
+         setImportProgress((current) => ({
+@@ -1150,8 +1426,7 @@ export function App() {
+         mode: activePreferences.readingCommentMode,
+         length: activePreferences.commentLength,
+         operationId,
+-        autoSaveCompanionComments:
+-          sessionBundle.session.sessionPreferences.autoSaveCompanionComments
++        autoSaveCompanionComments: true
+       });
+       const result = await callTool("send_current_context", {
+         sessionId: sessionBundle.session.id,
+@@ -1178,7 +1453,9 @@ export function App() {
+         successPrompt: policyPrompt,
+         fallbackPrompt,
+         updateModelContext,
+-        sendMessage: askChatGpt
++        sendMessage: async (prompt, options) => {
++          await askChatGpt(prompt, options);
++        }
+       });
+       rememberPendingCommentDraft({
+         position: sessionBundle.session.userCurrentPosition,
+@@ -1188,7 +1465,7 @@ export function App() {
        });
        setToast(
          mode === "context"
@@ -1650,7 +2922,7 @@ index e200d4e..3465496 100644
            : "已用兼容模式发送当前段落。"
        );
      } finally {
-@@ -1202,7 +1202,7 @@ export function App() {
+@@ -1202,7 +1479,7 @@ export function App() {
      const userIndex = sessionBundle.session.userCurrentPosition.index;
      const assistantIndex = sessionBundle.session.assistantSyncedPosition?.index ?? 0;
      if (userIndex <= assistantIndex) {
@@ -1659,7 +2931,196 @@ index e200d4e..3465496 100644
        await lookAtNovel(currentText, selectedText);
        return;
      }
-@@ -1419,7 +1419,7 @@ export function App() {
+@@ -1213,10 +1490,6 @@ export function App() {
+       rangeEnd: userIndex,
+       idFactory: (ordinal) => `${sessionBundle.session.id}-${Date.now()}-${ordinal}`
+     });
+-    if (userIndex - assistantIndex > 20 || batches.length > 2) {
+-      setSyncChoiceOpen(true);
+-      return;
+-    }
+     await startFullCatchUp(batches);
+   }
+ 
+@@ -1245,10 +1518,9 @@ export function App() {
+       activeBatchIndex: 0,
+       createdAt: new Date().toISOString()
+     };
+-    setSyncChoiceOpen(false);
+     storeSyncJob(job);
+     await cache.putSyncJob(job).catch(() => undefined);
+-    await sendSyncBatch(job);
++    await runAutomaticCatchUp(job);
+   }
+ 
+   async function requestMangaSync() {
+@@ -1261,10 +1533,6 @@ export function App() {
+       return;
+     }
+     if (!allowAutomaticSync("range_sync")) return;
+-    if (userIndex - assistantIndex > 10) {
+-      setSyncChoiceOpen(true);
+-      return;
+-    }
+     await startMangaCatchUp(assistantIndex + 1);
+   }
+ 
+@@ -1300,10 +1568,152 @@ export function App() {
+       activeBatchIndex: 0,
+       createdAt: new Date().toISOString()
+     };
+-    setSyncChoiceOpen(false);
+     storeSyncJob(job);
+     await cache.putSyncJob(job).catch(() => undefined);
+-    await sendSyncBatch(job);
++    await runAutomaticCatchUp(job);
++  }
++
++  async function runAutomaticCatchUp(initialJob: ReadingSyncJob) {
++    if (!sessionBundle || syncRequestInFlight) return;
++    const permission = checkSourceSyncPermission({
++      mode: initialJob.mode,
++      sourceAvailability
++    });
++    if (!permission.allowed) {
++      setToast(sourceSyncBlockedMessage(sourceAvailability));
++      return;
++    }
++    setSyncRequestInFlight(true);
++    let working = initialJob;
++    const contexts: Record<string, unknown>[] = [];
++    const sourceContext = getSourceContext(sessionBundle.session.sourceManifest);
++    try {
++      while (getActiveBatch(working)) {
++        const batch = getActiveBatch(working)!;
++        let context: Record<string, unknown> | undefined;
++        if (working.type === "manga") {
++          const page = mangaPages[batch.rangeEnd - 1];
++          if (!page) throw new Error("Missing manga page");
++          const prepared = await prepareCurrentPageContext({
++            file: page.file,
++            pageDescription: batch.rangeEnd === position?.index ? pageDescription : "",
++            userNote,
++            uploadFile: fileCapabilities.uploadFile()
++          });
++          const result = await callTool("send_current_context", {
++            sessionId: working.sessionId,
++            previousSyncedPosition: working.confirmedThrough,
++            currentPosition: makePosition("manga", batch.rangeEnd, mangaPages.length),
++            contextRange: { start: batch.rangeStart, end: batch.rangeEnd },
++            ...(prepared.currentPageImage ? { currentPageImage: prepared.currentPageImage } : {}),
++            ...(prepared.pageDescription ? { pageDescription: prepared.pageDescription } : {}),
++            ...(prepared.userNote ? { userNote: prepared.userNote } : {}),
++            ...(sourceContext ? { sourceContext } : {}),
++            mode: "range_sync",
++            batch: {
++              id: batch.id,
++              ordinal: batch.ordinal,
++              total: batch.totalBatches,
++              rangeStart: batch.rangeStart,
++              rangeEnd: batch.rangeEnd,
++              hasMore: !batch.isFinal
++            }
++          });
++          context = result.structuredContent?.context as Record<string, unknown> | undefined;
++        } else {
++          const result = await callTool("send_current_context", {
++            sessionId: working.sessionId,
++            previousSyncedPosition: working.confirmedThrough,
++            currentPosition: working.targetPosition,
++            contextRange: { start: batch.rangeStart, end: batch.rangeEnd },
++            includedText: batch.text,
++            userNote: buildBatchUserNote(working, batch),
++            ...(sourceContext ? { sourceContext } : {}),
++            mode: "range_sync",
++            batch: {
++              id: batch.id,
++              ordinal: batch.ordinal,
++              total: batch.totalBatches,
++              rangeStart: batch.rangeStart,
++              rangeEnd: batch.rangeEnd,
++              hasMore: !batch.isFinal
++            }
++          });
++          context = result.structuredContent?.context as Record<string, unknown> | undefined;
++        }
++        if (!context) throw new Error("Missing catch-up context");
++        contexts.push(context);
++        working = markBatchConfirmed(markBatchSent(working, batch.id), batch.id);
++        storeSyncJob(working);
++        await cache.putSyncJob(working).catch(() => undefined);
++        await nextFrame();
++      }
++
++      const operationId = `auto-catch-up-${working.sessionId}-${working.targetPosition.index}-${Date.now()}`;
++      const preferences = sessionBundle.session.sessionPreferences;
++      const contextApplied = await updateModelContext({
++        kind: "automatic-full-catch-up",
++        sessionId: working.sessionId,
++        title: working.title,
++        targetPosition: working.targetPosition,
++        batches: contexts
++      });
++      const prompt = contextApplied
++        ? [
++            `已经自动完整补完《${working.title}》到${working.targetPosition.label}之间的所有内容。`,
++            "不要回复补课确认语，直接开始正式陪读。",
++            buildFormalReadingPrompt(working, {
++              mode: preferences.readingCommentMode,
++              length: preferences.commentLength,
++              operationId,
++              autoSaveCompanionComments: true
++            })
++          ].join("\n\n")
++        : buildAutomaticCatchUpFallbackPrompt(working, {
++            mode: preferences.readingCommentMode,
++            length: preferences.commentLength,
++            operationId
++          });
++      const messageSent = await askChatGpt(prompt, { scrollToBottom: false });
++      if (!messageSent) throw new Error("ChatGPT follow-up was unavailable");
++
++      rememberPendingCommentDraft({
++        position: working.targetPosition,
++        mode: preferences.readingCommentMode,
++        length: preferences.commentLength,
++        operationId
++      });
++      clearSyncJobState();
++      await cache.removeSyncJob(working.sessionId).catch(() => undefined);
++      setToast("全部内容已送达；林序言保存正式短评后会自动确认进度。");
++    } catch {
++      const active = getActiveBatch(working);
++      const failed = active
++        ? markBatchFailed(working, active.id)
++        : {
++            ...initialJob,
++            activeBatchIndex: 0,
++            confirmedThrough: sessionBundle.session.assistantSyncedPosition,
++            batches: initialJob.batches.map((batch) => ({ ...batch, status: "failed" as const }))
++          };
++      storeSyncJob(failed);
++      await cache.putSyncJob(failed).catch(() => undefined);
++      setToast("自动补课中断了，点重试会从头安全补课，不会写入假进度。");
++    } finally {
++      setSyncRequestInFlight(false);
++    }
++  }
++
++  async function retryAutomaticCatchUp() {
++    if (!syncJob || !sessionBundle) return;
++    const reset: ReadingSyncJob = {
++      ...syncJob,
++      activeBatchIndex: 0,
++      confirmedThrough: sessionBundle.session.assistantSyncedPosition,
++      batches: syncJob.batches.map((batch) => ({ ...batch, status: "pending" as const }))
++    };
++    storeSyncJob(reset);
++    await runAutomaticCatchUp(reset);
+   }
+ 
+   async function sendSyncBatch(job: ReadingSyncJob) {
+@@ -1419,7 +1829,7 @@ export function App() {
        if (confirmed.mode === "live_reading") {
          clearSyncJobState();
          await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
@@ -1668,7 +3129,7 @@ index e200d4e..3465496 100644
          return;
        }
        const formalMode = sessionBundle.session.sessionPreferences.readingCommentMode;
-@@ -1460,7 +1460,7 @@ export function App() {
+@@ -1460,7 +1870,7 @@ export function App() {
        });
        clearSyncJobState();
        await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
@@ -1677,7 +3138,34 @@ index e200d4e..3465496 100644
        return;
      }
      storeSyncJob(confirmed);
-@@ -2154,15 +2154,15 @@ export function App() {
+@@ -1477,7 +1887,6 @@ export function App() {
+       .slice(start - 1, end)
+       .map((chunk, offset) => `【第 ${start + offset} 段】\n${chunk}`)
+       .join("\n\n");
+-    setSyncChoiceOpen(false);
+     await askChatGpt(
+       buildRecentOnlyPrompt({
+         sessionId: sessionBundle.session.id,
+@@ -1496,7 +1905,6 @@ export function App() {
+   }
+ 
+   async function cancelCurrentSync() {
+-    setSyncChoiceOpen(false);
+     if (!syncJob) return;
+     const cancelled = cancelSyncJob(syncJob);
+     clearSyncJobState();
+@@ -1717,7 +2125,9 @@ export function App() {
+         successPrompt: policyPrompt,
+         fallbackPrompt,
+         updateModelContext,
+-        sendMessage: askChatGpt
++        sendMessage: async (prompt, options) => {
++          await askChatGpt(prompt, options);
++        }
+       });
+       rememberPendingCommentDraft({
+         position,
+@@ -2154,15 +2564,15 @@ export function App() {
                : "正文/图片只保存在本设备，不会上传到服务器。只有你主动同步的片段或页面会发送给 ChatGPT；请保留原文件以防设备缓存被清理。"}
            </p>
            {existingSession ? (
@@ -1697,8 +3185,81 @@ index e200d4e..3465496 100644
                ) : null}
                {!companionLoading && !companionError
                  ? companionComments.slice(0, 3).map((comment) => (
+@@ -2251,6 +2661,7 @@ export function App() {
+         <AppearanceSheet
+           value={appearance}
+           backgroundImage={appearanceBackground}
++          syncState={appearanceSyncState}
+           onChange={setAppearance}
+           onBackgroundChange={(dataUrl) => {
+             if (!saveAppearanceBackground(dataUrl)) {
+@@ -2289,6 +2700,7 @@ export function App() {
+           onRename={(title) => void renameManagedBook(title)}
+           onStatus={(status) => void setManagedBookStatus(status)}
+           onClearComments={(scope) => void clearManagedComments(scope)}
++          onJumpToPosition={(positionIndex) => void jumpToManagedPosition(positionIndex)}
+           onDelete={(options) => void deleteManagedBook(options)}
+           onClose={() => {
+             setManagedBook(null);
+@@ -2296,41 +2708,10 @@ export function App() {
+           }}
+         />
+       ) : null}
+-      {syncChoiceOpen && sessionBundle ? (
+-        <SyncChoiceSheet
+-          assistantLabel={sessionBundle.session.assistantSyncedPosition?.label ?? "开头"}
+-          userLabel={sessionBundle.session.userCurrentPosition.label}
+-          recentLabel={sessionBundle.session.type === "manga" ? "补最近 3 页" : "补最近 5 段"}
+-          onFull={() =>
+-            void (sessionBundle.session.type === "manga"
+-              ? startMangaCatchUp()
+-              : startFullCatchUp())
+-          }
+-          onCurrent={() => {
+-            setSyncChoiceOpen(false);
+-            void (sessionBundle.session.type === "manga"
+-              ? lookAtManga()
+-              : lookAtNovel(
+-                  chunks[sessionBundle.session.userCurrentPosition.index - 1] ?? "",
+-                  ""
+-                ));
+-          }}
+-          onRecent={() =>
+-            void (sessionBundle.session.type === "manga"
+-              ? startMangaCatchUp(
+-                  Math.max(1, sessionBundle.session.userCurrentPosition.index - 2),
+-                  true
+-                )
+-              : sendRecentNovelContext())
+-          }
+-          onCancel={() => setSyncChoiceOpen(false)}
+-        />
+-      ) : null}
+       {syncJob ? (
+         <SyncProgressSheet
+           job={syncJob}
+-          onConfirm={() => void confirmSyncBatch()}
+-          onRetry={() => void sendSyncBatch(syncJob)}
++          onRetry={() => void retryAutomaticCatchUp()}
+           onCancel={() => void cancelCurrentSync()}
+         />
+       ) : null}
+@@ -2496,6 +2877,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
+   };
+ }
+ 
++function appearanceSignature(
++  preferences: AppearancePreferences,
++  backgroundDataUrl?: string
++): string {
++  return JSON.stringify([preferences, backgroundDataUrl ?? null]);
++}
++
+ function makePosition(type: ReadingType, index: number, total?: number): ReadingPosition {
+   return {
+     kind: type === "novel" ? "paragraph" : "page",
 diff --git a/web/src/Boot.test.tsx b/web/src/Boot.test.tsx
-index abd5023..b23c001 100644
+index abd5023..89a4375 100644
 --- a/web/src/Boot.test.tsx
 +++ b/web/src/Boot.test.tsx
 @@ -46,7 +46,7 @@ describe("Boot", () => {
@@ -1706,7 +3267,7 @@ index abd5023..b23c001 100644
  
      expect(await screen.findByText("failed")).toBeInTheDocument();
 -    expect(screen.getByText("app-v24")).toBeInTheDocument();
-+    expect(screen.getByText("app-v0213")).toBeInTheDocument();
++    expect(screen.getByText("app-v0214")).toBeInTheDocument();
      expect(screen.getAllByText("present")).toHaveLength(3);
      expect(screen.getByText("1")).toBeInTheDocument();
      const diagnosticText = screen.getByRole("alert").textContent ?? "";
@@ -1715,12 +3276,12 @@ index abd5023..b23c001 100644
  
      expect(html).toContain("data-startup-fallback");
 -    expect(html).toContain("app-v24");
-+    expect(html).toContain("app-v0213");
++    expect(html).toContain("app-v0214");
      expect(html).not.toContain("sourceText");
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37..445ebdb 100644
+index c23bd37..454a3b6 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -1729,13 +3290,13 @@ index c23bd37..445ebdb 100644
  
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
-+const RESOURCE_VERSION = "app-v0213";
-+const APP_VERSION = "0.2.13";
++const RESOURCE_VERSION = "app-v0214";
++const APP_VERSION = "0.2.14";
  
  type AppModule = {
    App: ComponentType;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28ca..3649e4c 100644
+index 08a28ca..376f442 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -1743,12 +3304,43 @@ index 08a28ca..3649e4c 100644
    if (typeof window === "undefined" || window.parent === window) return undefined;
    if (!app) {
 -    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
-+    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.13" });
++    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.14" });
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
+@@ -55,24 +55,26 @@ export async function callTool(
+ export async function askChatGpt(
+   prompt: string,
+   options: { scrollToBottom?: boolean } = {}
+-) {
++): Promise<boolean> {
+   if (isStandaloneMode()) {
+     window.setTimeout(() => {
+       window.dispatchEvent(new CustomEvent("sxs:standalone-chat-request"));
+     }, 0);
+-    return;
++    return false;
+   }
+   await requestReaderPip();
+   const bridge = connectApp();
+   if (bridge) {
+     await appReady;
+     await bridge.sendMessage({ role: "user", content: [{ type: "text", text: prompt }] });
+-    return;
++    return true;
+   }
+-  await window.openai?.sendFollowUpMessage?.({
++  if (!window.openai?.sendFollowUpMessage) return false;
++  await window.openai.sendFollowUpMessage({
+     prompt,
+     scrollToBottom: options.scrollToBottom ?? false
+   });
++  return true;
+ }
+ 
+ export async function requestReaderPip(): Promise<boolean> {
 diff --git a/web/src/bridge/standalone.ts b/web/src/bridge/standalone.ts
-index f6c1e54..72c2549 100644
+index f6c1e54..090f43c 100644
 --- a/web/src/bridge/standalone.ts
 +++ b/web/src/bridge/standalone.ts
 @@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
@@ -1756,12 +3348,12 @@ index f6c1e54..72c2549 100644
    if (!config) throw new Error("Standalone reader path is unavailable");
    standaloneClient ??= (async () => {
 -    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.7" });
-+    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.13" });
++    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.14" });
      await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
      return client;
    })();
 diff --git a/web/src/components/AppearanceSheet.tsx b/web/src/components/AppearanceSheet.tsx
-index 2b6aff2..64fa2db 100644
+index 2b6aff2..800b2c4 100644
 --- a/web/src/components/AppearanceSheet.tsx
 +++ b/web/src/components/AppearanceSheet.tsx
 @@ -1,37 +1,10 @@
@@ -1802,7 +3394,15 @@ index 2b6aff2..64fa2db 100644
  const FONTS: Array<{ value: ReaderFont; label: string; preview: string }> = [
    { value: "serif", label: "书页宋体", preview: "故事" },
    { value: "rounded", label: "温柔圆体", preview: "故事" },
-@@ -78,43 +51,48 @@ export function AppearanceSheet(props: {
+@@ -41,6 +14,7 @@ const FONTS: Array<{ value: ReaderFont; label: string; preview: string }> = [
+ export function AppearanceSheet(props: {
+   value: AppearancePreferences;
+   backgroundImage?: string;
++  syncState?: "loading" | "saving" | "saved" | "error";
+   onChange: (next: AppearancePreferences) => void;
+   onBackgroundChange: (dataUrl?: string) => void;
+   onClose: () => void;
+@@ -78,43 +52,51 @@ export function AppearanceSheet(props: {
            <button type="button" className="icon-button" aria-label="关闭外观设置" onClick={props.onClose}>×</button>
          </header>
  
@@ -1825,7 +3425,10 @@ index 2b6aff2..64fa2db 100644
 -              </button>
 -            ))}
 +        <section className="appearance-section background-picker">
-+          <div className="appearance-section-title"><strong>自定义背景</strong><span>图片只留在当前设备</span></div>
++          <div className="appearance-section-title">
++            <strong>自定义背景</strong>
++            <span>{appearanceSyncLabel(props.syncState)}</span>
++          </div>
 +          {props.backgroundImage ? (
 +            <div className="background-preview" style={{ backgroundImage: `url("${props.backgroundImage}")` }}>
 +              <span>当前背景</span>
@@ -1858,27 +3461,27 @@ index 2b6aff2..64fa2db 100644
 -            value={props.value.glassOpacity}
 -            min={0.36}
 -            max={0.92}
-+            label="玻璃透光度"
-+            value={1 - props.value.glassOpacity}
-+            min={0.7}
-+            max={0.94}
-             step={0.02}
+-            step={0.02}
 -            display={`${Math.round(props.value.glassOpacity * 100)}%`}
 -            onChange={(glassOpacity) => patch({ glassOpacity })}
++            label="玻璃透光度"
++            value={1 - props.value.glassOpacity}
++            min={0.76}
++            max={0.97}
++            step={0.01}
 +            display={`${Math.round((1 - props.value.glassOpacity) * 100)}%`}
 +            onChange={(glassTransparency) => patch({ glassOpacity: 1 - glassTransparency })}
            />
            <RangeControl
              label="磨砂模糊"
              value={props.value.glassBlur}
--            min={8}
+             min={8}
 -            max={38}
-+            min={12}
-+            max={48}
++            max={36}
              step={1}
              display={`${Math.round(props.value.glassBlur)} px`}
              onChange={(glassBlur) => patch({ glassBlur })}
-@@ -156,32 +134,6 @@ export function AppearanceSheet(props: {
+@@ -156,32 +138,6 @@ export function AppearanceSheet(props: {
            />
          </section>
  
@@ -1911,24 +3514,110 @@ index 2b6aff2..64fa2db 100644
          <div className="appearance-footer">
            <button
              type="button"
+@@ -200,6 +156,15 @@ export function AppearanceSheet(props: {
+   );
+ }
+ 
++function appearanceSyncLabel(
++  state: "loading" | "saving" | "saved" | "error" | undefined
++): string {
++  if (state === "loading") return "正在读取私人云端";
++  if (state === "saving") return "正在保存";
++  if (state === "error") return "本机已保存，云端待重试";
++  return "已跨窗口保存";
++}
++
+ function RangeControl(props: {
+   label: string;
+   value: number;
+@@ -230,15 +195,21 @@ async function optimizeBackgroundImage(file: File): Promise<string> {
+   if (file.size > 20 * 1024 * 1024) throw new Error("图片太大啦，请选择 20MB 以内的照片。");
+   const source = await readFileAsDataUrl(file);
+   const image = await loadImage(source);
+-  const maxSide = 1600;
+-  const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+   const canvas = document.createElement("canvas");
+-  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+-  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+   const context = canvas.getContext("2d");
+   if (!context) throw new Error("当前浏览器无法处理这张照片。");
+-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+-  return canvas.toDataURL("image/jpeg", 0.82);
++  for (const maxSide of [1600, 1400, 1200]) {
++    const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
++    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
++    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
++    context.clearRect(0, 0, canvas.width, canvas.height);
++    context.drawImage(image, 0, 0, canvas.width, canvas.height);
++    for (const quality of [0.82, 0.72, 0.62]) {
++      const dataUrl = canvas.toDataURL("image/jpeg", quality);
++      if (dataUrl.length <= 1_200_000) return dataUrl;
++    }
++  }
++  throw new Error("这张照片压缩后仍然太大，请换一张尺寸小一点的图片。");
+ }
+ 
+ function readFileAsDataUrl(file: File): Promise<string> {
 diff --git a/web/src/components/BookManagementSheet.test.tsx b/web/src/components/BookManagementSheet.test.tsx
-index b265473..e10c707 100644
+index b265473..8467921 100644
 --- a/web/src/components/BookManagementSheet.test.tsx
 +++ b/web/src/components/BookManagementSheet.test.tsx
-@@ -55,7 +55,7 @@ describe("BookManagementSheet", () => {
+@@ -27,6 +27,7 @@ describe("BookManagementSheet", () => {
+   it("supports rename, status toggle, and lightweight record tabs", () => {
+     const onRename = vi.fn();
+     const onStatus = vi.fn();
++    const onJumpToPosition = vi.fn();
+     render(
+       <BookManagementSheet
+         bundle={bundle}
+@@ -38,6 +39,7 @@ describe("BookManagementSheet", () => {
+         onRename={onRename}
+         onStatus={onStatus}
+         onClearComments={vi.fn()}
++        onJumpToPosition={onJumpToPosition}
+         onDelete={vi.fn()}
+         onClose={vi.fn()}
+       />
+@@ -55,7 +57,9 @@ describe("BookManagementSheet", () => {
      expect(screen.getAllByText("用户反应")).toHaveLength(2);
      fireEvent.click(screen.getByRole("button", { name: "书签" }));
      expect(screen.getByText("书签标签")).toBeInTheDocument();
 -    fireEvent.click(screen.getByRole("button", { name: "烁构评论" }));
++    fireEvent.click(screen.getByRole("button", { name: /第 4 段.*书签标签/ }));
++    expect(onJumpToPosition).toHaveBeenCalledWith(4);
 +    fireEvent.click(screen.getByRole("button", { name: "林序言评论" }));
      expect(screen.getByText("历史短评")).toBeInTheDocument();
      expect(screen.getByRole("button", { name: "加载更多评论" })).toBeInTheDocument();
    });
+@@ -74,6 +78,7 @@ describe("BookManagementSheet", () => {
+         onRename={vi.fn()}
+         onStatus={vi.fn()}
+         onClearComments={onClearComments}
++        onJumpToPosition={vi.fn()}
+         onDelete={onDelete}
+         onClose={vi.fn()}
+       />
+@@ -115,6 +120,7 @@ describe("BookManagementSheet", () => {
+         onRename={vi.fn()}
+         onStatus={vi.fn()}
+         onClearComments={vi.fn()}
++        onJumpToPosition={vi.fn()}
+         onDelete={vi.fn()}
+         onClose={vi.fn()}
+       />
 diff --git a/web/src/components/BookManagementSheet.tsx b/web/src/components/BookManagementSheet.tsx
-index 7a95eda..6e52f63 100644
+index 7a95eda..f61cee2 100644
 --- a/web/src/components/BookManagementSheet.tsx
 +++ b/web/src/components/BookManagementSheet.tsx
-@@ -72,7 +72,7 @@ export function BookManagementSheet(props: {
+@@ -17,6 +17,7 @@ export function BookManagementSheet(props: {
+   onRename: (title: string) => void;
+   onStatus: (status: SessionStatus) => void;
+   onClearComments: (scope: "recent" | "history") => void;
++  onJumpToPosition: (positionIndex: number) => void;
+   onDelete: (options: { deleteCloudSource: boolean; deleteLocalCache: boolean }) => void;
+   onClose: () => void;
+ }) {
+@@ -72,11 +73,15 @@ export function BookManagementSheet(props: {
              <button aria-pressed={tab === "bookmarks"} onClick={() => setTab("bookmarks")}>书签</button>
              <button aria-pressed={tab === "quotes"} onClick={() => setTab("quotes")}>摘录</button>
              <button aria-pressed={tab === "reactions"} onClick={() => setTab("reactions")}>用户反应</button>
@@ -1937,12 +3626,136 @@ index 7a95eda..6e52f63 100644
            </div>
            <div className="record-list">
              {tab === "bookmarks"
+-              ? recordItems(props.bundle.bookmarks, (item) => item.label || item.position.label)
++              ? recordItems(
++                  props.bundle.bookmarks,
++                  (item) => item.label || item.position.label,
++                  props.onJumpToPosition
++                )
+               : null}
+             {tab === "quotes"
+               ? recordItems(props.bundle.quotes, (item) => item.content)
+@@ -178,15 +183,31 @@ export function BookManagementSheet(props: {
+   );
+ }
+ 
+-function recordItems<T extends { id: string; position: { label: string } }>(
++function recordItems<T extends { id: string; position: { index: number; label: string } }>(
+   items: T[],
+-  content: (item: T) => string
++  content: (item: T) => string,
++  onJumpToPosition?: (positionIndex: number) => void
+ ) {
+   if (items.length === 0) return <p className="record-empty">这里还没有记录。</p>;
+-  return items.map((item) => (
+-    <article key={item.id} className="record-item">
+-      <span>{item.position.label}</span>
+-      <p>{content(item)}</p>
+-    </article>
+-  ));
++  return items.map((item) => {
++    const body = (
++      <>
++        <span>{item.position.label}</span>
++        <p>{content(item)}</p>
++        {onJumpToPosition ? <small>点这里跳回此处 →</small> : null}
++      </>
++    );
++    return onJumpToPosition ? (
++      <button
++        type="button"
++        key={item.id}
++        className="record-item record-item-jump"
++        onClick={() => onJumpToPosition(item.position.index)}
++      >
++        {body}
++      </button>
++    ) : (
++      <article key={item.id} className="record-item">{body}</article>
++    );
++  });
+ }
 diff --git a/web/src/components/CompanionDock.test.tsx b/web/src/components/CompanionDock.test.tsx
-index 589531b..fbd49f0 100644
+index 589531b..9d2ff88 100644
 --- a/web/src/components/CompanionDock.test.tsx
 +++ b/web/src/components/CompanionDock.test.tsx
-@@ -141,8 +141,8 @@ describe("CompanionDock", () => {
-     fireEvent.click(screen.getByRole("button", { name: /第 4 段.*第四段短评/ }));
+@@ -1,4 +1,4 @@
+-import { fireEvent, render, screen } from "@testing-library/react";
++import { fireEvent, render, screen, within } from "@testing-library/react";
+ import { describe, expect, it, vi } from "vitest";
+ import type { CompanionComment } from "@ss/shared";
+ import { CompanionDock } from "./CompanionDock.js";
+@@ -11,7 +11,7 @@ const comments: CompanionComment[] = [
+ ];
+ 
+ describe("CompanionDock", () => {
+-  it("shows the latest three comments in wide mode and expands to recent comments", () => {
++  it("shows the latest three comments in wide mode and opens all comments in an independent sheet", () => {
+     render(
+       <CompanionDock
+         sessionId="session-a"
+@@ -28,8 +28,10 @@ describe("CompanionDock", () => {
+     expect(screen.getByText("第二段短评")).toBeInTheDocument();
+     expect(screen.queryByText("第一段短评")).not.toBeInTheDocument();
+ 
+-    fireEvent.click(screen.getByRole("button", { name: "查看最近短评" }));
+-    expect(screen.getByText("第一段短评")).toBeInTheDocument();
++    fireEvent.click(screen.getByRole("button", { name: "查看全部短评（4）" }));
++    const dialog = screen.getByRole("dialog", { name: "全部陪读短评" });
++    expect(within(dialog).getByText("第一段短评")).toBeInTheDocument();
++    expect(within(dialog).getAllByText(/段短评|段弹幕/)).toHaveLength(4);
+   });
+ 
+   it("uses a compact latest-comment card on narrow screens", () => {
+@@ -62,15 +64,12 @@ describe("CompanionDock", () => {
+       />
+     );
+ 
+-    const dock = screen.getByTestId("companion-dock");
+-    expect(dock).not.toHaveClass("expanded");
+     expect(screen.getByText(longText).closest("p")).not.toHaveClass("full-text");
+ 
+-    fireEvent.click(screen.getByRole("button", { name: "展开短评" }));
++    fireEvent.click(screen.getByRole("button", { name: "展开这条" }));
+ 
+-    expect(dock).toHaveClass("expanded");
+     expect(screen.getByText(longText).closest("p")).toHaveClass("full-text");
+-    expect(screen.getByRole("button", { name: "收起短评" })).toBeInTheDocument();
++    expect(screen.getByRole("button", { name: "收起这条" })).toBeInTheDocument();
+   });
+ 
+   it("orders recent comments newest first and never displays more than twenty", () => {
+@@ -94,10 +93,11 @@ describe("CompanionDock", () => {
+       />
+     );
+ 
+-    fireEvent.click(screen.getByRole("button", { name: "查看最近短评" }));
+-    expect(screen.getByText("短评 21")).toBeInTheDocument();
+-    expect(screen.getByText("短评 2")).toBeInTheDocument();
+-    expect(screen.queryByText("短评 1")).not.toBeInTheDocument();
++    fireEvent.click(screen.getByRole("button", { name: "查看全部短评（20）" }));
++    const dialog = screen.getByRole("dialog", { name: "全部陪读短评" });
++    expect(within(dialog).getByText("短评 21")).toBeInTheDocument();
++    expect(within(dialog).getByText("短评 2")).toBeInTheDocument();
++    expect(within(dialog).queryByText("短评 1")).not.toBeInTheDocument();
+   });
+ 
+   it("never renders deep-analysis body text and highlights the latest live comment", () => {
+@@ -121,7 +121,7 @@ describe("CompanionDock", () => {
+ 
+     expect(screen.queryByText(/不该出现在 Dock/)).not.toBeInTheDocument();
+     expect(screen.getByText("已生成长评，可回聊天区查看。")).toBeInTheDocument();
+-    expect(screen.getByText("第三段弹幕").closest("button")).toHaveClass("live-comment");
++    expect(screen.getByText("第三段弹幕").closest("article")).toHaveClass("live-comment");
+   });
+ 
+   it("supports jump, collapse, empty/error states, and clear recent", () => {
+@@ -138,11 +138,11 @@ describe("CompanionDock", () => {
+       />
+     );
+ 
+-    fireEvent.click(screen.getByRole("button", { name: /第 4 段.*第四段短评/ }));
++    fireEvent.click(screen.getByRole("button", { name: "第 4 段跳到这里 →" }));
      expect(onJump).toHaveBeenCalledWith(4);
      fireEvent.click(screen.getByRole("button", { name: "收起陪读 Dock" }));
 -    expect(screen.getByRole("button", { name: "烁构陪读" })).toBeInTheDocument();
@@ -2031,10 +3844,32 @@ index 589531b..fbd49f0 100644
        target: { value: "布局刷新时别关。" }
      });
 diff --git a/web/src/components/CompanionDock.tsx b/web/src/components/CompanionDock.tsx
-index 096ac47..44ad950 100644
+index 096ac47..4a135ec 100644
 --- a/web/src/components/CompanionDock.tsx
 +++ b/web/src/components/CompanionDock.tsx
-@@ -65,7 +65,7 @@ export function CompanionDock(props: {
+@@ -34,7 +34,10 @@ export function CompanionDock(props: {
+   onJump: (positionIndex: number) => void;
+   onClear?: () => void;
+ }) {
+-  const [expanded, setExpanded] = useState(false);
++  const [expandedCommentIds, setExpandedCommentIds] = useState<Set<string>>(
++    () => new Set()
++  );
++  const [showAll, setShowAll] = useState(false);
+   const [collapsed, setCollapsed] = useState(false);
+   const [draftOpen, setDraftOpen] = useState(false);
+   const [draftText, setDraftText] = useState("");
+@@ -48,7 +51,8 @@ export function CompanionDock(props: {
+   );
+ 
+   useEffect(() => {
+-    setExpanded(false);
++    setExpandedCommentIds(new Set());
++    setShowAll(false);
+     setCollapsed(false);
+     setDraftOpen(false);
+     setDraftText("");
+@@ -65,33 +69,36 @@ export function CompanionDock(props: {
          data-testid="companion-dock"
        >
          <button type="button" className="companion-tab" onClick={() => setCollapsed(false)}>
@@ -2043,9 +3878,34 @@ index 096ac47..44ad950 100644
          </button>
        </aside>
      );
-@@ -87,11 +87,11 @@ export function CompanionDock(props: {
+   }
+ 
+   const collapsedVisibleCount = props.layout === "wide" ? 3 : 1;
+-  const hasLongComment = comments.some((comment) => {
+-    const text = comment.mode === "deep_analysis" ? DEEP_ANALYSIS_DOCK_TEXT : comment.text;
+-    return text.length > LONG_COMMENT_PREVIEW_THRESHOLD;
+-  });
+-  const canExpand = comments.length > collapsedVisibleCount || hasLongComment;
+-  const visibleCount = expanded ? 20 : collapsedVisibleCount;
+-  const visible = comments.slice(0, visibleCount);
++  const visible = comments.slice(0, collapsedVisibleCount);
+   const latestLiveCommentId = comments.find(
+     (comment) => comment.source === "live_reading"
+   )?.id;
+ 
++  const toggleComment = (commentId: string) =>
++    setExpandedCommentIds((current) => {
++      const next = new Set(current);
++      if (next.has(commentId)) next.delete(commentId);
++      else next.add(commentId);
++      return next;
++    });
++
+   return (
++    <>
      <aside
-       className={`companion-dock companion-dock-${props.layout}${expanded ? " expanded" : ""}${draftOpen ? " draft-open" : ""}`}
+-      className={`companion-dock companion-dock-${props.layout}${expanded ? " expanded" : ""}${draftOpen ? " draft-open" : ""}`}
++      className={`companion-dock companion-dock-${props.layout}${draftOpen ? " draft-open" : ""}`}
        data-testid="companion-dock"
 -      aria-label="烁构陪读短评"
 +      aria-label="林序言陪读短评"
@@ -2057,7 +3917,7 @@ index 096ac47..44ad950 100644
            <span>最近短评</span>
          </div>
          <div className="companion-dock-controls">
-@@ -105,10 +105,10 @@ export function CompanionDock(props: {
+@@ -105,28 +112,21 @@ export function CompanionDock(props: {
        </header>
  
        <div className="companion-comment-list">
@@ -2070,6 +3930,31 @@ index 096ac47..44ad950 100644
          ) : null}
          {!props.loading && !props.error
            ? visible.map((comment) => (
+-              <button
+-                type="button"
++              <CompanionCommentCard
+                 key={comment.id}
+-                className={`companion-comment${
+-                  comment.id === latestLiveCommentId ? " live-comment" : ""
+-                }`}
+-                onClick={() => props.onJump(comment.position.index)}
+-              >
+-                <span>{comment.position.label}</span>
+-                <p className={expanded ? "full-text" : undefined}>
+-                  {comment.mode === "deep_analysis"
+-                    ? DEEP_ANALYSIS_DOCK_TEXT
+-                    : comment.text}
+-                </p>
+-              </button>
++                comment={comment}
++                live={comment.id === latestLiveCommentId}
++                expanded={expandedCommentIds.has(comment.id)}
++                onToggle={() => toggleComment(comment.id)}
++                onJump={() => props.onJump(comment.position.index)}
++              />
+             ))
+           : null}
+       </div>
 @@ -136,7 +136,7 @@ export function CompanionDock(props: {
            <div className="pending-comment-save">
              {!draftOpen ? (
@@ -2079,7 +3964,7 @@ index 096ac47..44ad950 100644
                </button>
              ) : (
                <form
-@@ -156,7 +156,7 @@ export function CompanionDock(props: {
+@@ -156,20 +156,15 @@ export function CompanionDock(props: {
                    />
                  </label>
                  <button type="submit" disabled={!draftText.trim() || props.pendingCommentSaving}>
@@ -2088,6 +3973,94 @@ index 096ac47..44ad950 100644
                  </button>
                </form>
              )}
+           </div>
+         ) : null}
+-        {hasLongComment ? (
+-          <button type="button" onClick={() => setExpanded((value) => !value)}>
+-            {expanded ? "收起短评" : "展开短评"}
+-          </button>
+-        ) : null}
+-        {!hasLongComment && canExpand ? (
+-          <button type="button" onClick={() => setExpanded((value) => !value)}>
+-            {expanded ? "只看最新短评" : "查看最近短评"}
++        {comments.length > collapsedVisibleCount ? (
++          <button type="button" onClick={() => setShowAll(true)}>
++            查看全部短评（{comments.length}）
+           </button>
+         ) : null}
+         {comments.length > 0 && props.onClear ? (
+@@ -179,5 +174,71 @@ export function CompanionDock(props: {
+         ) : null}
+       </footer>
+     </aside>
++    {showAll ? (
++      <div
++        className="companion-comments-backdrop"
++        role="presentation"
++        onClick={() => setShowAll(false)}
++      >
++        <section
++          className="companion-comments-sheet"
++          role="dialog"
++          aria-modal="true"
++          aria-label="全部陪读短评"
++          onClick={(event) => event.stopPropagation()}
++        >
++          <header>
++            <div><strong>林序言陪读短评</strong><span>共 {comments.length} 条</span></div>
++            <button type="button" onClick={() => setShowAll(false)}>关闭</button>
++          </header>
++          <div className="companion-comments-sheet-list">
++            {comments.map((comment) => (
++              <CompanionCommentCard
++                key={comment.id}
++                comment={comment}
++                live={comment.id === latestLiveCommentId}
++                expanded
++                forceFull
++                onToggle={() => undefined}
++                onJump={() => {
++                  setShowAll(false);
++                  props.onJump(comment.position.index);
++                }}
++              />
++            ))}
++          </div>
++        </section>
++      </div>
++    ) : null}
++    </>
++  );
++}
++
++function CompanionCommentCard(props: {
++  comment: CompanionComment;
++  live: boolean;
++  expanded: boolean;
++  forceFull?: boolean;
++  onToggle: () => void;
++  onJump: () => void;
++}) {
++  const text =
++    props.comment.mode === "deep_analysis"
++      ? DEEP_ANALYSIS_DOCK_TEXT
++      : props.comment.text;
++  const long = text.length > LONG_COMMENT_PREVIEW_THRESHOLD;
++  return (
++    <article className={`companion-comment${props.live ? " live-comment" : ""}`}>
++      <button type="button" className="companion-comment-jump" onClick={props.onJump}>
++        <span>{props.comment.position.label}</span>
++        <small>跳到这里 →</small>
++      </button>
++      <p className={props.expanded || props.forceFull ? "full-text" : undefined}>{text}</p>
++      {long && !props.forceFull ? (
++        <button type="button" className="companion-comment-toggle" onClick={props.onToggle}>
++          {props.expanded ? "收起这条" : "展开这条"}
++        </button>
++      ) : null}
++    </article>
+   );
+ }
 diff --git a/web/src/components/DiaryPreview.tsx b/web/src/components/DiaryPreview.tsx
 index 69174cb..ebc2df6 100644
 --- a/web/src/components/DiaryPreview.tsx
@@ -2198,31 +4171,47 @@ index b764d57..0f40b1c 100644
            完整补课后再陪读（推荐）
          </button>
 diff --git a/web/src/components/SyncProgressSheet.tsx b/web/src/components/SyncProgressSheet.tsx
-index 77b05b9..43211f0 100644
+index 77b05b9..32e8ec5 100644
 --- a/web/src/components/SyncProgressSheet.tsx
 +++ b/web/src/components/SyncProgressSheet.tsx
-@@ -12,14 +12,14 @@ export function SyncProgressSheet(props: {
+@@ -3,7 +3,6 @@ import type { ReadingSyncJob } from "../features/reading-sync/types.js";
+ 
+ export function SyncProgressSheet(props: {
+   job: ReadingSyncJob;
+-  onConfirm: () => void;
+   onRetry: () => void;
+   onCancel: () => void;
+ }) {
+@@ -12,18 +11,14 @@ export function SyncProgressSheet(props: {
    return (
      <div className="sheet-backdrop">
        <section className="bottom-sheet sync-sheet" role="dialog" aria-modal="true">
 -        <h2>烁构补课中</h2>
 +        <h2>林序言补课中</h2>
          <p>
-           已确认：{props.job.confirmedThrough?.label ?? "尚未同步"}
-           {batch ? ` · 当前第 ${batch.rangeStart}–${batch.rangeEnd} ${unit}` : ""}
+-          已确认：{props.job.confirmedThrough?.label ?? "尚未同步"}
+-          {batch ? ` · 当前第 ${batch.rangeStart}–${batch.rangeEnd} ${unit}` : ""}
++          {batch
++            ? `正在自动读取第 ${batch.rangeStart}–${batch.rangeEnd} ${unit}`
++            : "全部内容已经送达，正在生成正式陪读回复"}
          </p>
-         {batch?.status === "sent-awaiting-confirmation" ? (
-           <button className="action-primary" onClick={props.onConfirm}>
+-        {batch?.status === "sent-awaiting-confirmation" ? (
+-          <button className="action-primary" onClick={props.onConfirm}>
 -            我看到烁构回复“已读到第 {batch.rangeEnd} {unit}”，
-+            我看到林序言回复“已读到第 {batch.rangeEnd} {unit}”，
-             {batch.isFinal ? "开始正式陪读" : "发送下一批"}
-           </button>
-         ) : null}
+-            {batch.isFinal ? "开始正式陪读" : "发送下一批"}
+-          </button>
+-        ) : null}
+-        {batch?.status === "failed" ? <button onClick={props.onRetry}>重试本批</button> : null}
++        <p>不需要逐批确认，完成后会直接出现林序言的陪读短评。</p>
++        {batch?.status === "failed" ? <button onClick={props.onRetry}>重试自动补课</button> : null}
+         <button className="text-button" onClick={props.onCancel}>取消补课</button>
+       </section>
+     </div>
 diff --git a/web/src/features/appearance/appearance.test.ts b/web/src/features/appearance/appearance.test.ts
-index a90656c..6bb56d0 100644
+index a90656c..1f46a32 100644
 --- a/web/src/features/appearance/appearance.test.ts
 +++ b/web/src/features/appearance/appearance.test.ts
-@@ -13,16 +13,14 @@ describe("appearance preferences", () => {
+@@ -13,15 +13,13 @@ describe("appearance preferences", () => {
      expect(loadAppearancePreferences({ getItem: () => null })).toEqual(DEFAULT_APPEARANCE);
      expect(
        normalizeAppearance({
@@ -2235,12 +4224,10 @@ index a90656c..6bb56d0 100644
      ).toMatchObject({
 -      theme: "lavender",
 -      glassOpacity: 0.92,
--      glassBlur: 8,
-+      glassOpacity: 0.3,
-+      glassBlur: 12,
++      glassOpacity: 0.24,
+       glassBlur: 8,
        readerScale: 0.9,
        readerLineHeight: 2.2
-     });
 @@ -35,19 +33,19 @@ describe("appearance preferences", () => {
        setItem: (key: string, value: string) => values.set(key, value),
        removeItem: (key: string) => values.delete(key)
@@ -2250,7 +4237,7 @@ index a90656c..6bb56d0 100644
      expect(saveAppearanceBackground("data:image/jpeg;base64,abc", storage)).toBe(true);
      expect(values.size).toBe(2);
 -    expect(loadAppearancePreferences(storage).theme).toBe("peach");
-+    expect(loadAppearancePreferences(storage).glassBlur).toBe(41);
++    expect(loadAppearancePreferences(storage).glassBlur).toBe(36);
    });
  
 -  it("applies the theme, glass controls, typography and local background", () => {
@@ -2266,7 +4253,7 @@ index a90656c..6bb56d0 100644
          glassBlur: 18,
          readerFont: "rounded",
          readerScale: 1.15
-@@ -55,10 +53,28 @@ describe("appearance preferences", () => {
+@@ -55,10 +53,38 @@ describe("appearance preferences", () => {
        "data:image/jpeg;base64,abc",
        root
      );
@@ -2274,8 +4261,8 @@ index a90656c..6bb56d0 100644
 +    expect(root.dataset.llTheme).toBeUndefined();
      expect(root.dataset.llCustomBackground).toBe("true");
 -    expect(root.style.getPropertyValue("--glass-opacity")).toBe("0.50");
-+    expect(root.style.getPropertyValue("--glass-opacity")).toBe("0.30");
-+    expect(root.style.getPropertyValue("--glass-reader-opacity")).toBe("0.20");
++    expect(root.style.getPropertyValue("--glass-opacity")).toBe("0.24");
++    expect(root.style.getPropertyValue("--glass-reader-opacity")).toBe("0.130");
      expect(root.style.getPropertyValue("--glass-blur")).toBe("18px");
      expect(root.style.getPropertyValue("--reader-font-scale")).toBe("1.15");
    });
@@ -2292,13 +4279,23 @@ index a90656c..6bb56d0 100644
 +    const preferences = loadAppearancePreferences({
 +      getItem: (key) => (key === "ll:appearance:v2" ? legacy : null)
 +    });
-+    expect(preferences.glassOpacity).toBe(0.3);
-+    expect(preferences.glassBlur).toBe(37);
++    expect(preferences.glassOpacity).toBe(0.24);
++    expect(preferences.glassBlur).toBe(36);
 +    expect(preferences).not.toHaveProperty("theme");
++  });
++
++  it("softens the old milky default when migrating to the transparent glass profile", () => {
++    const preferences = loadAppearancePreferences({
++      getItem: (key) =>
++        key === "ll:appearance:v3"
++          ? JSON.stringify({ ...DEFAULT_APPEARANCE, glassOpacity: 0.06, glassBlur: 26 })
++          : null
++    });
++    expect(preferences).toMatchObject({ glassOpacity: 0.06, glassBlur: 18 });
 +  });
  });
 diff --git a/web/src/features/appearance/appearance.ts b/web/src/features/appearance/appearance.ts
-index 017aaae..22d587f 100644
+index 017aaae..387148f 100644
 --- a/web/src/features/appearance/appearance.ts
 +++ b/web/src/features/appearance/appearance.ts
 @@ -1,8 +1,6 @@
@@ -2317,29 +4314,38 @@ index 017aaae..22d587f 100644
 -  theme: "forest",
 -  glassOpacity: 0.5,
 -  glassBlur: 28,
-+  glassOpacity: 0.1,
-+  glassBlur: 26,
++  glassOpacity: 0.055,
++  glassBlur: 16,
    readerFont: "serif",
    readerScale: 1,
    readerLineHeight: 1.86
  };
  
 -const SETTINGS_KEY = "ll:appearance:v1";
-+const SETTINGS_KEY = "ll:appearance:v3";
-+const LEGACY_SETTINGS_KEY = "ll:appearance:v2";
++const SETTINGS_KEY = "ll:appearance:v4";
++const LEGACY_SETTINGS_KEYS = ["ll:appearance:v3", "ll:appearance:v2"] as const;
  const BACKGROUND_KEY = "ll:appearance-background:v1";
  const FONT_STACKS: Record<ReaderFont, string> = {
    rounded: 'ui-rounded, "SF Pro Rounded", "PingFang SC", system-ui, sans-serif',
-@@ -31,7 +29,7 @@ export function loadAppearancePreferences(
+@@ -31,10 +29,15 @@ export function loadAppearancePreferences(
    storage: Pick<Storage, "getItem"> = window.localStorage
  ): AppearancePreferences {
    try {
 -    const raw = storage.getItem(SETTINGS_KEY);
-+    const raw = storage.getItem(SETTINGS_KEY) ?? storage.getItem(LEGACY_SETTINGS_KEY);
++    const current = storage.getItem(SETTINGS_KEY);
++    const raw =
++      current ?? LEGACY_SETTINGS_KEYS.map((key) => storage.getItem(key)).find(Boolean);
      if (!raw) return DEFAULT_APPEARANCE;
      const parsed = JSON.parse(raw) as Partial<AppearancePreferences>;
-     return normalizeAppearance(parsed);
-@@ -82,11 +80,23 @@ export function applyAppearance(
+-    return normalizeAppearance(parsed);
++    const normalized = normalizeAppearance(parsed);
++    return !current && normalized.glassOpacity <= 0.08 && normalized.glassBlur >= 24
++      ? { ...normalized, glassBlur: 18 }
++      : normalized;
+   } catch {
+     return DEFAULT_APPEARANCE;
+   }
+@@ -82,11 +85,23 @@ export function applyAppearance(
    root: HTMLElement = document.documentElement
  ) {
    const normalized = normalizeAppearance(preferences);
@@ -2349,35 +4355,35 @@ index 017aaae..22d587f 100644
    root.style.setProperty(
      "--glass-panel-opacity",
 -    Math.min(0.88, normalized.glassOpacity + 0.14).toFixed(2)
-+    Math.min(0.22, normalized.glassOpacity + 0.03).toFixed(2)
++    Math.min(0.15, normalized.glassOpacity + 0.018).toFixed(3)
 +  );
 +  root.style.setProperty(
 +    "--glass-control-opacity",
-+    Math.min(0.27, normalized.glassOpacity + 0.07).toFixed(2)
++    Math.min(0.19, normalized.glassOpacity + 0.04).toFixed(3)
 +  );
 +  root.style.setProperty(
 +    "--glass-reader-opacity",
-+    Math.min(0.2, normalized.glassOpacity + 0.01).toFixed(2)
++    Math.min(0.13, normalized.glassOpacity + 0.008).toFixed(3)
 +  );
 +  root.style.setProperty(
 +    "--glass-readability-opacity",
-+    Math.max(0.025, 0.055 - normalized.glassOpacity * 0.15).toFixed(3)
++    Math.max(0.012, 0.028 - normalized.glassOpacity * 0.08).toFixed(3)
    );
    root.style.setProperty("--glass-blur", `${normalized.glassBlur}px`);
    root.style.setProperty("--reader-font-family", FONT_STACKS[normalized.readerFont]);
-@@ -105,9 +115,8 @@ export function normalizeAppearance(
+@@ -105,9 +120,8 @@ export function normalizeAppearance(
    value: Partial<AppearancePreferences>
  ): AppearancePreferences {
    return {
 -    theme: isTheme(value.theme) ? value.theme : DEFAULT_APPEARANCE.theme,
 -    glassOpacity: clamp(value.glassOpacity, 0.36, 0.92, DEFAULT_APPEARANCE.glassOpacity),
 -    glassBlur: clamp(value.glassBlur, 8, 38, DEFAULT_APPEARANCE.glassBlur),
-+    glassOpacity: clamp(value.glassOpacity, 0.06, 0.3, DEFAULT_APPEARANCE.glassOpacity),
-+    glassBlur: clamp(value.glassBlur, 12, 48, DEFAULT_APPEARANCE.glassBlur),
++    glassOpacity: clamp(value.glassOpacity, 0.03, 0.24, DEFAULT_APPEARANCE.glassOpacity),
++    glassBlur: clamp(value.glassBlur, 8, 36, DEFAULT_APPEARANCE.glassBlur),
      readerFont: isReaderFont(value.readerFont) ? value.readerFont : DEFAULT_APPEARANCE.readerFont,
      readerScale: clamp(value.readerScale, 0.9, 1.3, DEFAULT_APPEARANCE.readerScale),
      readerLineHeight: clamp(
-@@ -119,10 +128,6 @@ export function normalizeAppearance(
+@@ -119,10 +133,6 @@ export function normalizeAppearance(
    };
  }
  
@@ -2414,10 +4420,18 @@ index e83f698..6f8d995 100644
    };
  }
 diff --git a/web/src/features/reading-sync/build-messages.test.ts b/web/src/features/reading-sync/build-messages.test.ts
-index 01e1bfb..d2733a7 100644
+index 01e1bfb..30e6e21 100644
 --- a/web/src/features/reading-sync/build-messages.test.ts
 +++ b/web/src/features/reading-sync/build-messages.test.ts
-@@ -38,7 +38,7 @@ describe("reading-sync messages", () => {
+@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
+ import {
+   buildBatchChatMessage,
+   buildBatchUserNote,
++  buildAutomaticCatchUpFallbackPrompt,
+   buildFormalReadingPrompt,
+   buildCurrentOnlyPrompt,
+   buildRecentOnlyPrompt
+@@ -38,7 +39,7 @@ describe("reading-sync messages", () => {
      const message = buildBatchChatMessage(job, batch);
  
      expect(message).toContain("【补课第 1/4 批：第 3–8 段】");
@@ -2426,8 +4440,38 @@ index 01e1bfb..d2733a7 100644
      expect(message).toContain("只简短回复：“已读到第 8 段。”");
      expect(message).toContain(batch.text);
      expect(message).not.toMatch(/剧情摘要|关键事件|人物关系/);
+@@ -70,6 +71,29 @@ describe("reading-sync messages", () => {
+     expect(prompt).not.toMatch(/剧情变化.*人物变化.*伏笔猜测.*当前感受/s);
+   });
+ 
++  it("builds a one-turn automatic catch-up fallback with every batch and auto-save", () => {
++    const secondBatch: SyncBatch = {
++      ...batch,
++      id: "batch-2",
++      ordinal: 2,
++      totalBatches: 2,
++      rangeStart: 9,
++      rangeEnd: 12,
++      text: "【第 9 段】\n第二批原文",
++      isFinal: true
++    };
++    const prompt = buildAutomaticCatchUpFallbackPrompt(
++      { ...job, batches: [{ ...batch, totalBatches: 2 }, secondBatch] },
++      { mode: "light_chat", length: "normal", operationId: "auto-catch-up-1" }
++    );
++
++    expect(prompt).toContain(batch.text);
++    expect(prompt).toContain(secondBatch.text);
++    expect(prompt).toContain("不要先回复‘已读到’");
++    expect(prompt).toContain("先调用 publish_companion_comment");
++    expect(prompt).toContain("operationId=auto-catch-up-1");
++  });
++
+   it("routes current-only and recent-only formal requests through prompt policy", () => {
+     const current = buildCurrentOnlyPrompt({
+       sessionId: "session-1",
 diff --git a/web/src/features/reading-sync/build-messages.ts b/web/src/features/reading-sync/build-messages.ts
-index d6fc26f..cc36228 100644
+index d6fc26f..2416a6c 100644
 --- a/web/src/features/reading-sync/build-messages.ts
 +++ b/web/src/features/reading-sync/build-messages.ts
 @@ -7,8 +7,8 @@ export function buildBatchChatMessage(job: ReadingSyncJob, batch: SyncBatch) {
@@ -2441,38 +4485,164 @@ index d6fc26f..cc36228 100644
      `只简短回复：“已读到第 ${batch.rangeEnd} 段。”`,
      "",
      batch.text
+@@ -51,6 +51,28 @@ export function buildFormalReadingPrompt(
+   });
+ }
+ 
++export function buildAutomaticCatchUpFallbackPrompt(
++  job: ReadingSyncJob,
++  preferences: {
++    mode: ReadingCommentMode;
++    length: CommentLength;
++    operationId: string;
++  }
++) {
++  return [
++    `【自动完整补课：第 ${job.batches[0]?.rangeStart ?? job.targetPosition.index}–${job.targetPosition.index} 段】`,
++    `《${job.title}》`,
++    "下面包含上次同步位置到当前段之间的全部原文。请一次读完，不要先回复‘已读到’，直接给出正式陪读短评。",
++    "",
++    job.batches.map((batch) => batch.text).join("\n\n"),
++    "",
++    buildFormalReadingPrompt(job, {
++      ...preferences,
++      autoSaveCompanionComments: true
++    })
++  ].join("\n");
++}
++
+ export function buildCurrentOnlyPrompt(input: {
+   sessionId: string;
+   title: string;
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197..8942043 100644
+index 2523197..1b6c0c8 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
-@@ -247,8 +247,8 @@ describe("CloudSourceClient", () => {
+@@ -2,6 +2,54 @@ import { describe, expect, it, vi } from "vitest";
+ import { CloudSourceClient } from "./cloud-source-client.js";
+ 
+ describe("CloudSourceClient", () => {
++  it("loads, saves and clears the same cross-window appearance profile", async () => {
++    const fetchMock = vi.fn()
++      .mockResolvedValueOnce(jsonResponse({
++        preferences: {
++          glassOpacity: 0.05,
++          glassBlur: 14,
++          readerFont: "serif",
++          readerScale: 1,
++          readerLineHeight: 1.86
++        },
++        backgroundDataUrl: "data:image/jpeg;base64,AQID",
++        updatedAt: "2026-07-16T00:00:00.000Z"
++      }))
++      .mockResolvedValueOnce(jsonResponse({ updatedAt: "2026-07-16T00:01:00.000Z" }))
++      .mockResolvedValueOnce(jsonResponse({ updatedAt: "2026-07-16T00:02:00.000Z" }));
++    const client = new CloudSourceClient("/source/secret", fetchMock);
++
++    await expect(client.loadAppearance()).resolves.toMatchObject({
++      backgroundDataUrl: "data:image/jpeg;base64,AQID"
++    });
++    await client.saveAppearance({
++      preferences: {
++        glassOpacity: 0.05,
++        glassBlur: 14,
++        readerFont: "serif",
++        readerScale: 1,
++        readerLineHeight: 1.86
++      },
++      backgroundDataUrl: "data:image/jpeg;base64,AQID"
++    });
++    await client.deleteAppearanceBackground({
++      glassOpacity: 0.05,
++      glassBlur: 14,
++      readerFont: "serif",
++      readerScale: 1,
++      readerLineHeight: 1.86
++    });
++
++    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
++      "/source/secret/appearance/load",
++      "/source/secret/appearance/save",
++      "/source/secret/appearance/delete-background"
++    ]);
++    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toMatchObject({
++      backgroundDataUrl: "data:image/jpeg;base64,AQID"
++    });
++  });
++
+   it("uploads novel source to the component endpoint instead of sending full text through the bridge", async () => {
+     const fetchMock = vi.fn().mockResolvedValue(
+       jsonResponse({
+@@ -247,8 +295,8 @@ describe("CloudSourceClient", () => {
      });
      const message = result.diagnostics.directUploadError ?? "";
  
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
-+    expect(message).toContain("resourceVersion=app-v0213");
-+    expect(message).toContain("appVersion=0.2.13");
++    expect(message).toContain("resourceVersion=app-v0214");
++    expect(message).toContain("appVersion=0.2.14");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f..5652d97 100644
+index fd4eb1f..8da2988 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
-@@ -20,8 +20,8 @@ export interface CloudSourceUploadResult {
+@@ -1,5 +1,6 @@
+ import type { CloudSourcePage, SourceManifest } from "@ss/shared";
+ import type { ToolCallResult } from "../../types/openai.js";
++import type { AppearancePreferences } from "../appearance/appearance.js";
+ 
+ type FetchLike = typeof fetch;
+ type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<ToolCallResult>;
+@@ -20,8 +21,14 @@ export interface CloudSourceUploadResult {
    diagnostics: CloudUploadDiagnostics;
  }
  
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
-+const RESOURCE_VERSION = "app-v0213";
-+const APP_VERSION = "0.2.13";
++export type CloudAppearance = {
++  preferences?: AppearancePreferences;
++  backgroundDataUrl?: string;
++  updatedAt?: string;
++};
++
++const RESOURCE_VERSION = "app-v0214";
++const APP_VERSION = "0.2.14";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
  export class CloudSourceClient {
+@@ -149,6 +156,28 @@ export class CloudSourceClient {
+     };
+   }
+ 
++  async loadAppearance(): Promise<CloudAppearance> {
++    return this.post<CloudAppearance>("/appearance/load", {});
++  }
++
++  async saveAppearance(input: {
++    preferences: AppearancePreferences;
++    backgroundDataUrl?: string;
++    removeBackground?: boolean;
++  }): Promise<CloudAppearance> {
++    return this.post<CloudAppearance>("/appearance/save", {
++      preferences: input.preferences,
++      ...(input.backgroundDataUrl ? { backgroundDataUrl: input.backgroundDataUrl } : {}),
++      ...(input.removeBackground ? { removeBackground: true } : {})
++    });
++  }
++
++  async deleteAppearanceBackground(
++    preferences: AppearancePreferences
++  ): Promise<CloudAppearance> {
++    return this.post<CloudAppearance>("/appearance/delete-background", { preferences });
++  }
++
+   private async post<T>(path: string, body: Record<string, unknown>): Promise<T> {
+     const uploadUrl = `${this.endpointBase}${path}`;
+     let response: Response;
 diff --git a/web/src/main.tsx b/web/src/main.tsx
-index b9391dd..002a5d4 100644
+index b9391dd..e9daf41 100644
 --- a/web/src/main.tsx
 +++ b/web/src/main.tsx
 @@ -15,6 +15,6 @@ if (rootElement) {
@@ -2480,7 +4650,7 @@ index b9391dd..002a5d4 100644
    document.body.insertAdjacentHTML(
      "afterbegin",
 -    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v24</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
-+    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0213</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
++    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0214</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
    );
  }
 diff --git a/web/src/pages/Home.test.tsx b/web/src/pages/Home.test.tsx
@@ -2554,7 +4724,7 @@ index 06da839..ecff5fd 100644
              </label>
            </div>
 diff --git a/web/src/styles/app.css b/web/src/styles/app.css
-index a60e55d..9545ee5 100644
+index a60e55d..c59602a 100644
 --- a/web/src/styles/app.css
 +++ b/web/src/styles/app.css
 @@ -2,8 +2,8 @@
@@ -2826,7 +4996,120 @@ index a60e55d..9545ee5 100644
  .font-choice[aria-pressed="true"] {
    border-color: color-mix(in srgb, var(--wood) 72%, white);
    box-shadow:
-@@ -1067,6 +1061,376 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+@@ -888,6 +882,8 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+ }
+ .record-item span { color: var(--muted); font-size: 10px; }
+ .record-item p { margin: 4px 0 0; font-size: 12px; line-height: 1.5; }
++.record-item small { display: block; margin-top: 6px; color: var(--sage-strong); font-size: 10px; font-weight: 750; }
++.record-item-jump { width: 100%; min-height: 0; color: var(--ink); text-align: left; }
+ .record-empty { margin: 0; padding: 12px; color: var(--muted); font-size: 12px; text-align: center; }
+ .danger-zone { background: color-mix(in srgb, var(--peach) 35%, var(--surface)); }
+ .delete-confirmation { display: grid; gap: 9px; }
+@@ -981,7 +977,21 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+   color: var(--ink);
+   text-align: left;
+ }
+-.companion-comment span { color: var(--muted); font-size: 10px; }
++.companion-comment-jump {
++  display: flex;
++  width: 100%;
++  min-height: 22px;
++  align-items: center;
++  justify-content: space-between;
++  gap: 8px;
++  padding: 0;
++  border: 0;
++  background: transparent;
++  box-shadow: none;
++  text-align: left;
++}
++.companion-comment-jump span { color: var(--muted); font-size: 10px; }
++.companion-comment-jump small { color: var(--sage-strong); font-size: 9px; font-weight: 760; }
+ .companion-comment p {
+   display: -webkit-box;
+   margin: 4px 0 0;
+@@ -989,13 +999,24 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+   font-size: 12px;
+   line-height: 1.5;
+   -webkit-box-orient: vertical;
+-  -webkit-line-clamp: 3;
++  -webkit-line-clamp: 4;
+ }
+ .companion-comment p.full-text {
+   display: block;
+   overflow: visible;
+   -webkit-line-clamp: unset;
+ }
++.companion-comment-toggle {
++  min-height: 26px;
++  margin-top: 6px;
++  padding: 3px 7px;
++  border: 1px solid var(--glass-border-soft);
++  border-radius: 9px;
++  background: var(--glass-control);
++  color: var(--sage-strong);
++  font-size: 9px;
++  font-weight: 760;
++}
+ .companion-comment.live-comment {
+   border-color: color-mix(in srgb, var(--peach-strong) 55%, var(--line));
+   background: color-mix(in srgb, var(--peach) 48%, var(--surface));
+@@ -1045,6 +1066,54 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+   font-weight: 800;
+ }
+ .companion-dock-footer .clear-comments { color: var(--danger); }
++.companion-comments-backdrop {
++  position: fixed;
++  z-index: 44;
++  inset: 0;
++  display: flex;
++  align-items: flex-end;
++  justify-content: center;
++  padding-top: max(44px, var(--safe-top));
++  background: rgb(15 34 49 / .16);
++  -webkit-backdrop-filter: blur(8px) saturate(1.12);
++  backdrop-filter: blur(8px) saturate(1.12);
++}
++.companion-comments-sheet {
++  display: grid;
++  grid-template-rows: auto minmax(0, 1fr);
++  width: min(100%, 620px);
++  max-height: min(78vh, 720px);
++  max-height: min(78dvh, 720px);
++  padding: 14px 14px calc(14px + var(--safe-bottom));
++  border: 1px solid var(--glass-border);
++  border-bottom: 0;
++  border-radius: 28px 28px 0 0;
++  background: var(--glass-panel);
++  -webkit-backdrop-filter: var(--glass-filter-strong);
++  backdrop-filter: var(--glass-filter-strong);
++  box-shadow: var(--glass-shadow);
++}
++.companion-comments-sheet > header {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 12px;
++  padding: 2px 2px 12px;
++}
++.companion-comments-sheet > header strong,
++.companion-comments-sheet > header span { display: block; }
++.companion-comments-sheet > header strong { font-size: 15px; }
++.companion-comments-sheet > header span { margin-top: 2px; color: var(--muted); font-size: 10px; }
++.companion-comments-sheet > header button { min-height: 34px; padding: 5px 10px; border: 1px solid var(--glass-border-soft); border-radius: 11px; background: var(--glass-control); }
++.companion-comments-sheet-list {
++  display: grid;
++  gap: 9px;
++  min-height: 0;
++  overflow-y: auto;
++  overscroll-behavior: contain;
++  padding: 1px 2px 10px;
++}
++.companion-comments-sheet-list .companion-comment { height: auto; }
+ .sheet-action { width: 100%; margin-bottom: 9px; text-align: left; background: var(--surface); border: 1px solid var(--line); }
+ .quiet-danger, .danger-button { color: var(--danger); }
+ .danger-button { width: 100%; background: color-mix(in srgb, var(--peach) 55%, transparent); }
+@@ -1067,6 +1136,396 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
    text-align: center;
  }
  
@@ -2904,8 +5187,8 @@ index a60e55d..9545ee5 100644
 +
 +.app :is(h1, h2, h3, strong, p, span, label, button, input, textarea) {
 +  text-shadow:
-+    0 1px 1px rgb(255 255 255 / .68),
-+    0 0 14px rgb(255 255 255 / .14);
++    0 1px 1px rgb(255 255 255 / .38),
++    0 0 12px rgb(255 255 255 / .08);
 +}
 +
 +.home-hero {
@@ -3080,8 +5363,8 @@ index a60e55d..9545ee5 100644
 +.novel-paper p {
 +  color: var(--ink);
 +  text-shadow:
-+    0 1px 1px rgb(255 255 255 / .78),
-+    0 0 16px rgb(255 255 255 / .2);
++    0 1px 1px rgb(255 255 255 / .48),
++    0 0 12px rgb(255 255 255 / .1);
 +}
 +
 +.manga-page {
@@ -3187,6 +5470,26 @@ index a60e55d..9545ee5 100644
 +    radial-gradient(circle at 81% 10%, rgb(255 255 255 / .44) 0 1px, transparent 2px);
 +}
 +
++:root[data-ll-custom-background="true"] .home-hero,
++:root[data-ll-custom-background="true"] .mode-card,
++:root[data-ll-custom-background="true"] .book-card,
++:root[data-ll-custom-background="true"] .setup-heading,
++:root[data-ll-custom-background="true"] .novel-paper,
++:root[data-ll-custom-background="true"] .reader-header,
++:root[data-ll-custom-background="true"] .reader-actions,
++:root[data-ll-custom-background="true"] .companion-dock,
++:root[data-ll-custom-background="true"] .bottom-sheet {
++  background-color: transparent;
++}
++
++:root[data-ll-custom-background="true"] .appearance-section,
++:root[data-ll-custom-background="true"] .comment-preferences,
++:root[data-ll-custom-background="true"] .management-section,
++:root[data-ll-custom-background="true"] .companion-comment,
++:root[data-ll-custom-background="true"] .record-item {
++  background-color: rgb(var(--glass-rgb) / calc(var(--glass-opacity) * .72));
++}
++
 +@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
 +  .home-hero,
 +  .mode-card,
@@ -3204,7 +5507,7 @@ index a60e55d..9545ee5 100644
    .home-shell { padding-inline: 40px; }
    .mode-grid { grid-template-columns: 1fr 1fr; }
 diff --git a/web/src/styles/tokens.css b/web/src/styles/tokens.css
-index f68bf4f..6f7c823 100644
+index f68bf4f..ada1a13 100644
 --- a/web/src/styles/tokens.css
 +++ b/web/src/styles/tokens.css
 @@ -1,34 +1,66 @@
@@ -3252,32 +5555,32 @@ index f68bf4f..6f7c823 100644
 +  --backdrop-b: #d8b9ce;
 +  --backdrop-c: #a6c8c6;
 +  --glass-rgb: 119 170 204;
-+  --glass-opacity: 0.1;
-+  --glass-panel-opacity: 0.13;
-+  --glass-control-opacity: 0.17;
-+  --glass-reader-opacity: 0.11;
-+  --glass-readability-opacity: 0.04;
-+  --glass-blur: 26px;
-+  --glass-border: rgb(255 255 255 / 0.46);
-+  --glass-border-soft: rgb(255 255 255 / 0.34);
-+  --glass-highlight: rgb(255 255 255 / 0.66);
++  --glass-opacity: 0.055;
++  --glass-panel-opacity: 0.073;
++  --glass-control-opacity: 0.095;
++  --glass-reader-opacity: 0.063;
++  --glass-readability-opacity: 0.024;
++  --glass-blur: 16px;
++  --glass-border: rgb(255 255 255 / 0.48);
++  --glass-border-soft: rgb(255 255 255 / 0.32);
++  --glass-highlight: rgb(255 255 255 / 0.62);
 +  --glass-surface:
-+    linear-gradient(138deg, rgb(255 255 255 / 0.18), transparent 31%, rgb(39 103 145 / 0.055) 68%, rgb(255 255 255 / 0.075)),
++    linear-gradient(138deg, rgb(255 255 255 / 0.095), transparent 31%, rgb(39 103 145 / 0.03) 68%, rgb(255 255 255 / 0.035)),
 +    linear-gradient(180deg, rgb(255 255 255 / var(--glass-readability-opacity)), transparent 54%),
 +    rgb(var(--glass-rgb) / var(--glass-opacity));
 +  --glass-panel:
-+    linear-gradient(142deg, rgb(255 255 255 / 0.21), transparent 28%, rgb(34 95 138 / 0.065) 65%, rgb(255 255 255 / 0.085)),
++    linear-gradient(142deg, rgb(255 255 255 / 0.105), transparent 28%, rgb(34 95 138 / 0.034) 65%, rgb(255 255 255 / 0.038)),
 +    linear-gradient(180deg, rgb(255 255 255 / var(--glass-readability-opacity)), transparent 58%),
 +    rgb(var(--glass-rgb) / var(--glass-panel-opacity));
 +  --glass-control:
-+    linear-gradient(145deg, rgb(255 255 255 / 0.24), transparent 43%, rgb(36 98 139 / 0.075)),
++    linear-gradient(145deg, rgb(255 255 255 / 0.13), transparent 43%, rgb(36 98 139 / 0.04)),
 +    rgb(var(--glass-rgb) / var(--glass-control-opacity));
 +  --glass-reader:
-+    linear-gradient(135deg, rgb(255 255 255 / 0.16), transparent 25%, rgb(31 91 132 / 0.05) 71%, rgb(255 255 255 / 0.065)),
++    linear-gradient(135deg, rgb(255 255 255 / 0.075), transparent 25%, rgb(31 91 132 / 0.025) 71%, rgb(255 255 255 / 0.03)),
 +    linear-gradient(180deg, rgb(255 255 255 / var(--glass-readability-opacity)), transparent 43%),
 +    rgb(var(--glass-rgb) / var(--glass-reader-opacity));
-+  --glass-filter: blur(var(--glass-blur)) saturate(1.32) contrast(1.025);
-+  --glass-filter-strong: blur(calc(var(--glass-blur) + 6px)) saturate(1.4) contrast(1.035);
++  --glass-filter: blur(var(--glass-blur)) saturate(1.2) contrast(1.035);
++  --glass-filter-strong: blur(calc(var(--glass-blur) + 2px)) saturate(1.24) contrast(1.04);
    --reader-font-family: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
    --reader-font-scale: 1;
    --reader-line-height: 1.86;
@@ -3289,10 +5592,10 @@ index f68bf4f..6f7c823 100644
 +  --shadow-soft: 0 12px 30px rgb(24 51 72 / 0.11);
 +  --glass-shadow:
 +    inset 0 1px 0 var(--glass-highlight),
-+    inset 1px 0 0 rgb(255 255 255 / 0.16),
-+    inset -1px -1px 0 rgb(17 55 82 / 0.08),
-+    inset 0 -10px 24px rgb(22 75 111 / 0.035),
-+    0 16px 42px rgb(20 50 73 / 0.13);
++    inset 1px 0 0 rgb(255 255 255 / 0.13),
++    inset -1px -1px 0 rgb(17 55 82 / 0.065),
++    inset 0 -10px 24px rgb(22 75 111 / 0.025),
++    0 16px 42px rgb(20 50 73 / 0.1);
 +  --glass-shadow-soft:
 +    inset 0 1px 0 rgb(255 255 255 / 0.54),
 +    inset 1px 0 0 rgb(255 255 255 / 0.12),
@@ -3383,7 +5686,7 @@ index f68bf4f..6f7c823 100644
 +  background: var(--backdrop-base);
  }
 diff --git a/web/vite.config.ts b/web/vite.config.ts
-index d41559e..e4dfc47 100644
+index d41559e..2b819ce 100644
 --- a/web/vite.config.ts
 +++ b/web/vite.config.ts
 @@ -1,14 +1,27 @@
@@ -3391,7 +5694,7 @@ index d41559e..e4dfc47 100644
  import react from "@vitejs/plugin-react";
 -import { viteSingleFile } from "vite-plugin-singlefile";
 +
-+const WIDGET_ASSET_BASE = "/widget-assets/v0213/";
++const WIDGET_ASSET_BASE = "/widget-assets/v0214/";
  
  export default defineConfig({
 -  plugins: [react(), viteSingleFile()],
@@ -3408,12 +5711,509 @@ index d41559e..e4dfc47 100644
 +    rollupOptions: {
 +      output: {
 +        codeSplitting: false,
-+        entryFileNames: "ll-reading-nest-v0213.bundle.js",
++        entryFileNames: "ll-reading-nest-v0214.bundle.js",
 +        assetFileNames: (assetInfo) =>
 +          assetInfo.names.some((name) => name.endsWith(".css"))
-+            ? "ll-reading-nest-v0213.css"
++            ? "ll-reading-nest-v0214.css"
 +            : "assets/[name]-[hash][extname]"
 +      }
 +    }
    }
  });
+diff --git a/server/migrations/0002_private_assets.sql b/server/migrations/0002_private_assets.sql
+new file mode 100644
+index 0000000..e0f7f93
+--- /dev/null
++++ b/server/migrations/0002_private_assets.sql
+@@ -0,0 +1,23 @@
++CREATE TABLE IF NOT EXISTS private_assets (
++  object_key TEXT PRIMARY KEY,
++  body BLOB NOT NULL,
++  content_type TEXT,
++  size_bytes INTEGER NOT NULL,
++  metadata_json TEXT,
++  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
++);
++
++CREATE INDEX IF NOT EXISTS private_assets_updated_at_idx
++  ON private_assets(updated_at);
++
++-- D1 limits the size of one BLOB value. Larger private sources are therefore
++-- split into small ordered rows while private_assets keeps their metadata.
++CREATE TABLE IF NOT EXISTS private_asset_chunks (
++  object_key TEXT NOT NULL,
++  chunk_index INTEGER NOT NULL,
++  body BLOB NOT NULL,
++  PRIMARY KEY (object_key, chunk_index)
++);
++
++CREATE INDEX IF NOT EXISTS private_asset_chunks_object_key_idx
++  ON private_asset_chunks(object_key);
+diff --git a/server/src/services/appearance-storage-service.ts b/server/src/services/appearance-storage-service.ts
+new file mode 100644
+index 0000000..31a1673
+--- /dev/null
++++ b/server/src/services/appearance-storage-service.ts
+@@ -0,0 +1,134 @@
++import { SourceObjectNotFoundError, type SourceObjectStorage } from "../storage/source-object-storage.js";
++import { AppError } from "../errors/app-error.js";
++
++export type StoredAppearancePreferences = {
++  glassOpacity: number;
++  glassBlur: number;
++  readerFont: "rounded" | "serif" | "sans";
++  readerScale: number;
++  readerLineHeight: number;
++};
++
++export type StoredAppearance = {
++  preferences?: StoredAppearancePreferences;
++  backgroundDataUrl?: string;
++  updatedAt?: string;
++};
++
++const APPEARANCE_OBJECT_KEY = "private/appearance/profile-v1.json";
++const MAX_BACKGROUND_DATA_URL_CHARS = 1_300_000;
++
++export class AppearanceStorageService {
++  constructor(
++    private readonly storage: SourceObjectStorage,
++    private readonly now: () => Date = () => new Date()
++  ) {}
++
++  async load(): Promise<StoredAppearance> {
++    try {
++      const object = await this.storage.getObject(APPEARANCE_OBJECT_KEY);
++      const raw = JSON.parse(new TextDecoder().decode(object.bytes)) as unknown;
++      return normalizeStoredAppearance(raw);
++    } catch (error) {
++      if (error instanceof SourceObjectNotFoundError) return {};
++      throw error;
++    }
++  }
++
++  async save(input: {
++    preferences?: unknown;
++    backgroundDataUrl?: unknown;
++    removeBackground?: boolean;
++  }): Promise<StoredAppearance> {
++    const current = await this.load();
++    const preferences =
++      input.preferences === undefined
++        ? current.preferences
++        : normalizeAppearancePreferences(input.preferences);
++    const backgroundDataUrl = input.removeBackground
++      ? undefined
++      : input.backgroundDataUrl === undefined
++        ? current.backgroundDataUrl
++        : normalizeBackgroundDataUrl(input.backgroundDataUrl);
++    const updatedAt = this.now().toISOString();
++    const next: StoredAppearance = {
++      ...(preferences ? { preferences } : {}),
++      ...(backgroundDataUrl ? { backgroundDataUrl } : {}),
++      updatedAt
++    };
++    await this.storage.putObject({
++      key: APPEARANCE_OBJECT_KEY,
++      bytes: new TextEncoder().encode(JSON.stringify(next)),
++      contentType: "application/json"
++    });
++    return next;
++  }
++
++  async clearBackground(): Promise<StoredAppearance> {
++    return this.save({ removeBackground: true });
++  }
++}
++
++function normalizeStoredAppearance(value: unknown): StoredAppearance {
++  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
++  const record = value as Record<string, unknown>;
++  const preferences = normalizeAppearancePreferences(record.preferences, false);
++  const backgroundDataUrl = normalizeBackgroundDataUrl(record.backgroundDataUrl, false);
++  return {
++    ...(preferences ? { preferences } : {}),
++    ...(backgroundDataUrl ? { backgroundDataUrl } : {}),
++    ...(typeof record.updatedAt === "string" ? { updatedAt: record.updatedAt } : {})
++  };
++}
++
++function normalizeAppearancePreferences(
++  value: unknown,
++  strict = true
++): StoredAppearancePreferences | undefined {
++  if (!value || typeof value !== "object" || Array.isArray(value)) {
++    if (strict) throw new AppError("INVALID_OPERATION", "外观设置格式无效。");
++    return undefined;
++  }
++  const record = value as Record<string, unknown>;
++  const readerFont = record.readerFont;
++  if (
++    !isFiniteNumber(record.glassOpacity) ||
++    !isFiniteNumber(record.glassBlur) ||
++    !isFiniteNumber(record.readerScale) ||
++    !isFiniteNumber(record.readerLineHeight) ||
++    (readerFont !== "rounded" && readerFont !== "serif" && readerFont !== "sans")
++  ) {
++    if (strict) throw new AppError("INVALID_OPERATION", "外观设置格式无效。");
++    return undefined;
++  }
++  return {
++    glassOpacity: clamp(record.glassOpacity, 0.03, 0.24),
++    glassBlur: clamp(record.glassBlur, 8, 36),
++    readerFont,
++    readerScale: clamp(record.readerScale, 0.9, 1.3),
++    readerLineHeight: clamp(record.readerLineHeight, 1.55, 2.2)
++  };
++}
++
++function normalizeBackgroundDataUrl(value: unknown, strict = true): string | undefined {
++  if (value === undefined || value === null || value === "") return undefined;
++  if (
++    typeof value !== "string" ||
++    !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value) ||
++    value.length > MAX_BACKGROUND_DATA_URL_CHARS
++  ) {
++    if (strict) {
++      throw new AppError("INVALID_OPERATION", "背景图片格式无效或压缩后仍然太大。");
++    }
++    return undefined;
++  }
++  return value;
++}
++
++function isFiniteNumber(value: unknown): value is number {
++  return typeof value === "number" && Number.isFinite(value);
++}
++
++function clamp(value: number, min: number, max: number) {
++  return Math.min(max, Math.max(min, value));
++}
+diff --git a/server/src/storage/d1-source-object-storage.test.ts b/server/src/storage/d1-source-object-storage.test.ts
+new file mode 100644
+index 0000000..661a019
+--- /dev/null
++++ b/server/src/storage/d1-source-object-storage.test.ts
+@@ -0,0 +1,141 @@
++import { describe, expect, it } from "vitest";
++import { Buffer } from "node:buffer";
++import {
++  D1SourceObjectStorage,
++  type D1AssetDatabaseLike
++} from "./d1-source-object-storage.js";
++
++describe("D1SourceObjectStorage", () => {
++  it("round-trips private binary objects without exposing a URL", async () => {
++    const database = new MemoryD1Assets();
++    const storage = new D1SourceObjectStorage(database);
++    const key = "private/sources/source-d1/source.txt";
++
++    await expect(
++      storage.putObject({
++        key,
++        bytes: new TextEncoder().encode("跨窗口正文"),
++        contentType: "text/plain;charset=utf-8",
++        metadata: { private: "true" }
++      })
++    ).resolves.toMatchObject({ key });
++    await expect(storage.headObject(key)).resolves.toMatchObject({
++      exists: true,
++      contentType: "text/plain;charset=utf-8"
++    });
++    const restored = await storage.getObject(key);
++    expect(new TextDecoder().decode(restored.bytes)).toBe("跨窗口正文");
++    expect(restored).not.toHaveProperty("publicUrl");
++    expect(restored).not.toHaveProperty("signedUrl");
++    await expect(storage.deleteObject(key)).resolves.toEqual({ deleted: true });
++    await expect(storage.getObject(key)).rejects.toThrow("Source object not found");
++  });
++
++  it("round-trips a 3.5 MiB private novel through ordered D1 chunks", async () => {
++    const database = new MemoryD1Assets();
++    const storage = new D1SourceObjectStorage(database);
++    const bytes = new Uint8Array(Math.floor(3.5 * 1024 * 1024));
++    for (let index = 0; index < bytes.length; index += 1) bytes[index] = index % 251;
++
++    await storage.putObject({ key: "large-novel", bytes });
++    const restored = new Uint8Array((await storage.getObject("large-novel")).bytes);
++
++    expect(restored.byteLength).toBe(bytes.byteLength);
++    expect(Buffer.compare(Buffer.from(restored), Buffer.from(bytes))).toBe(0);
++    expect(database.chunkCount("large-novel")).toBeGreaterThan(1);
++  });
++
++  it("rejects objects above the private source limit", async () => {
++    const storage = new D1SourceObjectStorage(new MemoryD1Assets());
++    await expect(
++      storage.putObject({ key: "too-large", bytes: new Uint8Array(5 * 1024 * 1024 + 1) })
++    ).rejects.toThrow("5 MiB 限制");
++  });
++});
++
++type Asset = {
++  body: ArrayBuffer;
++  content_type: string | null;
++  size_bytes: number;
++  metadata_json: string | null;
++};
++
++class MemoryD1Assets implements D1AssetDatabaseLike {
++  private readonly assets = new Map<string, Asset>();
++  private readonly chunks = new Map<string, Map<number, ArrayBuffer>>();
++
++  chunkCount(key: string): number {
++    return this.chunks.get(key)?.size ?? 0;
++  }
++
++  prepare(sql: string): FakeStatement {
++    return this.statement(sql, []);
++  }
++
++  private statement(sql: string, values: unknown[]): FakeStatement {
++    return {
++      bind: (...next: unknown[]) => this.statement(sql, next),
++      first: async <T>() => this.first<T>(sql, values),
++      all: async <T>() => this.all<T>(sql, values),
++      run: async () => this.run(sql, values)
++    };
++  }
++
++  private async all<T>(sql: string, values: unknown[]): Promise<{ success: boolean; results: T[] }> {
++    if (!sql.includes("FROM private_asset_chunks")) return { success: true, results: [] };
++    const chunks = this.chunks.get(String(values[0])) ?? new Map();
++    return {
++      success: true,
++      results: [...chunks.entries()]
++        .sort(([left], [right]) => left - right)
++        .map(([, body]) => ({ body: body.slice(0) } as T))
++    };
++  }
++
++  private async first<T>(sql: string, values: unknown[]): Promise<T | null> {
++    if (!sql.includes("FROM private_assets")) return null;
++    const asset = this.assets.get(String(values[0]));
++    if (!asset) return null;
++    if (sql.includes("SELECT content_type, size_bytes")) {
++      return { content_type: asset.content_type, size_bytes: asset.size_bytes } as T;
++    }
++    return { ...asset, body: asset.body.slice(0) } as T;
++  }
++
++  private async run(sql: string, values: unknown[]) {
++    if (sql.includes("INSERT INTO private_assets")) {
++      const [key, body, contentType, sizeBytes, metadataJson] = values;
++      const bytes = body as ArrayBuffer;
++      this.assets.set(String(key), {
++        body: bytes.slice(0),
++        content_type: typeof contentType === "string" ? contentType : null,
++        size_bytes: Number(sizeBytes),
++        metadata_json: typeof metadataJson === "string" ? metadataJson : null
++      });
++      return { success: true, meta: { changes: 1 } };
++    }
++    if (sql.includes("INSERT INTO private_asset_chunks")) {
++      const [key, index, body] = values;
++      const chunks = this.chunks.get(String(key)) ?? new Map<number, ArrayBuffer>();
++      chunks.set(Number(index), (body as ArrayBuffer).slice(0));
++      this.chunks.set(String(key), chunks);
++      return { success: true, meta: { changes: 1 } };
++    }
++    if (sql.includes("DELETE FROM private_asset_chunks")) {
++      const deleted = this.chunks.delete(String(values[0]));
++      return { success: true, meta: { changes: deleted ? 1 : 0 } };
++    }
++    if (sql.includes("DELETE FROM private_assets")) {
++      const deleted = this.assets.delete(String(values[0]));
++      return { success: true, meta: { changes: deleted ? 1 : 0 } };
++    }
++    return { success: true, meta: { changes: 0 } };
++  }
++}
++
++type FakeStatement = {
++  bind(...values: unknown[]): FakeStatement;
++  first<T>(): Promise<T | null>;
++  all<T>(): Promise<{ success: boolean; results: T[] }>;
++  run(): Promise<{ success: boolean; meta: { changes?: number } }>;
++};
+diff --git a/server/src/storage/d1-source-object-storage.ts b/server/src/storage/d1-source-object-storage.ts
+new file mode 100644
+index 0000000..d242432
+--- /dev/null
++++ b/server/src/storage/d1-source-object-storage.ts
+@@ -0,0 +1,175 @@
++import {
++  SourceObjectNotFoundError,
++  sourceBytesToArrayBuffer,
++  type SourceObjectStorage
++} from "./source-object-storage.js";
++
++type D1ResultLike = {
++  success: boolean;
++  meta: { changes?: number };
++};
++
++type D1RowsLike<T> = {
++  success: boolean;
++  results: T[];
++};
++
++type D1StatementLike = {
++  bind(...values: unknown[]): D1StatementLike;
++  first<T>(): Promise<T | null>;
++  all<T>(): Promise<D1RowsLike<T>>;
++  run(): Promise<D1ResultLike>;
++};
++
++export interface D1AssetDatabaseLike {
++  prepare(sql: string): D1StatementLike;
++}
++
++type AssetRow = {
++  body: ArrayBuffer | Uint8Array;
++  content_type: string | null;
++  size_bytes: number;
++  metadata_json: string | null;
++};
++
++type AssetChunkRow = { body: ArrayBuffer | Uint8Array };
++
++const D1_PRIVATE_ASSET_CHUNK_BYTES = 512 * 1024;
++const MAX_D1_PRIVATE_ASSET_BYTES = 5 * 1024 * 1024;
++
++export class D1SourceObjectStorage implements SourceObjectStorage {
++  constructor(private readonly database: D1AssetDatabaseLike) {}
++
++  async putObject(input: {
++    key: string;
++    bytes: Uint8Array | ArrayBuffer | Blob;
++    contentType?: string;
++    metadata?: Record<string, string>;
++  }): Promise<{ key: string; sizeBytes: number }> {
++    const bytes = await sourceBytesToArrayBuffer(input.bytes);
++    if (bytes.byteLength > MAX_D1_PRIVATE_ASSET_BYTES) {
++      throw new Error("私人资源超过 5 MiB 限制，请缩小文件后重试。");
++    }
++    await this.database
++      .prepare("DELETE FROM private_asset_chunks WHERE object_key = ?")
++      .bind(input.key)
++      .run();
++
++    const usesChunks = bytes.byteLength > D1_PRIVATE_ASSET_CHUNK_BYTES;
++    await this.database
++      .prepare(
++        `INSERT INTO private_assets
++          (object_key, body, content_type, size_bytes, metadata_json, updated_at)
++         VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
++         ON CONFLICT(object_key) DO UPDATE SET
++          body = excluded.body,
++          content_type = excluded.content_type,
++          size_bytes = excluded.size_bytes,
++          metadata_json = excluded.metadata_json,
++          updated_at = CURRENT_TIMESTAMP`
++      )
++      .bind(
++        input.key,
++        usesChunks ? new ArrayBuffer(0) : bytes,
++        input.contentType ?? null,
++        bytes.byteLength,
++        input.metadata ? JSON.stringify(input.metadata) : null
++      )
++      .run();
++
++    if (usesChunks) {
++      for (let offset = 0, index = 0; offset < bytes.byteLength; offset += D1_PRIVATE_ASSET_CHUNK_BYTES, index += 1) {
++        await this.database
++          .prepare(
++            `INSERT INTO private_asset_chunks (object_key, chunk_index, body)
++             VALUES (?, ?, ?)`
++          )
++          .bind(input.key, index, bytes.slice(offset, offset + D1_PRIVATE_ASSET_CHUNK_BYTES))
++          .run();
++      }
++    }
++    return { key: input.key, sizeBytes: bytes.byteLength };
++  }
++
++  async getObject(key: string): Promise<{
++    bytes: ArrayBuffer;
++    contentType?: string;
++    sizeBytes?: number;
++  }> {
++    const row = await this.database
++      .prepare(
++        "SELECT body, content_type, size_bytes, metadata_json FROM private_assets WHERE object_key = ?"
++      )
++      .bind(key)
++      .first<AssetRow>();
++    if (!row) throw new SourceObjectNotFoundError(key);
++    const inlineBytes = copyArrayBuffer(row.body);
++    let bytes = inlineBytes;
++    if (inlineBytes.byteLength !== row.size_bytes) {
++      const result = await this.database
++        .prepare(
++          "SELECT body FROM private_asset_chunks WHERE object_key = ? ORDER BY chunk_index ASC"
++        )
++        .bind(key)
++        .all<AssetChunkRow>();
++      bytes = joinChunks(result.results.map((chunk) => copyArrayBuffer(chunk.body)), row.size_bytes);
++    }
++    return {
++      bytes,
++      ...(row.content_type ? { contentType: row.content_type } : {}),
++      sizeBytes: row.size_bytes
++    };
++  }
++
++  async headObject(key: string): Promise<{
++    exists: boolean;
++    contentType?: string;
++    sizeBytes?: number;
++  }> {
++    const row = await this.database
++      .prepare(
++        "SELECT content_type, size_bytes FROM private_assets WHERE object_key = ?"
++      )
++      .bind(key)
++      .first<Pick<AssetRow, "content_type" | "size_bytes">>();
++    if (!row) return { exists: false };
++    return {
++      exists: true,
++      ...(row.content_type ? { contentType: row.content_type } : {}),
++      sizeBytes: row.size_bytes
++    };
++  }
++
++  async deleteObject(key: string): Promise<{ deleted: boolean }> {
++    await this.database
++      .prepare("DELETE FROM private_asset_chunks WHERE object_key = ?")
++      .bind(key)
++      .run();
++    const result = await this.database
++      .prepare("DELETE FROM private_assets WHERE object_key = ?")
++      .bind(key)
++      .run();
++    return { deleted: (result.meta.changes ?? 0) > 0 };
++  }
++}
++
++function joinChunks(chunks: ArrayBuffer[], expectedSize: number): ArrayBuffer {
++  const joined = new Uint8Array(expectedSize);
++  let offset = 0;
++  for (const chunk of chunks) {
++    const bytes = new Uint8Array(chunk);
++    joined.set(bytes, offset);
++    offset += bytes.byteLength;
++  }
++  if (offset !== expectedSize) {
++    throw new Error("D1 私人资源分片不完整，请重新上传原文件。");
++  }
++  return joined.buffer;
++}
++
++function copyArrayBuffer(value: ArrayBuffer | Uint8Array): ArrayBuffer {
++  if (value instanceof ArrayBuffer) return value.slice(0);
++  const copy = new Uint8Array(value.byteLength);
++  copy.set(value);
++  return copy.buffer;
++}
