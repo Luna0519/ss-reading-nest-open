@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index 0820d9c..bbbb292 100644
+index 0820d9c354353d6f3ddf840442a586491282824a..9f8720e310760699e65f56fac4fda74beba91af4 100644
 --- a/package.json
 +++ b/package.json
 @@ -1,7 +1,7 @@
@@ -7,12 +7,12 @@ index 0820d9c..bbbb292 100644
    "name": "ss-reading-nest",
    "private": true,
 -  "version": "0.2.7",
-+  "version": "0.2.15",
++  "version": "0.2.16",
    "packageManager": "pnpm@10.15.1",
    "scripts": {
      "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
 diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
-index 0c2e9b4..83e81cd 100644
+index 0c2e9b4d8c799ee6811774a748c0cb4eae3d05c2..83e81cd6351862db13f90fe34be1ec015295adc1 100644
 --- a/pnpm-lock.yaml
 +++ b/pnpm-lock.yaml
 @@ -110,9 +110,6 @@ importers:
@@ -56,7 +56,7 @@ index 0c2e9b4..83e81cd 100644
        lightningcss: 1.32.0
 diff --git a/server/migrations/0002_private_assets.sql b/server/migrations/0002_private_assets.sql
 new file mode 100644
-index 0000000..e0f7f93
+index 0000000000000000000000000000000000000000..e0f7f93da0935a99a6dcc5119afcda8422171876
 --- /dev/null
 +++ b/server/migrations/0002_private_assets.sql
 @@ -0,0 +1,23 @@
@@ -85,7 +85,7 @@ index 0000000..e0f7f93
 +  ON private_asset_chunks(object_key);
 diff --git a/server/migrations/0003_reading_discussions.sql b/server/migrations/0003_reading_discussions.sql
 new file mode 100644
-index 0000000..ea64a1d
+index 0000000000000000000000000000000000000000..ea64a1dba3f2faf830bf7c524f7e954dd8abc184
 --- /dev/null
 +++ b/server/migrations/0003_reading_discussions.sql
 @@ -0,0 +1,37 @@
@@ -127,14 +127,14 @@ index 0000000..ea64a1d
 +CREATE INDEX IF NOT EXISTS reading_discussion_messages_order_idx
 +  ON reading_discussion_messages(discussion_id, sequence);
 diff --git a/server/package.json b/server/package.json
-index c1ce2a3..c049ba0 100644
+index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..0d018de10c4f6003aa6159d5e993d8a8443b6c07 100644
 --- a/server/package.json
 +++ b/server/package.json
 @@ -1,13 +1,13 @@
  {
    "name": "@ss/server",
 -  "version": "0.2.7",
-+  "version": "0.2.15",
++  "version": "0.2.16",
    "private": true,
    "type": "module",
    "scripts": {
@@ -147,7 +147,7 @@ index c1ce2a3..c049ba0 100644
      "smoke:mcp": "node scripts/remote-smoke/mcp-smoke.mjs",
      "cf-types": "wrangler types",
 diff --git a/server/scripts/remote-smoke/cloud-source-smoke.mjs b/server/scripts/remote-smoke/cloud-source-smoke.mjs
-index e719dcd..bb21013 100644
+index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..33b88a61f52ecf186c082d902257cc9c7a864a85 100644
 --- a/server/scripts/remote-smoke/cloud-source-smoke.mjs
 +++ b/server/scripts/remote-smoke/cloud-source-smoke.mjs
 @@ -61,7 +61,7 @@ const expectedTools = [
@@ -155,12 +155,12 @@ index e719dcd..bb21013 100644
  ];
  
 -const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.15" });
++const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.16" });
  const cleanup = {
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 8173759..9b28f16 100644
+index 81737592c12db53b0f77280f424ac1c7422fed9a..f05ab2a00ac315f9cce32c1b281b5453dd312d87 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -168,7 +168,7 @@ index 8173759..9b28f16 100644
  const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
  const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
 -const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.15" });
++const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.16" });
  
  const healthResponse = await fetch(new URL("/health", workerUrl));
  assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);
@@ -267,7 +267,7 @@ index 8173759..9b28f16 100644
        tokenHiddenFromModel: true
      })
 diff --git a/server/src/app.test.ts b/server/src/app.test.ts
-index 629ce24..573a3e2 100644
+index 629ce2403058a7ad53676da31823633d2f35ccec..124b7d32b67ddba778418d6cb62fbcf600e72821 100644
 --- a/server/src/app.test.ts
 +++ b/server/src/app.test.ts
 @@ -6,7 +6,7 @@ describe("server app", () => {
@@ -275,12 +275,12 @@ index 629ce24..573a3e2 100644
      const response = await request(createApp()).get("/health");
      expect(response.status).toBe(200);
 -    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.15" });
++    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.16" });
    });
  
    it("accepts an MCP initialize request", async () => {
 diff --git a/server/src/app.ts b/server/src/app.ts
-index f4e9bd5..54bee5e 100644
+index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..ee8cb7af129dcedb7b9fb9af824030201925302a 100644
 --- a/server/src/app.ts
 +++ b/server/src/app.ts
 @@ -12,7 +12,7 @@ export function createApp() {
@@ -288,12 +288,12 @@ index f4e9bd5..54bee5e 100644
  
    app.get("/health", (_request, response) => {
 -    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.15" });
++    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.16" });
    });
  
    app.post("/mcp", async (request: Request, response: Response) => {
 diff --git a/server/src/html.d.ts b/server/src/html.d.ts
-index 3a031d8..7a79428 100644
+index 3a031d8f71be198d6852d79a24240a8200c0f4e7..7a79428938f473d23d1c44301a55ba57d5e2974f 100644
 --- a/server/src/html.d.ts
 +++ b/server/src/html.d.ts
 @@ -2,3 +2,13 @@ declare module "*.html" {
@@ -311,7 +311,7 @@ index 3a031d8..7a79428 100644
 +  export default content;
 +}
 diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
-index e4c685d..43512df 100644
+index e4c685d13228068801b94b092509e01e9a00c149..43512df8d414b5163f9141e498fb2edccfe02ad4 100644
 --- a/server/src/mcp/register-resource.test.ts
 +++ b/server/src/mcp/register-resource.test.ts
 @@ -3,34 +3,63 @@ import { describe, expect, it, vi } from "vitest";
@@ -386,7 +386,7 @@ index e4c685d..43512df 100644
    });
  });
 diff --git a/server/src/mcp/register-resource.ts b/server/src/mcp/register-resource.ts
-index 35b4bd0..2f022f6 100644
+index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..2f022f6c82556f1e52ae08313ea8c769863cc95d 100644
 --- a/server/src/mcp/register-resource.ts
 +++ b/server/src/mcp/register-resource.ts
 @@ -1,38 +1,40 @@
@@ -469,7 +469,7 @@ index 35b4bd0..2f022f6 100644
 +  return new URL(value).origin;
  }
 diff --git a/server/src/mcp/register-tools.test.ts b/server/src/mcp/register-tools.test.ts
-index 7640547..11b22db 100644
+index 764054784994f1f1ca68789fa9c713a8133d132a..11b22db2e4f5b43eb2609dc0f8463f137ad45aba 100644
 --- a/server/src/mcp/register-tools.test.ts
 +++ b/server/src/mcp/register-tools.test.ts
 @@ -1,6 +1,7 @@
@@ -574,7 +574,7 @@ index 7640547..11b22db 100644
        sessionId: "session-1",
        sourceKind: "pasted_text",
 diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
-index 21a3b3d..d85d60b 100644
+index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff2d9897f4 100644
 --- a/server/src/mcp/register-tools.ts
 +++ b/server/src/mcp/register-tools.ts
 @@ -3,12 +3,18 @@ import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
@@ -855,7 +855,7 @@ index 21a3b3d..d85d60b 100644
        return toolResult(combined, result.deleted ? "这本书的云端阅读数据已删除。" : "这本书已不在书架中。");
      }
 diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
-index 9e76434..9172ce6 100644
+index 9e7643489cce7180588313ad4033028420ff60f4..ae2e98bf2f09d3e76dc206bb4aeb879e4cc3f142 100644
 --- a/server/src/mcp/server-factory.ts
 +++ b/server/src/mcp/server-factory.ts
 @@ -1,6 +1,9 @@
@@ -882,7 +882,7 @@ index 9e76434..9172ce6 100644
    const server = new McpServer({
      name: "L&L 共读小窝",
 -    version: "0.2.7"
-+    version: "0.2.15"
++    version: "0.2.16"
    });
    const service = new ReadingService(repository);
 +  const discussionService = new ReadingDiscussionService(
@@ -896,7 +896,7 @@ index 9e76434..9172ce6 100644
  }
 diff --git a/server/src/mcp/ui-template.integration.test.ts b/server/src/mcp/ui-template.integration.test.ts
 new file mode 100644
-index 0000000..382271f
+index 0000000000000000000000000000000000000000..a313c590d276753212dd4a4c265af5401af9b684
 --- /dev/null
 +++ b/server/src/mcp/ui-template.integration.test.ts
 @@ -0,0 +1,67 @@
@@ -914,7 +914,7 @@ index 0000000..382271f
 +
 +describe("ChatGPT UI template MCP chain", () => {
 +  it("keeps the tool, listed resource, and readable HTML on one exact URI", async () => {
-+    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.15" });
++    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.16" });
 +    const widgetHtml = buildInlineWidgetHtml(
 +      `<!doctype html><html><head><link rel="stylesheet" href="${WIDGET_STYLE_PATH}"></head><body><div id="root"></div><script type="module" src="${WIDGET_SCRIPT_PATH}"></script></body></html>`,
 +      {
@@ -925,7 +925,7 @@ index 0000000..382271f
 +    registerReadingResource(server, widgetHtml, "https://reading-nest.example.workers.dev");
 +    registerReadingTools(server, {} as never, {} as never);
 +
-+    const client = new Client({ name: "L&L UI integration client", version: "0.2.15" });
++    const client = new Client({ name: "L&L UI integration client", version: "0.2.16" });
 +    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 +
 +    try {
@@ -969,7 +969,7 @@ index 0000000..382271f
 +});
 diff --git a/server/src/repositories/d1-reading-discussion-repository.ts b/server/src/repositories/d1-reading-discussion-repository.ts
 new file mode 100644
-index 0000000..92a253f
+index 0000000000000000000000000000000000000000..92a253f8094d8744d60f81bd0ddfa00b8a9bcb27
 --- /dev/null
 +++ b/server/src/repositories/d1-reading-discussion-repository.ts
 @@ -0,0 +1,296 @@
@@ -1270,7 +1270,7 @@ index 0000000..92a253f
 +  };
 +}
 diff --git a/server/src/repositories/d1-reading-repository.test.ts b/server/src/repositories/d1-reading-repository.test.ts
-index 239df47..b4d1e9c 100644
+index 239df47165ebe8956c003c272fea7e3ed498323c..b4d1e9c6abf8bce00d2da661547035a006d3e85e 100644
 --- a/server/src/repositories/d1-reading-repository.test.ts
 +++ b/server/src/repositories/d1-reading-repository.test.ts
 @@ -170,6 +170,37 @@ describe("D1ReadingRepository", () => {
@@ -1313,7 +1313,7 @@ index 239df47..b4d1e9c 100644
      const repository = new D1ReadingRepository(db);
 diff --git a/server/src/repositories/memory-reading-discussion-repository.ts b/server/src/repositories/memory-reading-discussion-repository.ts
 new file mode 100644
-index 0000000..3b2ec62
+index 0000000000000000000000000000000000000000..3b2ec629200260cbd5febb96563fbe03f151ec79
 --- /dev/null
 +++ b/server/src/repositories/memory-reading-discussion-repository.ts
 @@ -0,0 +1,152 @@
@@ -1470,7 +1470,7 @@ index 0000000..3b2ec62
 +  }
 +}
 diff --git a/server/src/repositories/normalize-reading-database.ts b/server/src/repositories/normalize-reading-database.ts
-index 7210487..742abff 100644
+index 7210487bcf75f341ee41d60e1fc9bb7039b00fa5..742abff88053e774b906326cce6669b8506a7ad1 100644
 --- a/server/src/repositories/normalize-reading-database.ts
 +++ b/server/src/repositories/normalize-reading-database.ts
 @@ -63,7 +63,13 @@ function copySourceManifest(manifest: SourceManifest | null): SourceManifest | n
@@ -1490,7 +1490,7 @@ index 7210487..742abff 100644
        : {}),
 diff --git a/server/src/repositories/reading-discussion-repository.ts b/server/src/repositories/reading-discussion-repository.ts
 new file mode 100644
-index 0000000..dcc1f7c
+index 0000000000000000000000000000000000000000..dcc1f7c9400a4be8525de6d3ed9a7dd639d0639c
 --- /dev/null
 +++ b/server/src/repositories/reading-discussion-repository.ts
 @@ -0,0 +1,39 @@
@@ -1535,7 +1535,7 @@ index 0000000..dcc1f7c
 +}
 diff --git a/server/src/services/appearance-storage-service.ts b/server/src/services/appearance-storage-service.ts
 new file mode 100644
-index 0000000..31a1673
+index 0000000000000000000000000000000000000000..31a1673f138cb1ba17d925ccd9c35224efc0896c
 --- /dev/null
 +++ b/server/src/services/appearance-storage-service.ts
 @@ -0,0 +1,134 @@
@@ -1674,7 +1674,7 @@ index 0000000..31a1673
 +  return Math.min(max, Math.max(min, value));
 +}
 diff --git a/server/src/services/cloud-source-service.test.ts b/server/src/services/cloud-source-service.test.ts
-index d9770a5..1cc52e0 100644
+index d9770a53ee723b7e5cf10d909d37db312ebc6a1b..1cc52e08580c871b189db00e43d343137bb568f5 100644
 --- a/server/src/services/cloud-source-service.test.ts
 +++ b/server/src/services/cloud-source-service.test.ts
 @@ -56,6 +56,34 @@ describe("CloudSourceService", () => {
@@ -1713,7 +1713,7 @@ index d9770a5..1cc52e0 100644
      const { cloudSource, sessionId } = setup();
  
 diff --git a/server/src/services/cloud-source-service.ts b/server/src/services/cloud-source-service.ts
-index abc8084..4620d65 100644
+index abc8084dd32d9619fd2fc7d0b5f24678f59a4c48..4620d6579a9fc9c74eea60529fbac532545bf35b 100644
 --- a/server/src/services/cloud-source-service.ts
 +++ b/server/src/services/cloud-source-service.ts
 @@ -24,6 +24,18 @@ type Dependencies = {
@@ -1786,7 +1786,7 @@ index abc8084..4620d65 100644
          uploadedAt,
          pages: pageMetadata
 diff --git a/server/src/services/companion-comments.test.ts b/server/src/services/companion-comments.test.ts
-index 858e173..4da9ef3 100644
+index 858e173465feef19dd7a80854a5d9537a6fdf360..4da9ef3cf296c4d54ba9fe6836750658c371c4a1 100644
 --- a/server/src/services/companion-comments.test.ts
 +++ b/server/src/services/companion-comments.test.ts
 @@ -112,6 +112,24 @@ describe("ReadingService companion comments", () => {
@@ -1816,7 +1816,7 @@ index 858e173..4da9ef3 100644
      const session = await startSessionWithHistory(service);
 diff --git a/server/src/services/reading-discussion-service.test.ts b/server/src/services/reading-discussion-service.test.ts
 new file mode 100644
-index 0000000..2ff4bb8
+index 0000000000000000000000000000000000000000..2ff4bb8888d31912c40313c8627b683b649bbab9
 --- /dev/null
 +++ b/server/src/services/reading-discussion-service.test.ts
 @@ -0,0 +1,182 @@
@@ -2004,7 +2004,7 @@ index 0000000..2ff4bb8
 +});
 diff --git a/server/src/services/reading-discussion-service.ts b/server/src/services/reading-discussion-service.ts
 new file mode 100644
-index 0000000..3b63ab1
+index 0000000000000000000000000000000000000000..3b63ab15fac28897b81a58eb510d830ef4279dbe
 --- /dev/null
 +++ b/server/src/services/reading-discussion-service.ts
 @@ -0,0 +1,127 @@
@@ -2136,7 +2136,7 @@ index 0000000..3b63ab1
 +  };
 +}
 diff --git a/server/src/services/reading-service.test.ts b/server/src/services/reading-service.test.ts
-index f759d2d..79a7c6f 100644
+index f759d2dd3d19e75c8ad449c4fd4f03996136a90f..79a7c6fd560c25621a2c378c695cc3b176ba8763 100644
 --- a/server/src/services/reading-service.test.ts
 +++ b/server/src/services/reading-service.test.ts
 @@ -296,6 +296,66 @@ describe("ReadingService", () => {
@@ -2207,7 +2207,7 @@ index f759d2d..79a7c6f 100644
      const session = await service.startSession("雨夜里的信", "novel");
      await service.updateUserPosition(session.id, {
 diff --git a/server/src/services/reading-service.ts b/server/src/services/reading-service.ts
-index 31d1741..3e3ddf6 100644
+index 31d174121a7b30f0dce89f598d33ed5a339c9926..3e3ddf6bd3e2a359b2c6f128864654951c4e6091 100644
 --- a/server/src/services/reading-service.ts
 +++ b/server/src/services/reading-service.ts
 @@ -130,13 +130,13 @@ export class ReadingService {
@@ -2265,18 +2265,20 @@ index 31d1741..3e3ddf6 100644
        if (comment.inHistory) {
          this.pruneCompanionComments(database, input.sessionId, "history");
 diff --git a/server/src/source-routes.test.ts b/server/src/source-routes.test.ts
-index 49e9b2c..719dd86 100644
+index 49e9b2c73c02ae41826aba874a230d16ab548f07..b5d09d1e30534bf4718c69221852e423a2ea7132 100644
 --- a/server/src/source-routes.test.ts
 +++ b/server/src/source-routes.test.ts
-@@ -3,6 +3,7 @@ import { DEFAULT_SESSION_PREFERENCES, type ReadingDatabase } from "@ss/shared";
+@@ -3,6 +3,9 @@ import { DEFAULT_SESSION_PREFERENCES, type ReadingDatabase } from "@ss/shared";
  import type { ReadingRepository } from "./repositories/reading-repository.js";
  import { MemorySourceObjectStorage } from "./storage/memory-source-object-storage.js";
  import { CloudSourceService } from "./services/cloud-source-service.js";
 +import { AppearanceStorageService } from "./services/appearance-storage-service.js";
++import { ReadingDiscussionService } from "./services/reading-discussion-service.js";
++import { MemoryReadingDiscussionRepository } from "./repositories/memory-reading-discussion-repository.js";
  import { handleSourceRoute } from "./source-routes.js";
  
  const NOW = "2026-06-24T00:00:00.000Z";
-@@ -118,6 +119,70 @@ describe("handleSourceRoute", () => {
+@@ -118,6 +121,70 @@ describe("handleSourceRoute", () => {
      expect(await missing.text()).not.toContain("第一段");
    });
  
@@ -2347,20 +2349,116 @@ index 49e9b2c..719dd86 100644
    it("rejects unsupported source routes without leaking details", async () => {
      const { service } = setup();
      const response = await handleSourceRoute(
+@@ -129,6 +196,84 @@ describe("handleSourceRoute", () => {
+     expect(await response.text()).not.toMatch(/objectKey|secret|sourceText/);
+   });
+ 
++  it("opens and persists a paragraph discussion through the private component route", async () => {
++    const { service, repository } = setup();
++    await repository.mutate((database) => {
++      database.companionComments.push({
++        id: "anchor-1",
++        sessionId: "session-1",
++        position: { kind: "paragraph", index: 1, label: "第 1 段" },
++        mode: "light_chat",
++        length: "normal",
++        text: "这一段很适合慢慢聊。",
++        source: "current_context",
++        inRecent: true,
++        inHistory: true,
++        createdAt: NOW
++      });
++    });
++    const discussionService = new ReadingDiscussionService(
++      repository,
++      new MemoryReadingDiscussionRepository()
++    );
++    const route = async (action: string, body: Record<string, unknown>) =>
++      handleSourceRoute(
++        new Request(`https://example.test/source/secret/discussion/${action}`, {
++          method: "POST",
++          body: JSON.stringify(body)
++        }),
++        service,
++        undefined,
++        discussionService
++      );
++
++    const opened = await route("open", {
++      sessionId: "session-1",
++      position: { kind: "paragraph", index: 1, label: "第 1 段" },
++      anchorCommentId: "anchor-1",
++      anchorText: "这一段很适合慢慢聊。"
++    });
++    expect(opened.status).toBe(200);
++    const detail = (await opened.json()) as {
++      discussion: { id: string; mood: string | null };
++      messages: unknown[];
++    };
++    expect(detail.messages).toHaveLength(1);
++
++    const mood = await route("mood", {
++      discussionId: detail.discussion.id,
++      mood: "resonance"
++    });
++    await expect(mood.json()).resolves.toMatchObject({
++      discussion: { id: detail.discussion.id, mood: "resonance" }
++    });
++
++    const message = await route("message", {
++      discussionId: detail.discussion.id,
++      text: "我也觉得。",
++      operationId: "discussion-user:route-test"
++    });
++    await expect(message.json()).resolves.toMatchObject({
++      detail: { messages: [{ role: "assistant" }, { role: "user", text: "我也觉得。" }] }
++    });
++
++    const listed = await route("list", { sessionId: "session-1" });
++    await expect(listed.json()).resolves.toMatchObject({
++      discussions: [{ discussion: { id: detail.discussion.id }, messageCount: 2 }]
++    });
++
++    const loaded = await route("get", { discussionId: detail.discussion.id });
++    await expect(loaded.json()).resolves.toMatchObject({
++      discussion: { id: detail.discussion.id },
++      messages: [{ role: "assistant" }, { role: "user" }]
++    });
++
++    const closed = await route("close", { discussionId: detail.discussion.id });
++    await expect(closed.json()).resolves.toMatchObject({
++      discussion: { id: detail.discussion.id, status: "closed" }
++    });
++  });
++
+   it("uploads manga pages through a component-only metadata response", async () => {
+     const { service, repository } = setup();
+     const response = await handleSourceRoute(
 diff --git a/server/src/source-routes.ts b/server/src/source-routes.ts
-index 282f116..cda04df 100644
+index 282f116eb4575c838544f3ac0d164a767a7db760..f7c5920077374be332c6ccceea1fb62f2d6aff18 100644
 --- a/server/src/source-routes.ts
 +++ b/server/src/source-routes.ts
-@@ -1,15 +1,38 @@
+@@ -1,15 +1,84 @@
  import { AppError } from "./errors/app-error.js";
++import {
++  appendReadingDiscussionUserMessageInputSchema,
++  closeReadingDiscussionInputSchema,
++  getOrCreateReadingDiscussionInputSchema,
++  getReadingDiscussionInputSchema,
++  listReadingDiscussionsInputSchema,
++  setReadingDiscussionMoodInputSchema
++} from "@ss/shared";
++import type { ZodType } from "zod";
 +import type { AppearanceStorageService } from "./services/appearance-storage-service.js";
  import type { CloudSourceService } from "./services/cloud-source-service.js";
++import type { ReadingDiscussionService } from "./services/reading-discussion-service.js";
  
  export async function handleSourceRoute(
    request: Request,
 -  service: CloudSourceService
 +  service: CloudSourceService,
-+  appearanceService?: AppearanceStorageService
++  appearanceService?: AppearanceStorageService,
++  discussionService?: ReadingDiscussionService
  ): Promise<Response> {
    const url = new URL(request.url);
    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders() });
@@ -2388,10 +2486,45 @@ index 282f116..cda04df 100644
 +      if (!appearanceService) return new Response("Not found", { status: 404, headers: corsHeaders() });
 +      return json(await appearanceService.clearBackground());
 +    }
++    if (url.pathname.endsWith("/discussion/open")) {
++      if (!discussionService) return notFound();
++      const input = parseInput(getOrCreateReadingDiscussionInputSchema, await readJson(request));
++      return json(await discussionService.getOrCreate(input));
++    }
++    if (url.pathname.endsWith("/discussion/mood")) {
++      if (!discussionService) return notFound();
++      const input = parseInput(setReadingDiscussionMoodInputSchema, await readJson(request));
++      return json({
++        discussion: await discussionService.setMood(input.discussionId, input.mood)
++      });
++    }
++    if (url.pathname.endsWith("/discussion/message")) {
++      if (!discussionService) return notFound();
++      const input = parseInput(
++        appendReadingDiscussionUserMessageInputSchema,
++        await readJson(request)
++      );
++      return json(await discussionService.appendUserMessage(input));
++    }
++    if (url.pathname.endsWith("/discussion/get")) {
++      if (!discussionService) return notFound();
++      const input = parseInput(getReadingDiscussionInputSchema, await readJson(request));
++      return json(await discussionService.getDetail(input.discussionId));
++    }
++    if (url.pathname.endsWith("/discussion/list")) {
++      if (!discussionService) return notFound();
++      const input = parseInput(listReadingDiscussionsInputSchema, await readJson(request));
++      return json({ discussions: await discussionService.listBySession(input.sessionId) });
++    }
++    if (url.pathname.endsWith("/discussion/close")) {
++      if (!discussionService) return notFound();
++      const input = parseInput(closeReadingDiscussionInputSchema, await readJson(request));
++      return json({ discussion: await discussionService.close(input.discussionId) });
++    }
      if (url.pathname.endsWith("/upload")) {
        const input = await readJson(request);
        const sourceKind = readSourceKind(input);
-@@ -57,7 +80,13 @@ export async function handleSourceRoute(
+@@ -57,7 +126,15 @@ export async function handleSourceRoute(
      return new Response("Not found", { status: 404, headers: corsHeaders() });
    } catch (error) {
      logSourceRoute({
@@ -2402,12 +2535,33 @@ index 282f116..cda04df 100644
 +          ? "restore"
 +          : url.pathname.includes("/appearance/")
 +            ? "appearance"
-+            : "unknown",
++            : url.pathname.includes("/discussion/")
++              ? "discussion"
++              : "unknown",
        status: error instanceof AppError ? 400 : 500,
        errorCode: error instanceof AppError ? error.code : "UNEXPECTED"
      });
+@@ -68,6 +145,18 @@ export async function handleSourceRoute(
+   }
+ }
+ 
++function parseInput<T>(schema: ZodType<T>, value: unknown): T {
++  const result = schema.safeParse(value);
++  if (!result.success) {
++    throw new AppError("INVALID_OPERATION", "请求格式无效。");
++  }
++  return result.data;
++}
++
++function notFound(): Response {
++  return new Response("Not found", { status: 404, headers: corsHeaders() });
++}
++
+ async function readJson(request: Request): Promise<Record<string, unknown>> {
+   const value = (await request.json()) as unknown;
+   if (!value || typeof value !== "object" || Array.isArray(value)) {
 diff --git a/server/src/standalone-pwa.test.ts b/server/src/standalone-pwa.test.ts
-index ea35efc..af52c4c 100644
+index ea35efc2291adbaa285eb936597afa90b5fee935..af52c4cf3ba4bb704a3b870abff2ec35f124a278 100644
 --- a/server/src/standalone-pwa.test.ts
 +++ b/server/src/standalone-pwa.test.ts
 @@ -1,15 +1,51 @@
@@ -2485,7 +2639,7 @@ index ea35efc..af52c4c 100644
      expect(script).not.toContain("/source/");
    });
 diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
-index e509afa..199f726 100644
+index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..199f7262d5a547987ac4f80528dd7f0d5e4f2440 100644
 --- a/server/src/standalone-pwa.ts
 +++ b/server/src/standalone-pwa.ts
 @@ -1,4 +1,107 @@
@@ -2684,7 +2838,7 @@ index e509afa..199f726 100644
 +}
 diff --git a/server/src/storage/d1-source-object-storage.test.ts b/server/src/storage/d1-source-object-storage.test.ts
 new file mode 100644
-index 0000000..8ae7d1e
+index 0000000000000000000000000000000000000000..8ae7d1ea16784d8f145fa5099184d0a05973f68c
 --- /dev/null
 +++ b/server/src/storage/d1-source-object-storage.test.ts
 @@ -0,0 +1,141 @@
@@ -2831,7 +2985,7 @@ index 0000000..8ae7d1e
 +};
 diff --git a/server/src/storage/d1-source-object-storage.ts b/server/src/storage/d1-source-object-storage.ts
 new file mode 100644
-index 0000000..567e623
+index 0000000000000000000000000000000000000000..567e623e065eca6509d9d1bc019472a4fd92eee5
 --- /dev/null
 +++ b/server/src/storage/d1-source-object-storage.ts
 @@ -0,0 +1,178 @@
@@ -3015,7 +3169,7 @@ index 0000000..567e623
 +}
 diff --git a/server/src/widget-assets.test.ts b/server/src/widget-assets.test.ts
 new file mode 100644
-index 0000000..62d1b2f
+index 0000000000000000000000000000000000000000..62d1b2f607b022f3a5ee7f57cb448ba5d7131ea9
 --- /dev/null
 +++ b/server/src/widget-assets.test.ts
 @@ -0,0 +1,116 @@
@@ -3137,7 +3291,7 @@ index 0000000..62d1b2f
 +});
 diff --git a/server/src/widget-assets.ts b/server/src/widget-assets.ts
 new file mode 100644
-index 0000000..3a088a2
+index 0000000000000000000000000000000000000000..3a088a245e9bd5b801605c465bbf0174b5c7621a
 --- /dev/null
 +++ b/server/src/widget-assets.ts
 @@ -0,0 +1,101 @@
@@ -3243,7 +3397,7 @@ index 0000000..3a088a2
 +  return value.replace(/<\/style/gi, "<\\/style");
 +}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705..ba436d1 100644
+index 1e35705c2ccadfeece1585fb2d379b7846862cae..50a275daff71471c8f783c288536f74d78ecd176 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
 @@ -6,6 +6,39 @@ describe("getWorkerRoute", () => {
@@ -3295,18 +3449,27 @@ index 1e35705..ba436d1 100644
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/manifest.webmanifest"), "secret")).toBe("app");
-@@ -25,6 +60,9 @@ describe("getWorkerRoute", () => {
+@@ -25,6 +60,18 @@ describe("getWorkerRoute", () => {
    it("routes only exact private source paths", () => {
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/upload"), "secret")).toBe("source");
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/restore"), "secret")).toBe("source");
 +    expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/appearance/load"), "secret")).toBe("source");
 +    expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/appearance/save"), "secret")).toBe("source");
 +    expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/appearance/delete-background"), "secret")).toBe("source");
++    for (const action of ["open", "mood", "message", "get", "list", "close"]) {
++      expect(
++        getWorkerRoute(
++          new URL(`https://example.workers.dev/source/secret/discussion/${action}`),
++          "secret"
++        )
++      ).toBe("source");
++    }
++    expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/discussion/delete"), "secret")).toBe("not-found");
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/wrong/upload"), "secret")).toBe("not-found");
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret"), "secret")).toBe("not-found");
    });
 diff --git a/server/src/worker-router.ts b/server/src/worker-router.ts
-index 1f8027f..cafaebc 100644
+index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..980696e6fc1554e7479b95a22813b68902814927 100644
 --- a/server/src/worker-router.ts
 +++ b/server/src/worker-router.ts
 @@ -1,8 +1,20 @@
@@ -3331,7 +3494,7 @@ index 1f8027f..cafaebc 100644
    if (
      url.pathname === `/app/${token}` ||
      url.pathname === `/app/${token}/` ||
-@@ -14,7 +26,10 @@ export function getWorkerRoute(url: URL, token: string | undefined): WorkerRoute
+@@ -14,7 +26,16 @@ export function getWorkerRoute(url: URL, token: string | undefined): WorkerRoute
    }
    if (
      url.pathname === `/source/${token}/upload` ||
@@ -3339,15 +3502,21 @@ index 1f8027f..cafaebc 100644
 +    url.pathname === `/source/${token}/restore` ||
 +    url.pathname === `/source/${token}/appearance/load` ||
 +    url.pathname === `/source/${token}/appearance/save` ||
-+    url.pathname === `/source/${token}/appearance/delete-background`
++    url.pathname === `/source/${token}/appearance/delete-background` ||
++    url.pathname === `/source/${token}/discussion/open` ||
++    url.pathname === `/source/${token}/discussion/mood` ||
++    url.pathname === `/source/${token}/discussion/message` ||
++    url.pathname === `/source/${token}/discussion/get` ||
++    url.pathname === `/source/${token}/discussion/list` ||
++    url.pathname === `/source/${token}/discussion/close`
    ) {
      return "source";
    }
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2..131692c 100644
+index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..9132395a11a48a2139a27126171878ecba3dcf5a 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
-@@ -1,22 +1,39 @@
+@@ -1,22 +1,40 @@
  import { createMcpHandler } from "agents/mcp";
  import widgetHtml from "../../web/dist/index.html";
 +import widgetScript from "../../web/dist/ll-reading-nest-v0214.bundle.js";
@@ -3357,6 +3526,7 @@ index 6f84bb2..131692c 100644
 +import { D1ReadingDiscussionRepository } from "./repositories/d1-reading-discussion-repository.js";
 +import { AppearanceStorageService } from "./services/appearance-storage-service.js";
  import { CloudSourceService } from "./services/cloud-source-service.js";
++import { ReadingDiscussionService } from "./services/reading-discussion-service.js";
  import { handleSourceRoute } from "./source-routes.js";
 +import { D1SourceObjectStorage } from "./storage/d1-source-object-storage.js";
  import { R2SourceObjectStorage } from "./storage/r2-source-object-storage.js";
@@ -3379,7 +3549,7 @@ index 6f84bb2..131692c 100644
  
      if (route === "health") {
 -      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.15" });
++      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.16" });
 +    }
 +    if (route === "widget-asset") {
 +      return handleWidgetAsset(request, url, {
@@ -3389,7 +3559,7 @@ index 6f84bb2..131692c 100644
      }
      if (route === "misconfigured") {
        console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
-@@ -25,25 +42,37 @@ export default {
+@@ -25,25 +43,44 @@ export default {
      if (route === "not-found") {
        return new Response("Not found", { status: 404 });
      }
@@ -3419,11 +3589,18 @@ index 6f84bb2..131692c 100644
 +            { provider: "d1", allowManga: false }
 +          );
 +      const appearanceService = new AppearanceStorageService(d1AssetStorage);
++      const discussionRepository = new D1ReadingDiscussionRepository(env.DB);
++      const discussionService = new ReadingDiscussionService(repository, discussionRepository);
        if (route === "source") {
 -        return sourceService
 -          ? handleSourceRoute(request, sourceService)
 -          : new Response("Not found", { status: 404 });
-+        return handleSourceRoute(request, sourceService, appearanceService);
++        return handleSourceRoute(
++          request,
++          sourceService,
++          appearanceService,
++          discussionService
++        );
        }
 -      const server = createMcpServerFromRepository(repository, widgetHtml, sourceService, {
 +      const server = createMcpServerFromRepository(repository, inlineWidgetHtml, sourceService, {
@@ -3432,12 +3609,12 @@ index 6f84bb2..131692c 100644
 -          ? { sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}` }
 -          : {})
 +        sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}`,
-+        discussionRepository: new D1ReadingDiscussionRepository(env.DB)
++        discussionRepository
        });
        return createMcpHandler(server, {
          route: url.pathname,
 diff --git a/server/wrangler.jsonc b/server/wrangler.jsonc
-index 7aab7e4..773289d 100644
+index 7aab7e42427e60a97ed07e9095de236c53b29b6b..773289d3427e1b970ce3fe8565db4718ad53afc4 100644
 --- a/server/wrangler.jsonc
 +++ b/server/wrangler.jsonc
 @@ -20,7 +20,7 @@
@@ -3450,19 +3627,19 @@ index 7aab7e4..773289d 100644
      }
    ],
 diff --git a/shared/package.json b/shared/package.json
-index d2cbeca..2bdf869 100644
+index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..570595004a420ffcbc24a661d3b2001ad49f2351 100644
 --- a/shared/package.json
 +++ b/shared/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/shared",
 -  "version": "0.2.7",
-+  "version": "0.2.15",
++  "version": "0.2.16",
    "private": true,
    "type": "module",
    "main": "./dist/index.js",
 diff --git a/shared/src/models.ts b/shared/src/models.ts
-index b213058..045c46e 100644
+index b2130585860c7d75aac204e9f7e9d65dd02ca10e..045c46e444341d870f61a9a005cca8dcc00d8da8 100644
 --- a/shared/src/models.ts
 +++ b/shared/src/models.ts
 @@ -69,7 +69,7 @@ export interface SourceManifest {
@@ -3531,7 +3708,7 @@ index b213058..045c46e 100644
    schemaVersion: 4;
    sessions: ReadingSession[];
 diff --git a/shared/src/tool-schemas.test.ts b/shared/src/tool-schemas.test.ts
-index 03860ff..645281f 100644
+index 03860ff0af00c5e74f1ed593afb031b902487ecd..645281fd6590530354f9a9714e5794b5703b4d36 100644
 --- a/shared/src/tool-schemas.test.ts
 +++ b/shared/src/tool-schemas.test.ts
 @@ -1,22 +1,137 @@
@@ -3673,7 +3850,7 @@ index 03860ff..645281f 100644
    it("accepts one top-level current page file reference", () => {
      const result = sendCurrentContextInputSchema.parse({
 diff --git a/shared/src/tool-schemas.ts b/shared/src/tool-schemas.ts
-index d5e154d..62f4193 100644
+index d5e154d051a9fdffeb4ca117723a7ff4b14b7acb..62f4193231f76236f6e9328d8239a55a74c82db2 100644
 --- a/shared/src/tool-schemas.ts
 +++ b/shared/src/tool-schemas.ts
 @@ -37,6 +37,14 @@ export const companionCommentSourceSchema = z.enum([
@@ -3832,7 +4009,7 @@ index d5e154d..62f4193 100644
    .object({
      sessionId: sessionIdSchema,
 diff --git a/web/index.html b/web/index.html
-index b261313..d283626 100644
+index b26131350103fa1e2f004ff508fea591ef27e284..d283626d667f108f0ff6e1e2d1e04743c2d78409 100644
 --- a/web/index.html
 +++ b/web/index.html
 @@ -3,14 +3,14 @@
@@ -3862,14 +4039,14 @@ index b261313..d283626 100644
            <dd>html-loaded</dd>
          </dl>
 diff --git a/web/package.json b/web/package.json
-index 088c892..4538b7f 100644
+index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..6cf7143c5cf569c6d6d137dc77652b5e5d48e665 100644
 --- a/web/package.json
 +++ b/web/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/web",
 -  "version": "0.2.7",
-+  "version": "0.2.15",
++  "version": "0.2.16",
    "private": true,
    "type": "module",
    "scripts": {
@@ -3882,7 +4059,7 @@ index 088c892..4538b7f 100644
    }
  }
 diff --git a/web/src/App.test.tsx b/web/src/App.test.tsx
-index 7b93b47..271ad14 100644
+index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311a62e7c0a 100644
 --- a/web/src/App.test.tsx
 +++ b/web/src/App.test.tsx
 @@ -32,20 +32,23 @@ describe("App", () => {
@@ -4743,7 +4920,7 @@ index 7b93b47..271ad14 100644
      await deviceCache.remove("bookshelf-a");
      await deviceCache.remove("bookshelf-b");
 diff --git a/web/src/App.tsx b/web/src/App.tsx
-index e200d4e..eb96190 100644
+index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a8d05d810 100644
 --- a/web/src/App.tsx
 +++ b/web/src/App.tsx
 @@ -5,6 +5,9 @@ import type {
@@ -4999,9 +5176,9 @@ index e200d4e..eb96190 100644
 +
 +  const loadDiscussionSummaries = useCallback(async (sessionId: string) => {
 +    try {
-+      const result = await callTool("list_reading_discussions", { sessionId });
-+      const discussions = Array.isArray(result.structuredContent?.discussions)
-+        ? (result.structuredContent.discussions as ReadingDiscussionSummary[])
++      const result = await cloudSourceClient.listReadingDiscussions(sessionId);
++      const discussions = Array.isArray(result.discussions)
++        ? result.discussions
 +        : [];
 +      setDiscussionSummaries(
 +        discussions.filter((item) => item.discussion?.sessionId === sessionId)
@@ -5009,12 +5186,12 @@ index e200d4e..eb96190 100644
 +    } catch {
 +      // Older cached app connections may need one refresh before seeing app-only tools.
 +    }
-+  }, []);
++  }, [cloudSourceClient]);
 +
    useEffect(() => {
      const sessionId = sessionBundle?.session.id;
      const reading = screen === "novel" || screen === "manga";
-@@ -294,16 +471,54 @@ export function App() {
+@@ -294,16 +471,59 @@ export function App() {
        setCompanionComments([]);
        setCompanionError("");
        setPendingCommentDraft(null);
@@ -5040,8 +5217,8 @@ index e200d4e..eb96190 100644
 +    let cancelled = false;
 +    const refresh = async () => {
 +      try {
-+        const result = await callTool("get_reading_discussion", { discussionId });
-+        const detail = readDiscussionDetail(result.structuredContent);
++        const result = await cloudSourceClient.getReadingDiscussion(discussionId);
++        const detail = readDiscussionDetail(result);
 +        if (!detail || cancelled) return;
 +        setActiveDiscussion(detail);
 +        upsertDiscussionSummary(detail);
@@ -5066,11 +5243,16 @@ index e200d4e..eb96190 100644
 +      cancelled = true;
 +      window.clearInterval(timer);
 +    };
-+  }, [activeDiscussion?.discussion.id, awaitingDiscussionReply, upsertDiscussionSummary]);
++  }, [
++    activeDiscussion?.discussion.id,
++    awaitingDiscussionReply,
++    cloudSourceClient,
++    upsertDiscussionSummary
++  ]);
  
    useEffect(() => {
      if (!readerImmersive) return;
-@@ -323,7 +538,6 @@ export function App() {
+@@ -323,7 +543,6 @@ export function App() {
    useEffect(() => {
      if (screen !== "novel" && screen !== "manga") return;
      setOverlay(null);
@@ -5078,7 +5260,7 @@ index e200d4e..eb96190 100644
    }, [hostLayout.revision]);
  
    useEffect(() => {
-@@ -343,6 +557,31 @@ export function App() {
+@@ -343,6 +562,31 @@ export function App() {
              sourceManifest: local.metadata.sourceManifest
            };
          }
@@ -5110,7 +5292,7 @@ index e200d4e..eb96190 100644
          let sourceAvailability = getSourceAvailability(
            session.sourceManifest ?? null,
            local?.metadata.sourceManifest ?? null
-@@ -421,19 +660,21 @@ export function App() {
+@@ -421,19 +665,21 @@ export function App() {
            ...(latestComment ? { latestComment } : {})
          };
        })
@@ -5142,7 +5324,7 @@ index e200d4e..eb96190 100644
  
    useEffect(() => {
      if (!toast) return;
-@@ -446,6 +687,28 @@ export function App() {
+@@ -446,6 +692,28 @@ export function App() {
    }, [mangaPages]);
  
    const position = sessionBundle?.session.userCurrentPosition;
@@ -5171,7 +5353,7 @@ index e200d4e..eb96190 100644
  
    useEffect(() => {
      if ((screen === "novel" || screen === "manga") && !sessionBundle) return;
-@@ -473,7 +736,7 @@ export function App() {
+@@ -473,7 +741,7 @@ export function App() {
      setScreen("setup");
    }
  
@@ -5180,7 +5362,7 @@ index e200d4e..eb96190 100644
      let nextItem = item;
      const local = await cache.get(item.session.id).catch(() => undefined);
      if (local && !item.session.sourceManifest) {
-@@ -489,13 +752,18 @@ export function App() {
+@@ -489,13 +757,18 @@ export function App() {
          }
        };
      }
@@ -5201,7 +5383,7 @@ index e200d4e..eb96190 100644
        setChunks(local.chunks);
        setSourceText(local.sourceText);
        setRemembered(true);
-@@ -503,6 +771,12 @@ export function App() {
+@@ -503,6 +776,12 @@ export function App() {
        return;
      }
      if (local && "pages" in local && (availability === "available_local" || availability === "unknown")) {
@@ -5214,7 +5396,7 @@ index e200d4e..eb96190 100644
        setMangaPages(
          local.pages.map((page) => ({
            file: new File([page.blob], page.fileName, { type: page.mimeType }),
-@@ -513,6 +787,64 @@ export function App() {
+@@ -513,6 +792,64 @@ export function App() {
        setScreen("manga");
        return;
      }
@@ -5279,7 +5461,7 @@ index e200d4e..eb96190 100644
      setExistingSession(nextItem.session);
      setTitle(nextItem.session.title);
      setSetupType(nextItem.session.type);
-@@ -527,6 +859,39 @@ export function App() {
+@@ -527,6 +864,39 @@ export function App() {
      );
    }
  
@@ -5319,7 +5501,7 @@ index e200d4e..eb96190 100644
    function prepareReimport(item: BookshelfItem) {
      setSessionBundle(item);
      setSourceAvailability(item.sourceAvailability);
-@@ -543,9 +908,22 @@ export function App() {
+@@ -543,9 +913,22 @@ export function App() {
    async function openBookManagement(item: BookshelfItem) {
      setManagedBook(item);
      setHistoryComments([]);
@@ -5343,7 +5525,7 @@ index e200d4e..eb96190 100644
    }
  
    async function openFullscreenReader() {
-@@ -608,7 +986,7 @@ export function App() {
+@@ -608,7 +991,7 @@ export function App() {
          result.structuredContent?.nextCursor as string | undefined
        );
      } catch {
@@ -5352,7 +5534,7 @@ index e200d4e..eb96190 100644
      } finally {
        setHistoryLoading(false);
      }
-@@ -910,7 +1288,7 @@ export function App() {
+@@ -910,7 +1293,7 @@ export function App() {
      let cloudUploadError = "";
      let cloudDiagnostics: CloudUploadDiagnostics | undefined;
      let serverSideCloudUploadOnly = false;
@@ -5361,7 +5543,7 @@ index e200d4e..eb96190 100644
        if (setupType === "novel") {
          const sessionId = session.id;
          setImportProgress((current) => ({
-@@ -1150,8 +1528,7 @@ export function App() {
+@@ -1150,8 +1533,7 @@ export function App() {
          mode: activePreferences.readingCommentMode,
          length: activePreferences.commentLength,
          operationId,
@@ -5371,7 +5553,7 @@ index e200d4e..eb96190 100644
        });
        const result = await callTool("send_current_context", {
          sessionId: sessionBundle.session.id,
-@@ -1178,7 +1555,9 @@ export function App() {
+@@ -1178,7 +1560,9 @@ export function App() {
          successPrompt: policyPrompt,
          fallbackPrompt,
          updateModelContext,
@@ -5382,7 +5564,7 @@ index e200d4e..eb96190 100644
        });
        rememberPendingCommentDraft({
          position: sessionBundle.session.userCurrentPosition,
-@@ -1188,7 +1567,7 @@ export function App() {
+@@ -1188,7 +1572,7 @@ export function App() {
        });
        setToast(
          mode === "context"
@@ -5391,7 +5573,7 @@ index e200d4e..eb96190 100644
            : "已用兼容模式发送当前段落。"
        );
      } finally {
-@@ -1202,7 +1581,7 @@ export function App() {
+@@ -1202,7 +1586,7 @@ export function App() {
      const userIndex = sessionBundle.session.userCurrentPosition.index;
      const assistantIndex = sessionBundle.session.assistantSyncedPosition?.index ?? 0;
      if (userIndex <= assistantIndex) {
@@ -5400,7 +5582,7 @@ index e200d4e..eb96190 100644
        await lookAtNovel(currentText, selectedText);
        return;
      }
-@@ -1213,10 +1592,6 @@ export function App() {
+@@ -1213,10 +1597,6 @@ export function App() {
        rangeEnd: userIndex,
        idFactory: (ordinal) => `${sessionBundle.session.id}-${Date.now()}-${ordinal}`
      });
@@ -5411,7 +5593,7 @@ index e200d4e..eb96190 100644
      await startFullCatchUp(batches);
    }
  
-@@ -1245,10 +1620,9 @@ export function App() {
+@@ -1245,10 +1625,9 @@ export function App() {
        activeBatchIndex: 0,
        createdAt: new Date().toISOString()
      };
@@ -5423,7 +5605,7 @@ index e200d4e..eb96190 100644
    }
  
    async function requestMangaSync() {
-@@ -1261,10 +1635,6 @@ export function App() {
+@@ -1261,10 +1640,6 @@ export function App() {
        return;
      }
      if (!allowAutomaticSync("range_sync")) return;
@@ -5434,7 +5616,7 @@ index e200d4e..eb96190 100644
      await startMangaCatchUp(assistantIndex + 1);
    }
  
-@@ -1300,10 +1670,152 @@ export function App() {
+@@ -1300,10 +1675,152 @@ export function App() {
        activeBatchIndex: 0,
        createdAt: new Date().toISOString()
      };
@@ -5589,7 +5771,7 @@ index e200d4e..eb96190 100644
    }
  
    async function sendSyncBatch(job: ReadingSyncJob) {
-@@ -1419,7 +1931,7 @@ export function App() {
+@@ -1419,7 +1936,7 @@ export function App() {
        if (confirmed.mode === "live_reading") {
          clearSyncJobState();
          await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
@@ -5598,7 +5780,7 @@ index e200d4e..eb96190 100644
          return;
        }
        const formalMode = sessionBundle.session.sessionPreferences.readingCommentMode;
-@@ -1431,8 +1943,7 @@ export function App() {
+@@ -1431,8 +1948,7 @@ export function App() {
                mode: formalMode,
                length: formalLength,
                operationId: formalOperationId,
@@ -5608,7 +5790,7 @@ index e200d4e..eb96190 100644
              })
            : buildReadingCommentPrompt({
                sessionId: confirmed.sessionId,
-@@ -1446,8 +1957,7 @@ export function App() {
+@@ -1446,8 +1962,7 @@ export function App() {
                },
                source: "catch_up_complete",
                operationId: formalOperationId,
@@ -5618,7 +5800,7 @@ index e200d4e..eb96190 100644
              });
        void askChatGpt(prompt, { scrollToBottom: false }).catch(() => {
          setToast("正式短评没有发送成功，请重试。");
-@@ -1460,7 +1970,7 @@ export function App() {
+@@ -1460,7 +1975,7 @@ export function App() {
        });
        clearSyncJobState();
        await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
@@ -5627,7 +5809,7 @@ index e200d4e..eb96190 100644
        return;
      }
      storeSyncJob(confirmed);
-@@ -1477,7 +1987,6 @@ export function App() {
+@@ -1477,7 +1992,6 @@ export function App() {
        .slice(start - 1, end)
        .map((chunk, offset) => `【第 ${start + offset} 段】\n${chunk}`)
        .join("\n\n");
@@ -5635,7 +5817,7 @@ index e200d4e..eb96190 100644
      await askChatGpt(
        buildRecentOnlyPrompt({
          sessionId: sessionBundle.session.id,
-@@ -1488,15 +1997,13 @@ export function App() {
+@@ -1488,15 +2002,13 @@ export function App() {
          mode: sessionBundle.session.sessionPreferences.readingCommentMode,
          length: sessionBundle.session.sessionPreferences.commentLength,
          operationId: crypto.randomUUID(),
@@ -5652,7 +5834,7 @@ index e200d4e..eb96190 100644
      if (!syncJob) return;
      const cancelled = cancelSyncJob(syncJob);
      clearSyncJobState();
-@@ -1584,8 +2091,7 @@ export function App() {
+@@ -1584,8 +2096,7 @@ export function App() {
              title: session.title,
              position: job.targetPosition,
              operationId: batch.id,
@@ -5662,7 +5844,7 @@ index e200d4e..eb96190 100644
              requestedMode: mode,
              requestedLength: length
            }),
-@@ -1679,8 +2185,7 @@ export function App() {
+@@ -1679,8 +2190,7 @@ export function App() {
          position,
          source: "current_only",
          operationId,
@@ -5672,7 +5854,7 @@ index e200d4e..eb96190 100644
        });
        const result = await callTool("send_current_context", {
          sessionId: sessionBundle.session.id,
-@@ -1717,7 +2222,9 @@ export function App() {
+@@ -1717,7 +2227,9 @@ export function App() {
          successPrompt: policyPrompt,
          fallbackPrompt,
          updateModelContext,
@@ -5683,7 +5865,7 @@ index e200d4e..eb96190 100644
        });
        rememberPendingCommentDraft({
          position,
-@@ -1925,6 +2432,150 @@ export function App() {
+@@ -1925,6 +2437,144 @@ export function App() {
      }
    }
  
@@ -5698,16 +5880,14 @@ index e200d4e..eb96190 100644
 +        (summary) => summary.discussion.anchorCommentId === anchor.id
 +      );
 +      const result = existing
-+        ? await callTool("get_reading_discussion", {
-+            discussionId: existing.discussion.id
-+          })
-+        : await callTool("get_or_create_reading_discussion", {
++        ? await cloudSourceClient.getReadingDiscussion(existing.discussion.id)
++        : await cloudSourceClient.getOrCreateReadingDiscussion({
 +            sessionId: sessionBundle.session.id,
 +            position: anchor.position,
 +            anchorCommentId: anchor.id,
 +            anchorText: anchor.text
 +          });
-+      const detail = readDiscussionDetail(result.structuredContent);
++      const detail = readDiscussionDetail(result);
 +      if (!detail) throw new Error("Missing discussion detail");
 +      upsertDiscussionSummary(detail);
 +      return detail;
@@ -5728,13 +5908,11 @@ index e200d4e..eb96190 100644
 +    if (!detail) return;
 +    setDiscussionBusy(true);
 +    try {
-+      const result = await callTool("set_reading_discussion_mood", {
-+        discussionId: detail.discussion.id,
++      const result = await cloudSourceClient.setReadingDiscussionMood(
++        detail.discussion.id,
 +        mood
-+      });
-+      const discussion = result.structuredContent?.discussion as
-+        | ReadingDiscussionDetail["discussion"]
-+        | undefined;
++      );
++      const discussion = result.discussion;
 +      if (!discussion) throw new Error("Missing discussion");
 +      const updated = { ...detail, discussion };
 +      upsertDiscussionSummary(updated);
@@ -5761,8 +5939,8 @@ index e200d4e..eb96190 100644
 +    setDiscussionLoading(true);
 +    setDiscussionError("");
 +    try {
-+      const result = await callTool("get_reading_discussion", { discussionId });
-+      const detail = readDiscussionDetail(result.structuredContent);
++      const result = await cloudSourceClient.getReadingDiscussion(discussionId);
++      const detail = readDiscussionDetail(result);
 +      if (!detail) throw new Error("Missing discussion detail");
 +      setActiveDiscussion(detail);
 +      upsertDiscussionSummary(detail);
@@ -5780,12 +5958,12 @@ index e200d4e..eb96190 100644
 +    setDiscussionSending(true);
 +    setDiscussionError("");
 +    try {
-+      const saved = await callTool("append_reading_discussion_user_message", {
++      const saved = await cloudSourceClient.appendReadingDiscussionUserMessage({
 +        discussionId: discussion.id,
 +        text,
 +        operationId: userOperationId
 +      });
-+      const detail = readDiscussionDetail(saved.structuredContent?.detail);
++      const detail = readDiscussionDetail(saved.detail);
 +      if (!detail) throw new Error("Missing saved discussion");
 +      setActiveDiscussion(detail);
 +      upsertDiscussionSummary(detail);
@@ -5816,12 +5994,10 @@ index e200d4e..eb96190 100644
 +  async function closeActiveDiscussionRound() {
 +    if (!activeDiscussion) return;
 +    try {
-+      const result = await callTool("close_reading_discussion", {
-+        discussionId: activeDiscussion.discussion.id
-+      });
-+      const discussion = result.structuredContent?.discussion as
-+        | ReadingDiscussionDetail["discussion"]
-+        | undefined;
++      const result = await cloudSourceClient.closeReadingDiscussion(
++        activeDiscussion.discussion.id
++      );
++      const discussion = result.discussion;
 +      if (discussion) upsertDiscussionSummary({ ...activeDiscussion, discussion });
 +      setActiveDiscussion(null);
 +      setAwaitingDiscussionReply(null);
@@ -5834,7 +6010,7 @@ index e200d4e..eb96190 100644
    function allowAutomaticSync(mode: "range_sync" | "recent_only" | "live_reading") {
      const permission = checkSourceSyncPermission({ mode, sourceAvailability });
      if (permission.allowed) return true;
-@@ -1986,26 +2637,12 @@ export function App() {
+@@ -1986,26 +2636,12 @@ export function App() {
      await callTool("finish_today_reading", {
        sessionId: sessionBundle.session.id,
        position: sessionBundle.session.userCurrentPosition,
@@ -5862,7 +6038,7 @@ index e200d4e..eb96190 100644
    async function openDiary() {
      if (!sessionBundle) return;
      const result = await callTool("generate_diary_context", { sessionId: sessionBundle.session.id });
-@@ -2154,15 +2791,15 @@ export function App() {
+@@ -2154,15 +2790,15 @@ export function App() {
                : "正文/图片只保存在本设备，不会上传到服务器。只有你主动同步的片段或页面会发送给 ChatGPT；请保留原文件以防设备缓存被清理。"}
            </p>
            {existingSession ? (
@@ -5882,7 +6058,7 @@ index e200d4e..eb96190 100644
                ) : null}
                {!companionLoading && !companionError
                  ? companionComments.slice(0, 3).map((comment) => (
-@@ -2198,18 +2835,15 @@ export function App() {
+@@ -2198,18 +2834,15 @@ export function App() {
            onFullscreen={() => void openFullscreenReader()}
            fullscreenLabel={readerImmersive ? "退出全屏" : "全屏阅读"}
            immersive={readerImmersive}
@@ -5906,7 +6082,7 @@ index e200d4e..eb96190 100644
            initialScrollTop={readerScrollTop}
            onScrollPosition={setReaderScrollTop}
            {...readerProps}
-@@ -2220,28 +2854,22 @@ export function App() {
+@@ -2220,28 +2853,22 @@ export function App() {
            session={sessionBundle.session}
            pages={mangaPages}
            description={pageDescription}
@@ -5940,7 +6116,7 @@ index e200d4e..eb96190 100644
            initialScrollTop={readerScrollTop}
            onScrollPosition={setReaderScrollTop}
            {...readerProps}
-@@ -2251,6 +2879,7 @@ export function App() {
+@@ -2251,6 +2878,7 @@ export function App() {
          <AppearanceSheet
            value={appearance}
            backgroundImage={appearanceBackground}
@@ -5948,7 +6124,7 @@ index e200d4e..eb96190 100644
            onChange={setAppearance}
            onBackgroundChange={(dataUrl) => {
              if (!saveAppearanceBackground(dataUrl)) {
-@@ -2265,13 +2894,6 @@ export function App() {
+@@ -2265,13 +2893,6 @@ export function App() {
        {overlay === "cache" && sessionBundle ? <CacheSettings type={sessionBundle.session.type} remembered={remembered} liveReadingEnabled={sessionBundle.session.liveReadingEnabled} onRememberChange={changeRemember} onLiveReadingChange={(enabled) => void changeLiveReading(enabled)} onClear={clearCache} onClose={() => setOverlay(null)} /> : null}
        {overlay === "more" && sessionBundle ? (
          <MoreActions
@@ -5962,7 +6138,7 @@ index e200d4e..eb96190 100644
            onDiary={openDiary}
            onComplete={completeWork}
            onClose={() => setOverlay(null)}
-@@ -2283,12 +2905,15 @@ export function App() {
+@@ -2283,12 +2904,15 @@ export function App() {
            bundle={managedBook}
            cloudSourceEnabled={cloudSourceEnabled}
            comments={historyComments}
@@ -5979,7 +6155,7 @@ index e200d4e..eb96190 100644
            onDelete={(options) => void deleteManagedBook(options)}
            onClose={() => {
              setManagedBook(null);
-@@ -2296,41 +2921,26 @@ export function App() {
+@@ -2296,41 +2920,26 @@ export function App() {
            }}
          />
        ) : null}
@@ -6035,7 +6211,7 @@ index e200d4e..eb96190 100644
            onCancel={() => void cancelCurrentSync()}
          />
        ) : null}
-@@ -2432,6 +3042,61 @@ function nextFrame() {
+@@ -2432,6 +3041,61 @@ function nextFrame() {
    });
  }
  
@@ -6097,7 +6273,7 @@ index e200d4e..eb96190 100644
  function deriveSourceEndpointBase(): string {
    if (typeof window === "undefined") return "/source";
    const match = window.location.pathname.match(/\/mcp\/([^/]+)/);
-@@ -2496,6 +3161,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
+@@ -2496,6 +3160,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
    };
  }
  
@@ -6112,7 +6288,7 @@ index e200d4e..eb96190 100644
    return {
      kind: type === "novel" ? "paragraph" : "page",
 diff --git a/web/src/Boot.test.tsx b/web/src/Boot.test.tsx
-index abd5023..89a4375 100644
+index abd502381499a52c09052f004b1ebb609a5639f1..89a4375238c28acb0ce6251938aca39ce9a2480c 100644
 --- a/web/src/Boot.test.tsx
 +++ b/web/src/Boot.test.tsx
 @@ -46,7 +46,7 @@ describe("Boot", () => {
@@ -6134,7 +6310,7 @@ index abd5023..89a4375 100644
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37..2e76560 100644
+index c23bd37b0c0ac24d0be3669363489c7474aed801..394d546a1829e3e440a4a4a6623f2ba6f0bfb876 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -6144,12 +6320,12 @@ index c23bd37..2e76560 100644
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
 +const RESOURCE_VERSION = "app-v0214";
-+const APP_VERSION = "0.2.15";
++const APP_VERSION = "0.2.16";
  
  type AppModule = {
    App: ComponentType;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28ca..0701014 100644
+index 08a28caba9ed1572f1b58d39264eed2545953d76..fb7b91a94b76bc922d45015e972126dcc38579be 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -6157,7 +6333,7 @@ index 08a28ca..0701014 100644
    if (typeof window === "undefined" || window.parent === window) return undefined;
    if (!app) {
 -    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
-+    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.15" });
++    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.16" });
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
@@ -6196,7 +6372,7 @@ index 08a28ca..0701014 100644
  
  export async function requestReaderPip(): Promise<boolean> {
 diff --git a/web/src/bridge/standalone.ts b/web/src/bridge/standalone.ts
-index f6c1e54..a83d5ed 100644
+index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..a4312f2552e81fd4250a90581c82117032a5fc19 100644
 --- a/web/src/bridge/standalone.ts
 +++ b/web/src/bridge/standalone.ts
 @@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
@@ -6204,12 +6380,12 @@ index f6c1e54..a83d5ed 100644
    if (!config) throw new Error("Standalone reader path is unavailable");
    standaloneClient ??= (async () => {
 -    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.7" });
-+    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.15" });
++    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.16" });
      await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
      return client;
    })();
 diff --git a/web/src/components/AppearanceSheet.tsx b/web/src/components/AppearanceSheet.tsx
-index 2b6aff2..800b2c4 100644
+index 2b6aff2622136a6bacd01731b682a9171c1d1beb..800b2c407ee97971d1864053e8221bfde4c445ef 100644
 --- a/web/src/components/AppearanceSheet.tsx
 +++ b/web/src/components/AppearanceSheet.tsx
 @@ -1,37 +1,10 @@
@@ -6415,7 +6591,7 @@ index 2b6aff2..800b2c4 100644
  
  function readFileAsDataUrl(file: File): Promise<string> {
 diff --git a/web/src/components/BookManagementSheet.test.tsx b/web/src/components/BookManagementSheet.test.tsx
-index b265473..72fa0b0 100644
+index b2654736a6e87aca358c129b8b60b32971820f35..72fa0b0e14443ecd5d9d423e6511e1b5f6f7a066 100644
 --- a/web/src/components/BookManagementSheet.test.tsx
 +++ b/web/src/components/BookManagementSheet.test.tsx
 @@ -24,20 +24,37 @@ const bundle = {
@@ -6527,7 +6703,7 @@ index b265473..72fa0b0 100644
          onClose={vi.fn()}
        />
 diff --git a/web/src/components/BookManagementSheet.tsx b/web/src/components/BookManagementSheet.tsx
-index 7a95eda..69b5ebe 100644
+index 7a95eda9e80c523c9d9889620e0bbd5aa60ad09b..69b5ebe1e6b2afdbdf9a9ced40344d8e7f670b06 100644
 --- a/web/src/components/BookManagementSheet.tsx
 +++ b/web/src/components/BookManagementSheet.tsx
 @@ -1,30 +1,46 @@
@@ -6758,7 +6934,7 @@ index 7a95eda..69b5ebe 100644
 +  })}`;
 +}
 diff --git a/web/src/components/CompanionDock.test.tsx b/web/src/components/CompanionDock.test.tsx
-index 589531b..9d2ff88 100644
+index 589531bfefd0bb5d775798b9fff6340ab6df0796..9d2ff88ec54a634cb68c6dd2e19c465157cd8c1b 100644
 --- a/web/src/components/CompanionDock.test.tsx
 +++ b/web/src/components/CompanionDock.test.tsx
 @@ -1,4 +1,4 @@
@@ -6926,7 +7102,7 @@ index 589531b..9d2ff88 100644
        target: { value: "布局刷新时别关。" }
      });
 diff --git a/web/src/components/CompanionDock.tsx b/web/src/components/CompanionDock.tsx
-index 096ac47..4a135ec 100644
+index 096ac47ec52d7a81b2e2729ba8f3c18988c866e9..4a135ecfa9e399fb285f048603cae2a7dd615168 100644
 --- a/web/src/components/CompanionDock.tsx
 +++ b/web/src/components/CompanionDock.tsx
 @@ -34,7 +34,10 @@ export function CompanionDock(props: {
@@ -7144,7 +7320,7 @@ index 096ac47..4a135ec 100644
    );
  }
 diff --git a/web/src/components/DiaryPreview.tsx b/web/src/components/DiaryPreview.tsx
-index 69174cb..ebc2df6 100644
+index 69174cb6e0fa1488b279395be48c7a268315ba20..ebc2df6043f68263ff62efdfba1143a856d46cf2 100644
 --- a/web/src/components/DiaryPreview.tsx
 +++ b/web/src/components/DiaryPreview.tsx
 @@ -21,7 +21,7 @@ export function DiaryPreview(props: {
@@ -7158,7 +7334,7 @@ index 69174cb..ebc2df6 100644
      </div>
 diff --git a/web/src/components/DiscussionDrawer.tsx b/web/src/components/DiscussionDrawer.tsx
 new file mode 100644
-index 0000000..66f80ad
+index 0000000000000000000000000000000000000000..66f80ad6cf2cc3277e48e01d26bb12c68a4ffb83
 --- /dev/null
 +++ b/web/src/components/DiscussionDrawer.tsx
 @@ -0,0 +1,143 @@
@@ -7306,7 +7482,7 @@ index 0000000..66f80ad
 +  );
 +}
 diff --git a/web/src/components/MoreActions.tsx b/web/src/components/MoreActions.tsx
-index b6ab061..c880526 100644
+index b6ab061103af76bc8030fbf399354d9820bd2ae9..c88052647f4ec9c2bc91049a6e36ed5baeba0972 100644
 --- a/web/src/components/MoreActions.tsx
 +++ b/web/src/components/MoreActions.tsx
 @@ -1,47 +1,22 @@
@@ -7369,7 +7545,7 @@ index b6ab061..c880526 100644
          <button className="text-button" onClick={props.onClose}>取消</button>
        </section>
 diff --git a/web/src/components/ReaderActions.tsx b/web/src/components/ReaderActions.tsx
-index 897f9b9..9c54376 100644
+index 897f9b97afe85ddfe4fc270b1d3224a2041e1a89..9c54376517cf97971ab33015dd885fd16307680b 100644
 --- a/web/src/components/ReaderActions.tsx
 +++ b/web/src/components/ReaderActions.tsx
 @@ -1,16 +1,21 @@
@@ -7399,7 +7575,7 @@ index 897f9b9..9c54376 100644
      </nav>
    );
 diff --git a/web/src/components/ReadingCommentPreferences.test.tsx b/web/src/components/ReadingCommentPreferences.test.tsx
-index c1daf80..0f4c796 100644
+index c1daf802d5559dafd6a371b7db63305c9315d020..0f4c7965090a7092c20321f867d13137759cf71a 100644
 --- a/web/src/components/ReadingCommentPreferences.test.tsx
 +++ b/web/src/components/ReadingCommentPreferences.test.tsx
 @@ -28,7 +28,7 @@ describe("ReadingCommentPreferences", () => {
@@ -7447,7 +7623,7 @@ index c1daf80..0f4c796 100644
    });
  });
 diff --git a/web/src/components/ReadingCommentPreferences.tsx b/web/src/components/ReadingCommentPreferences.tsx
-index 9da7b5b..3ddc6c4 100644
+index 9da7b5bc2da28eb48feb0e64abf7c0ede1c199b2..3ddc6c42365ae46f3f06e49a3b3f7a421cf257c3 100644
 --- a/web/src/components/ReadingCommentPreferences.tsx
 +++ b/web/src/components/ReadingCommentPreferences.tsx
 @@ -118,7 +118,7 @@ export function ReadingCommentPreferences(props: {
@@ -7470,7 +7646,7 @@ index 9da7b5b..3ddc6c4 100644
    );
 diff --git a/web/src/components/ReadingDiscussion.test.tsx b/web/src/components/ReadingDiscussion.test.tsx
 new file mode 100644
-index 0000000..87e5a12
+index 0000000000000000000000000000000000000000..87e5a1227ad09bc43bbc656a6c48e098854bb4cc
 --- /dev/null
 +++ b/web/src/components/ReadingDiscussion.test.tsx
 @@ -0,0 +1,113 @@
@@ -7589,7 +7765,7 @@ index 0000000..87e5a12
 +});
 diff --git a/web/src/components/ReadingDiscussionCard.tsx b/web/src/components/ReadingDiscussionCard.tsx
 new file mode 100644
-index 0000000..c89f94e
+index 0000000000000000000000000000000000000000..c89f94e11b16ab88f0adfa615cb20a113b9b34a2
 --- /dev/null
 +++ b/web/src/components/ReadingDiscussionCard.tsx
 @@ -0,0 +1,95 @@
@@ -7689,7 +7865,7 @@ index 0000000..c89f94e
 +
 +export { moodOptions as readingDiscussionMoodOptions };
 diff --git a/web/src/components/ReadingSyncStatus.tsx b/web/src/components/ReadingSyncStatus.tsx
-index 30e5d4c..5be7c92 100644
+index 30e5d4cbc3d4b416c48292d72b06fd0c0769fda4..5be7c924dfe1174310ca7559bca7f58a7c5f8607 100644
 --- a/web/src/components/ReadingSyncStatus.tsx
 +++ b/web/src/components/ReadingSyncStatus.tsx
 @@ -9,7 +9,7 @@ export function ReadingSyncStatus({ session }: { session: ReadingSession }) {
@@ -7702,7 +7878,7 @@ index 30e5d4c..5be7c92 100644
          <span>
            待补课：第 {pendingStart}–{user.index} {user.kind === "page" ? "页" : "段"}
 diff --git a/web/src/components/SyncChoiceSheet.tsx b/web/src/components/SyncChoiceSheet.tsx
-index b764d57..0f40b1c 100644
+index b764d57f1fc09a6c1cd3727e62228fb569554724..0f40b1cf522941deafadeb086f4affc8bf8b8840 100644
 --- a/web/src/components/SyncChoiceSheet.tsx
 +++ b/web/src/components/SyncChoiceSheet.tsx
 @@ -11,7 +11,7 @@ export function SyncChoiceSheet(props: {
@@ -7715,7 +7891,7 @@ index b764d57..0f40b1c 100644
            完整补课后再陪读（推荐）
          </button>
 diff --git a/web/src/components/SyncProgressSheet.tsx b/web/src/components/SyncProgressSheet.tsx
-index 77b05b9..32e8ec5 100644
+index 77b05b924fef4ef6145d5bc0d0b6d3ee8f4453ba..32e8ec5fd3ebe14631ed9e36435089792d120dc2 100644
 --- a/web/src/components/SyncProgressSheet.tsx
 +++ b/web/src/components/SyncProgressSheet.tsx
 @@ -3,7 +3,6 @@ import type { ReadingSyncJob } from "../features/reading-sync/types.js";
@@ -7752,7 +7928,7 @@ index 77b05b9..32e8ec5 100644
        </section>
      </div>
 diff --git a/web/src/features/appearance/appearance.test.ts b/web/src/features/appearance/appearance.test.ts
-index a90656c..1f46a32 100644
+index a90656cdc2aaf9b11e0cbbefe17d022e3f747741..1f46a3246e9d22d60f326206aa14e1a1012b99d1 100644
 --- a/web/src/features/appearance/appearance.test.ts
 +++ b/web/src/features/appearance/appearance.test.ts
 @@ -13,15 +13,13 @@ describe("appearance preferences", () => {
@@ -7839,7 +8015,7 @@ index a90656c..1f46a32 100644
 +  });
  });
 diff --git a/web/src/features/appearance/appearance.ts b/web/src/features/appearance/appearance.ts
-index 017aaae..387148f 100644
+index 017aaae8e9afbcf7ffd164da335c66c207ec49ca..387148f4001f2e551bf9d4ada7454a485c9067e5 100644
 --- a/web/src/features/appearance/appearance.ts
 +++ b/web/src/features/appearance/appearance.ts
 @@ -1,8 +1,6 @@
@@ -7939,7 +8115,7 @@ index 017aaae..387148f 100644
    return value === "rounded" || value === "serif" || value === "sans";
  }
 diff --git a/web/src/features/manga/image-sync.test.ts b/web/src/features/manga/image-sync.test.ts
-index 5ea9a38..c1a96a5 100644
+index 5ea9a385a25b2ee9f70ab1a23cde7ac99e57e013..c1a96a5069c1f6803ff37da0f95dc530dbae179c 100644
 --- a/web/src/features/manga/image-sync.test.ts
 +++ b/web/src/features/manga/image-sync.test.ts
 @@ -35,7 +35,7 @@ describe("prepareCurrentPageContext", () => {
@@ -7952,7 +8128,7 @@ index 5ea9a38..c1a96a5 100644
    });
  });
 diff --git a/web/src/features/manga/image-sync.ts b/web/src/features/manga/image-sync.ts
-index e83f698..6f8d995 100644
+index e83f69839a84019bf0c5870180c91ef97875ff6e..6f8d995c8b1e4dcc61d1b5155dce0d9b3d83e827 100644
 --- a/web/src/features/manga/image-sync.ts
 +++ b/web/src/features/manga/image-sync.ts
 @@ -31,6 +31,6 @@ export async function prepareCurrentPageContext(input: {
@@ -7964,7 +8140,7 @@ index e83f698..6f8d995 100644
    };
  }
 diff --git a/web/src/features/reading-sync/build-messages.test.ts b/web/src/features/reading-sync/build-messages.test.ts
-index 01e1bfb..30e6e21 100644
+index 01e1bfba97ff9ba51cefa7e00ccaad922386f2b4..30e6e21e125dd4f7e3aca30e951491ee8297fe56 100644
 --- a/web/src/features/reading-sync/build-messages.test.ts
 +++ b/web/src/features/reading-sync/build-messages.test.ts
 @@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
@@ -8015,7 +8191,7 @@ index 01e1bfb..30e6e21 100644
      const current = buildCurrentOnlyPrompt({
        sessionId: "session-1",
 diff --git a/web/src/features/reading-sync/build-messages.ts b/web/src/features/reading-sync/build-messages.ts
-index d6fc26f..2416a6c 100644
+index d6fc26f0671c933c4b04b98900aebaa38f40b4b8..2416a6cc51c04a53e66898343f9355d6c262af69 100644
 --- a/web/src/features/reading-sync/build-messages.ts
 +++ b/web/src/features/reading-sync/build-messages.ts
 @@ -7,8 +7,8 @@ export function buildBatchChatMessage(job: ReadingSyncJob, batch: SyncBatch) {
@@ -8059,10 +8235,10 @@ index d6fc26f..2416a6c 100644
    sessionId: string;
    title: string;
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197..eeb20ad 100644
+index 2523197e6ba2317df34567a63db060563be71fcc..d852e36a702eddb1cc4eb05f5d416022ef1b506c 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
-@@ -2,6 +2,54 @@ import { describe, expect, it, vi } from "vitest";
+@@ -2,6 +2,131 @@ import { describe, expect, it, vi } from "vitest";
  import { CloudSourceClient } from "./cloud-source-client.js";
  
  describe("CloudSourceClient", () => {
@@ -8114,32 +8290,118 @@ index 2523197..eeb20ad 100644
 +    });
 +  });
 +
++  it("uses the private component route for discussions instead of cached app tool names", async () => {
++    const discussion = {
++      id: "discussion-1",
++      sessionId: "session-1",
++      position: { kind: "paragraph", index: 5, total: 75, label: "第 5 段" },
++      anchorCommentId: "comment-1",
++      anchorText: "这一段很适合慢慢聊。",
++      mood: null,
++      status: "open",
++      currentRound: 1,
++      createdAt: "2026-07-18T00:00:00.000Z",
++      updatedAt: "2026-07-18T00:00:00.000Z"
++    };
++    const detail = {
++      discussion,
++      messages: [
++        {
++          id: "message-1",
++          discussionId: discussion.id,
++          sequence: 1,
++          roundNumber: 1,
++          role: "assistant",
++          kind: "anchor",
++          text: discussion.anchorText,
++          operationId: "discussion-anchor:comment-1",
++          createdAt: discussion.createdAt
++        }
++      ]
++    };
++    const fetchMock = vi.fn()
++      .mockResolvedValueOnce(jsonResponse(detail))
++      .mockResolvedValueOnce(jsonResponse({ discussions: [] }))
++      .mockResolvedValueOnce(jsonResponse({ discussion: { ...discussion, mood: "like" } }));
++    const toolCaller = vi.fn();
++    const client = new CloudSourceClient("/source/secret", fetchMock, toolCaller);
++
++    await expect(
++      client.getOrCreateReadingDiscussion({
++        sessionId: "session-1",
++        position: discussion.position as never,
++        anchorCommentId: discussion.anchorCommentId,
++        anchorText: discussion.anchorText
++      })
++    ).resolves.toMatchObject({ discussion: { id: "discussion-1" } });
++    await client.listReadingDiscussions("session-1");
++    await client.setReadingDiscussionMood("discussion-1", "like");
++
++    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
++      "/source/secret/discussion/open",
++      "/source/secret/discussion/list",
++      "/source/secret/discussion/mood"
++    ]);
++    expect(toolCaller).not.toHaveBeenCalled();
++  });
++
++  it("keeps MCP discussion tools as a fallback when no private endpoint is available", async () => {
++    const toolCaller = vi.fn().mockResolvedValue({
++      structuredContent: {
++        detail: {
++          discussion: { id: "discussion-fallback" },
++          messages: []
++        }
++      }
++    });
++    const fetchMock = vi.fn();
++    const client = new CloudSourceClient("/source", fetchMock, toolCaller);
++
++    await expect(client.getReadingDiscussion("discussion-fallback")).resolves.toMatchObject({
++      discussion: { id: "discussion-fallback" },
++      messages: []
++    });
++    expect(toolCaller).toHaveBeenCalledWith("get_reading_discussion", {
++      discussionId: "discussion-fallback"
++    });
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
++
    it("uploads novel source to the component endpoint instead of sending full text through the bridge", async () => {
      const fetchMock = vi.fn().mockResolvedValue(
        jsonResponse({
-@@ -247,8 +295,8 @@ describe("CloudSourceClient", () => {
+@@ -247,8 +372,8 @@ describe("CloudSourceClient", () => {
      });
      const message = result.diagnostics.directUploadError ?? "";
  
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
 +    expect(message).toContain("resourceVersion=app-v0214");
-+    expect(message).toContain("appVersion=0.2.15");
++    expect(message).toContain("appVersion=0.2.16");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f..68e7f27 100644
+index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..6e1f2f21dd73d16801031534ae91452bfd31f705 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
-@@ -1,5 +1,6 @@
- import type { CloudSourcePage, SourceManifest } from "@ss/shared";
+@@ -1,5 +1,14 @@
+-import type { CloudSourcePage, SourceManifest } from "@ss/shared";
++import type {
++  CloudSourcePage,
++  ReadingDiscussion,
++  ReadingDiscussionDetail,
++  ReadingDiscussionMood,
++  ReadingDiscussionSummary,
++  ReadingPosition,
++  SourceManifest
++} from "@ss/shared";
  import type { ToolCallResult } from "../../types/openai.js";
 +import type { AppearancePreferences } from "../appearance/appearance.js";
  
  type FetchLike = typeof fetch;
  type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<ToolCallResult>;
-@@ -20,8 +21,14 @@ export interface CloudSourceUploadResult {
+@@ -20,8 +29,14 @@ export interface CloudSourceUploadResult {
    diagnostics: CloudUploadDiagnostics;
  }
  
@@ -8152,11 +8414,11 @@ index fd4eb1f..68e7f27 100644
 +};
 +
 +const RESOURCE_VERSION = "app-v0214";
-+const APP_VERSION = "0.2.15";
++const APP_VERSION = "0.2.16";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
  export class CloudSourceClient {
-@@ -149,6 +156,28 @@ export class CloudSourceClient {
+@@ -149,6 +164,120 @@ export class CloudSourceClient {
      };
    }
  
@@ -8182,11 +8444,103 @@ index fd4eb1f..68e7f27 100644
 +    return this.post<CloudAppearance>("/appearance/delete-background", { preferences });
 +  }
 +
++  async getOrCreateReadingDiscussion(input: {
++    sessionId: string;
++    position: ReadingPosition;
++    anchorCommentId: string;
++    anchorText: string;
++  }): Promise<ReadingDiscussionDetail> {
++    return this.discussionRequest(
++      "/discussion/open",
++      "get_or_create_reading_discussion",
++      input
++    );
++  }
++
++  async getReadingDiscussion(discussionId: string): Promise<ReadingDiscussionDetail> {
++    return this.discussionRequest(
++      "/discussion/get",
++      "get_reading_discussion",
++      { discussionId }
++    );
++  }
++
++  async listReadingDiscussions(sessionId: string): Promise<{
++    discussions: ReadingDiscussionSummary[];
++  }> {
++    return this.discussionRequest(
++      "/discussion/list",
++      "list_reading_discussions",
++      { sessionId }
++    );
++  }
++
++  async setReadingDiscussionMood(
++    discussionId: string,
++    mood: ReadingDiscussionMood | null
++  ): Promise<{ discussion: ReadingDiscussion }> {
++    return this.discussionRequest(
++      "/discussion/mood",
++      "set_reading_discussion_mood",
++      { discussionId, mood }
++    );
++  }
++
++  async appendReadingDiscussionUserMessage(input: {
++    discussionId: string;
++    text: string;
++    operationId: string;
++  }): Promise<{ detail: ReadingDiscussionDetail }> {
++    return this.discussionRequest(
++      "/discussion/message",
++      "append_reading_discussion_user_message",
++      input
++    );
++  }
++
++  async closeReadingDiscussion(
++    discussionId: string
++  ): Promise<{ discussion: ReadingDiscussion }> {
++    return this.discussionRequest(
++      "/discussion/close",
++      "close_reading_discussion",
++      { discussionId }
++    );
++  }
++
++  private async discussionRequest<T>(
++    path: string,
++    toolName: string,
++    body: Record<string, unknown>
++  ): Promise<T> {
++    if (hasPrivateSourceEndpoint(this.endpointBase)) {
++      return this.post<T>(path, body);
++    }
++    if (this.toolCaller) {
++      const result = await this.toolCaller(toolName, body);
++      const structured = result.structuredContent;
++      if (!structured || typeof structured !== "object") {
++        throw new Error("共读讨论返回格式无效。");
++      }
++      const detail = structured.detail;
++      if (
++        (toolName === "get_or_create_reading_discussion" ||
++          toolName === "get_reading_discussion") &&
++        detail &&
++        typeof detail === "object"
++      ) {
++        return detail as T;
++      }
++      return structured as T;
++    }
++    return this.post<T>(path, body);
++  }
++
    private async post<T>(path: string, body: Record<string, unknown>): Promise<T> {
      const uploadUrl = `${this.endpointBase}${path}`;
      let response: Response;
 diff --git a/web/src/main.tsx b/web/src/main.tsx
-index b9391dd..e9daf41 100644
+index b9391dda60310d338ab66c41abb279614aae667b..e9daf41d5c1ca0e2134dc16f11b03e553ea41da0 100644
 --- a/web/src/main.tsx
 +++ b/web/src/main.tsx
 @@ -15,6 +15,6 @@ if (rootElement) {
@@ -8198,7 +8552,7 @@ index b9391dd..e9daf41 100644
    );
  }
 diff --git a/web/src/pages/Home.test.tsx b/web/src/pages/Home.test.tsx
-index 0c11755..6ee31b9 100644
+index 0c11755d032546a632902dab033f96b52eec16d9..6ee31b943246af138960a38e1c7f3b7b1755ecd1 100644
 --- a/web/src/pages/Home.test.tsx
 +++ b/web/src/pages/Home.test.tsx
 @@ -23,8 +23,8 @@ describe("Home bookshelf core", () => {
@@ -8213,7 +8567,7 @@ index 0c11755..6ee31b9 100644
    });
  
 diff --git a/web/src/pages/Home.tsx b/web/src/pages/Home.tsx
-index f26a868..5e1bd36 100644
+index f26a8687bbc6a2032c77ee9f7f08065bcd617381..5e1bd36c31483563af10aa7fd5e12c8585707150 100644
 --- a/web/src/pages/Home.tsx
 +++ b/web/src/pages/Home.tsx
 @@ -17,15 +17,6 @@ const FILTERS: Array<{ value: Filter; label: string }> = [
@@ -8260,7 +8614,7 @@ index f26a868..5e1bd36 100644
        <button
          type="button"
 diff --git a/web/src/pages/MangaReader.test.tsx b/web/src/pages/MangaReader.test.tsx
-index 553c7f7..81ae9ca 100644
+index 553c7f72a6098cd64f783a793036dac45ebc140c..81ae9ca5b773fa3e711e113df81082e17be55461 100644
 --- a/web/src/pages/MangaReader.test.tsx
 +++ b/web/src/pages/MangaReader.test.tsx
 @@ -29,32 +29,26 @@ describe("MangaReader v0.2 positions", () => {
@@ -8336,7 +8690,7 @@ index 553c7f7..81ae9ca 100644
    });
  });
 diff --git a/web/src/pages/MangaReader.tsx b/web/src/pages/MangaReader.tsx
-index 06da839..295076c 100644
+index 06da8395f40d42065c04613ceb9ebe6174eeb8e3..295076cb73f084d8dd0688b5bad0a4c6253baba4 100644
 --- a/web/src/pages/MangaReader.tsx
 +++ b/web/src/pages/MangaReader.tsx
 @@ -1,11 +1,12 @@
@@ -8465,7 +8819,7 @@ index 06da839..295076c 100644
        />
      </main>
 diff --git a/web/src/pages/NovelReader.test.tsx b/web/src/pages/NovelReader.test.tsx
-index 09048f8..bde5035 100644
+index 09048f89986446f587771282845e69dae4deffb4..bde5035ab2ef8a3738f8f57e61b271fb30999f2a 100644
 --- a/web/src/pages/NovelReader.test.tsx
 +++ b/web/src/pages/NovelReader.test.tsx
 @@ -29,13 +29,10 @@ describe("NovelReader display layout", () => {
@@ -8494,7 +8848,7 @@ index 09048f8..bde5035 100644
    });
  });
 diff --git a/web/src/pages/NovelReader.tsx b/web/src/pages/NovelReader.tsx
-index bedb68d..5523a5f 100644
+index bedb68d0c5eebbe7fdee424f91e08c7dc94afd00..5523a5f053951a55a502b800ab49459ffc344125 100644
 --- a/web/src/pages/NovelReader.tsx
 +++ b/web/src/pages/NovelReader.tsx
 @@ -1,11 +1,12 @@
@@ -8587,7 +8941,7 @@ index bedb68d..5523a5f 100644
        <ReaderActions
          primaryLabel="陪我看看这里"
 diff --git a/web/src/styles/app.css b/web/src/styles/app.css
-index a60e55d..25a86a8 100644
+index a60e55d90802978d379749982b11b507d27f0356..25a86a80efd7c99f873d1a3e552df1c4805d31cd 100644
 --- a/web/src/styles/app.css
 +++ b/web/src/styles/app.css
 @@ -2,8 +2,8 @@
@@ -9677,7 +10031,7 @@ index a60e55d..25a86a8 100644
 +  .discussion-composer { padding-bottom: calc(18px + var(--safe-bottom)); }
 +}
 diff --git a/web/src/styles/tokens.css b/web/src/styles/tokens.css
-index f68bf4f..ada1a13 100644
+index f68bf4f0daa48f16dc61904941146c825a41511c..ada1a13a9dd5d43aaa60c8515976c47036ed3478 100644
 --- a/web/src/styles/tokens.css
 +++ b/web/src/styles/tokens.css
 @@ -1,34 +1,66 @@
@@ -9856,7 +10210,7 @@ index f68bf4f..ada1a13 100644
 +  background: var(--backdrop-base);
  }
 diff --git a/web/vite.config.ts b/web/vite.config.ts
-index d41559e..2b819ce 100644
+index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..2b819cec37f19267b1b9ea7b0c6fd09077f47290 100644
 --- a/web/vite.config.ts
 +++ b/web/vite.config.ts
 @@ -1,14 +1,27 @@
