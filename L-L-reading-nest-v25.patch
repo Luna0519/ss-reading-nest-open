@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index 0820d9c354353d6f3ddf840442a586491282824a..9f8720e310760699e65f56fac4fda74beba91af4 100644
+index 0820d9c354353d6f3ddf840442a586491282824a..1aa4e1310b190edf378ee9e463ed28e32dda449c 100644
 --- a/package.json
 +++ b/package.json
 @@ -1,7 +1,7 @@
@@ -7,7 +7,7 @@ index 0820d9c354353d6f3ddf840442a586491282824a..9f8720e310760699e65f56fac4fda74b
    "name": "ss-reading-nest",
    "private": true,
 -  "version": "0.2.7",
-+  "version": "0.2.16",
++  "version": "0.2.17",
    "packageManager": "pnpm@10.15.1",
    "scripts": {
      "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
@@ -127,14 +127,14 @@ index 0000000000000000000000000000000000000000..ea64a1dba3f2faf830bf7c524f7e954d
 +CREATE INDEX IF NOT EXISTS reading_discussion_messages_order_idx
 +  ON reading_discussion_messages(discussion_id, sequence);
 diff --git a/server/package.json b/server/package.json
-index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..0d018de10c4f6003aa6159d5e993d8a8443b6c07 100644
+index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..ebd74a27c0f8c0e416d608bf0eb763a7e4a14c39 100644
 --- a/server/package.json
 +++ b/server/package.json
 @@ -1,13 +1,13 @@
  {
    "name": "@ss/server",
 -  "version": "0.2.7",
-+  "version": "0.2.16",
++  "version": "0.2.17",
    "private": true,
    "type": "module",
    "scripts": {
@@ -147,7 +147,7 @@ index c1ce2a3a0f6afb6c5cf9100127be6f76d690fa79..0d018de10c4f6003aa6159d5e993d8a8
      "smoke:mcp": "node scripts/remote-smoke/mcp-smoke.mjs",
      "cf-types": "wrangler types",
 diff --git a/server/scripts/remote-smoke/cloud-source-smoke.mjs b/server/scripts/remote-smoke/cloud-source-smoke.mjs
-index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..33b88a61f52ecf186c082d902257cc9c7a864a85 100644
+index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..bb3db4003f6fbc0818279ba0b82a5f49873c7c9f 100644
 --- a/server/scripts/remote-smoke/cloud-source-smoke.mjs
 +++ b/server/scripts/remote-smoke/cloud-source-smoke.mjs
 @@ -61,7 +61,7 @@ const expectedTools = [
@@ -155,12 +155,12 @@ index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..33b88a61f52ecf186c082d902257cc9c
  ];
  
 -const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.16" });
++const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.17" });
  const cleanup = {
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 81737592c12db53b0f77280f424ac1c7422fed9a..f05ab2a00ac315f9cce32c1b281b5453dd312d87 100644
+index 81737592c12db53b0f77280f424ac1c7422fed9a..fc6fe8ed64b2c146ca55b13321e7a5766fee550e 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -168,7 +168,7 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..f05ab2a00ac315f9cce32c1b281b5453
  const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
  const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
 -const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.16" });
++const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.17" });
  
  const healthResponse = await fetch(new URL("/health", workerUrl));
  assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);
@@ -267,7 +267,7 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..f05ab2a00ac315f9cce32c1b281b5453
        tokenHiddenFromModel: true
      })
 diff --git a/server/src/app.test.ts b/server/src/app.test.ts
-index 629ce2403058a7ad53676da31823633d2f35ccec..124b7d32b67ddba778418d6cb62fbcf600e72821 100644
+index 629ce2403058a7ad53676da31823633d2f35ccec..7b9e6da5c8d3ab0e5837e3db6a4fc9c2522f04d4 100644
 --- a/server/src/app.test.ts
 +++ b/server/src/app.test.ts
 @@ -6,7 +6,7 @@ describe("server app", () => {
@@ -275,12 +275,12 @@ index 629ce2403058a7ad53676da31823633d2f35ccec..124b7d32b67ddba778418d6cb62fbcf6
      const response = await request(createApp()).get("/health");
      expect(response.status).toBe(200);
 -    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.16" });
++    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.17" });
    });
  
    it("accepts an MCP initialize request", async () => {
 diff --git a/server/src/app.ts b/server/src/app.ts
-index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..ee8cb7af129dcedb7b9fb9af824030201925302a 100644
+index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..1cf66babffe1aa63fdc42dd3016ca4005c9e31d3 100644
 --- a/server/src/app.ts
 +++ b/server/src/app.ts
 @@ -12,7 +12,7 @@ export function createApp() {
@@ -288,7 +288,7 @@ index f4e9bd5d4a7db166b39de3d694d140d2d5f5a6fe..ee8cb7af129dcedb7b9fb9af82403020
  
    app.get("/health", (_request, response) => {
 -    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.16" });
++    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.17" });
    });
  
    app.post("/mcp", async (request: Request, response: Response) => {
@@ -311,10 +311,10 @@ index 3a031d8f71be198d6852d79a24240a8200c0f4e7..7a79428938f473d23d1c44301a55ba57
 +  export default content;
 +}
 diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
-index e4c685d13228068801b94b092509e01e9a00c149..43512df8d414b5163f9141e498fb2edccfe02ad4 100644
+index e4c685d13228068801b94b092509e01e9a00c149..c0551de159228681116b623cfdebc4d13ca4c5a0 100644
 --- a/server/src/mcp/register-resource.test.ts
 +++ b/server/src/mcp/register-resource.test.ts
-@@ -3,34 +3,63 @@ import { describe, expect, it, vi } from "vitest";
+@@ -3,34 +3,67 @@ import { describe, expect, it, vi } from "vitest";
  const registerAppResource = vi.fn();
  
  vi.mock("@modelcontextprotocol/ext-apps/server", () => ({
@@ -334,7 +334,8 @@ index e4c685d13228068801b94b092509e01e9a00c149..43512df8d414b5163f9141e498fb2edc
 +    registerReadingResource(
 +      {} as never,
 +      '<!doctype html><html><head><style data-ll-widget-styles>.app{display:block}</style></head><body><div id="root"></div><script type="module" data-ll-widget-script>console.log("ready")</script></body></html>',
-+      "https://reading-nest.example.workers.dev/private/path"
++      "https://reading-nest.example.workers.dev/private/path",
++      "https://reading-nest.example.workers.dev/source/private-token"
 +    );
      const [, , uri, descriptor, loader] = registerAppResource.mock.calls[0];
  
@@ -363,6 +364,9 @@ index e4c685d13228068801b94b092509e01e9a00c149..43512df8d414b5163f9141e498fb2edc
 +    expect(loaded.contents[0].mimeType).toBe("text/html;profile=mcp-app");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-styles");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-script");
++    expect(loaded.contents[0].text).toContain(
++      '<meta name="ll-source-endpoint" content="https://reading-nest.example.workers.dev/source/private-token">'
++    );
 +    expect(loaded.contents[0].text).not.toMatch(/<(?:script|link)\b[^>]*(?:src|href)=/i);
      expect(loaded.contents[0]._meta.ui.csp.connectDomains).toContain(
        "https://reading-nest.example.workers.dev"
@@ -386,18 +390,27 @@ index e4c685d13228068801b94b092509e01e9a00c149..43512df8d414b5163f9141e498fb2edc
    });
  });
 diff --git a/server/src/mcp/register-resource.ts b/server/src/mcp/register-resource.ts
-index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..2f022f6c82556f1e52ae08313ea8c769863cc95d 100644
+index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..d235656c0bde112be9c109df853adfbc2d8e417b 100644
 --- a/server/src/mcp/register-resource.ts
 +++ b/server/src/mcp/register-resource.ts
-@@ -1,38 +1,40 @@
+@@ -1,40 +1,50 @@
  import { registerAppResource, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
  import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 -import { READING_NEST_URI } from "./register-tools.js";
 +import { READING_NEST_COMPAT_URIS, READING_NEST_URI } from "./register-tools.js";
  
- export function registerReadingResource(server: McpServer, widgetHtml: string, workerOrigin?: string) {
+-export function registerReadingResource(server: McpServer, widgetHtml: string, workerOrigin?: string) {
 -  const connectDomains = [workerOrigin ?? "http://localhost:8787"];
++export function registerReadingResource(
++  server: McpServer,
++  widgetHtml: string,
++  workerOrigin?: string,
++  sourceEndpointBase?: string
++) {
 +  const appOrigin = normalizeOrigin(workerOrigin ?? "http://localhost:8787");
++  const componentHtml = sourceEndpointBase
++    ? injectSourceEndpoint(widgetHtml, sourceEndpointBase)
++    : widgetHtml;
 +  const connectDomains = [appOrigin];
 +  const resourceDomains: string[] = [];
    const resourceCsp = {
@@ -451,9 +464,12 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..2f022f6c82556f1e52ae08313ea8c769
 -            uri: READING_NEST_URI,
 +            uri: resourceUri,
              mimeType: RESOURCE_MIME_TYPE,
-             text: widgetHtml,
+-            text: widgetHtml,
++            text: componentHtml,
              _meta: {
-@@ -47,7 +49,11 @@ export function registerReadingResource(server: McpServer, widgetHtml: string, w
+               ui: {
+                 csp: resourceCsp,
+@@ -47,7 +57,27 @@ export function registerReadingResource(server: McpServer, widgetHtml: string, w
              }
            }
          ]
@@ -463,6 +479,22 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..2f022f6c82556f1e52ae08313ea8c769
 +      })
 +    );
 +  }
++}
++
++function injectSourceEndpoint(widgetHtml: string, sourceEndpointBase: string): string {
++  const meta = `<meta name="ll-source-endpoint" content="${escapeAttribute(sourceEndpointBase)}">`;
++  if (/<head(?:\s[^>]*)?>/i.test(widgetHtml)) {
++    return widgetHtml.replace(/<head(?:\s[^>]*)?>/i, (head) => `${head}${meta}`);
++  }
++  return `${meta}${widgetHtml}`;
++}
++
++function escapeAttribute(value: string): string {
++  return value
++    .replace(/&/g, "&amp;")
++    .replace(/"/g, "&quot;")
++    .replace(/</g, "&lt;")
++    .replace(/>/g, "&gt;");
 +}
 +
 +function normalizeOrigin(value: string): string {
@@ -855,7 +887,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
        return toolResult(combined, result.deleted ? "这本书的云端阅读数据已删除。" : "这本书已不在书架中。");
      }
 diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
-index 9e7643489cce7180588313ad4033028420ff60f4..ae2e98bf2f09d3e76dc206bb4aeb879e4cc3f142 100644
+index 9e7643489cce7180588313ad4033028420ff60f4..300434437629399ceb47b73020419f41686aa91d 100644
 --- a/server/src/mcp/server-factory.ts
 +++ b/server/src/mcp/server-factory.ts
 @@ -1,6 +1,9 @@
@@ -868,7 +900,7 @@ index 9e7643489cce7180588313ad4033028420ff60f4..ae2e98bf2f09d3e76dc206bb4aeb879e
  import type { CloudSourceService } from "../services/cloud-source-service.js";
  import { registerReadingResource } from "./register-resource.js";
  import { registerReadingTools } from "./register-tools.js";
-@@ -9,14 +12,22 @@ export function createMcpServerFromRepository(
+@@ -9,14 +12,27 @@ export function createMcpServerFromRepository(
    repository: ReadingRepository,
    widgetHtml: string,
    cloudSourceService?: CloudSourceService,
@@ -882,21 +914,27 @@ index 9e7643489cce7180588313ad4033028420ff60f4..ae2e98bf2f09d3e76dc206bb4aeb879e
    const server = new McpServer({
      name: "L&L 共读小窝",
 -    version: "0.2.7"
-+    version: "0.2.16"
++    version: "0.2.17"
    });
    const service = new ReadingService(repository);
+-  registerReadingResource(server, widgetHtml, options.workerOrigin);
+-  registerReadingTools(server, service, cloudSourceService, options);
 +  const discussionService = new ReadingDiscussionService(
 +    repository,
 +    options.discussionRepository ?? new MemoryReadingDiscussionRepository()
 +  );
-   registerReadingResource(server, widgetHtml, options.workerOrigin);
--  registerReadingTools(server, service, cloudSourceService, options);
++  registerReadingResource(
++    server,
++    widgetHtml,
++    options.workerOrigin,
++    options.sourceEndpointBase
++  );
 +  registerReadingTools(server, service, discussionService, cloudSourceService, options);
    return server;
  }
 diff --git a/server/src/mcp/ui-template.integration.test.ts b/server/src/mcp/ui-template.integration.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..a313c590d276753212dd4a4c265af5401af9b684
+index 0000000000000000000000000000000000000000..b96848aab4e72f4e10f77c882d651634a66089a9
 --- /dev/null
 +++ b/server/src/mcp/ui-template.integration.test.ts
 @@ -0,0 +1,67 @@
@@ -914,7 +952,7 @@ index 0000000000000000000000000000000000000000..a313c590d276753212dd4a4c265af540
 +
 +describe("ChatGPT UI template MCP chain", () => {
 +  it("keeps the tool, listed resource, and readable HTML on one exact URI", async () => {
-+    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.16" });
++    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.17" });
 +    const widgetHtml = buildInlineWidgetHtml(
 +      `<!doctype html><html><head><link rel="stylesheet" href="${WIDGET_STYLE_PATH}"></head><body><div id="root"></div><script type="module" src="${WIDGET_SCRIPT_PATH}"></script></body></html>`,
 +      {
@@ -925,7 +963,7 @@ index 0000000000000000000000000000000000000000..a313c590d276753212dd4a4c265af540
 +    registerReadingResource(server, widgetHtml, "https://reading-nest.example.workers.dev");
 +    registerReadingTools(server, {} as never, {} as never);
 +
-+    const client = new Client({ name: "L&L UI integration client", version: "0.2.16" });
++    const client = new Client({ name: "L&L UI integration client", version: "0.2.17" });
 +    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 +
 +    try {
@@ -3397,13 +3435,18 @@ index 0000000000000000000000000000000000000000..3a088a245e9bd5b801605c465bbf0174
 +  return value.replace(/<\/style/gi, "<\\/style");
 +}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705c2ccadfeece1585fb2d379b7846862cae..50a275daff71471c8f783c288536f74d78ecd176 100644
+index 1e35705c2ccadfeece1585fb2d379b7846862cae..12ee247daf3e21f1c961f4f68d91f1e7dadd71d7 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
-@@ -6,6 +6,39 @@ describe("getWorkerRoute", () => {
+@@ -4,6 +4,42 @@ import { getWorkerRoute } from "./worker-router.js";
+ describe("getWorkerRoute", () => {
+   it("keeps health public without exposing the token", () => {
      expect(getWorkerRoute(new URL("https://example.workers.dev/health"), "secret")).toBe("health");
-   });
- 
++    expect(
++      getWorkerRoute(new URL("https://example.workers.dev/health/discussions"), undefined)
++    ).toBe("discussion-health");
++  });
++
 +  it("serves only the versioned public widget assets without requiring the private token", () => {
 +    expect(
 +      getWorkerRoute(
@@ -3435,12 +3478,10 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..50a275daff71471c8f783c288536f74d
 +        undefined
 +      )
 +    ).toBe("misconfigured");
-+  });
-+
+   });
+ 
    it("accepts only the exact private MCP path", () => {
-     expect(getWorkerRoute(new URL("https://example.workers.dev/mcp/secret"), "secret")).toBe("mcp");
-     expect(getWorkerRoute(new URL("https://example.workers.dev/mcp/wrong"), "secret")).toBe("not-found");
-@@ -13,6 +46,8 @@ describe("getWorkerRoute", () => {
+@@ -13,6 +49,8 @@ describe("getWorkerRoute", () => {
    });
  
    it("routes only the private standalone reader shell", () => {
@@ -3449,7 +3490,7 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..50a275daff71471c8f783c288536f74d
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/manifest.webmanifest"), "secret")).toBe("app");
-@@ -25,6 +60,18 @@ describe("getWorkerRoute", () => {
+@@ -25,6 +63,18 @@ describe("getWorkerRoute", () => {
    it("routes only exact private source paths", () => {
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/upload"), "secret")).toBe("source");
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/restore"), "secret")).toBe("source");
@@ -3469,15 +3510,16 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..50a275daff71471c8f783c288536f74d
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret"), "secret")).toBe("not-found");
    });
 diff --git a/server/src/worker-router.ts b/server/src/worker-router.ts
-index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..980696e6fc1554e7479b95a22813b68902814927 100644
+index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..3098de31bea4b58d29d3df790ec4c6764f7cfefc 100644
 --- a/server/src/worker-router.ts
 +++ b/server/src/worker-router.ts
-@@ -1,8 +1,20 @@
+@@ -1,8 +1,22 @@
 -export type WorkerRoute = "health" | "app" | "mcp" | "source" | "not-found" | "misconfigured";
 +import { isWidgetAssetPath } from "./widget-assets.js";
 +
 +export type WorkerRoute =
 +  | "health"
++  | "discussion-health"
 +  | "widget-asset"
 +  | "app-entry"
 +  | "app"
@@ -3488,13 +3530,14 @@ index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..980696e6fc1554e7479b95a22813b689
  
  export function getWorkerRoute(url: URL, token: string | undefined): WorkerRoute {
    if (url.pathname === "/health") return "health";
++  if (url.pathname === "/health/discussions") return "discussion-health";
 +  if (isWidgetAssetPath(url.pathname)) return "widget-asset";
    if (!token) return "misconfigured";
 +  if (url.pathname === "/app" || url.pathname === "/app/") return "app-entry";
    if (
      url.pathname === `/app/${token}` ||
      url.pathname === `/app/${token}/` ||
-@@ -14,7 +26,16 @@ export function getWorkerRoute(url: URL, token: string | undefined): WorkerRoute
+@@ -14,7 +28,16 @@ export function getWorkerRoute(url: URL, token: string | undefined): WorkerRoute
    }
    if (
      url.pathname === `/source/${token}/upload` ||
@@ -3513,10 +3556,10 @@ index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..980696e6fc1554e7479b95a22813b689
      return "source";
    }
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..9132395a11a48a2139a27126171878ecba3dcf5a 100644
+index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..f4cee6d2713fac4e7617d1b445e991ed38ae97d2 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
-@@ -1,22 +1,40 @@
+@@ -1,22 +1,57 @@
  import { createMcpHandler } from "agents/mcp";
  import widgetHtml from "../../web/dist/index.html";
 +import widgetScript from "../../web/dist/ll-reading-nest-v0214.bundle.js";
@@ -3549,7 +3592,24 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..9132395a11a48a2139a27126171878ec
  
      if (route === "health") {
 -      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.16" });
++      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.17" });
++    }
++    if (route === "discussion-health") {
++      try {
++        const tables = await env.DB
++          .prepare(
++            "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('reading_discussions', 'reading_discussion_messages')"
++          )
++          .all<{ name: string }>();
++        const names = new Set(tables.results.map((table) => table.name));
++        const ready =
++          names.has("reading_discussions") && names.has("reading_discussion_messages");
++        return Response.json({ ok: ready, discussionStorage: ready ? "ready" : "missing" }, {
++          status: ready ? 200 : 503
++        });
++      } catch {
++        return Response.json({ ok: false, discussionStorage: "unavailable" }, { status: 503 });
++      }
 +    }
 +    if (route === "widget-asset") {
 +      return handleWidgetAsset(request, url, {
@@ -3559,7 +3619,7 @@ index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..9132395a11a48a2139a27126171878ec
      }
      if (route === "misconfigured") {
        console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
-@@ -25,25 +43,44 @@ export default {
+@@ -25,25 +60,44 @@ export default {
      if (route === "not-found") {
        return new Response("Not found", { status: 404 });
      }
@@ -3627,14 +3687,14 @@ index 7aab7e42427e60a97ed07e9095de236c53b29b6b..773289d3427e1b970ce3fe8565db4718
      }
    ],
 diff --git a/shared/package.json b/shared/package.json
-index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..570595004a420ffcbc24a661d3b2001ad49f2351 100644
+index d2cbeca5bb9ff6d1e28f331e4c7bea1356a5c775..1c19e6387576c8d8d346087758bf14a06947b341 100644
 --- a/shared/package.json
 +++ b/shared/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/shared",
 -  "version": "0.2.7",
-+  "version": "0.2.16",
++  "version": "0.2.17",
    "private": true,
    "type": "module",
    "main": "./dist/index.js",
@@ -4039,14 +4099,14 @@ index b26131350103fa1e2f004ff508fea591ef27e284..d283626d667f108f0ff6e1e2d1e04743
            <dd>html-loaded</dd>
          </dl>
 diff --git a/web/package.json b/web/package.json
-index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..6cf7143c5cf569c6d6d137dc77652b5e5d48e665 100644
+index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..6012f0104ab7f00353778a4a6863424e1d3f3af3 100644
 --- a/web/package.json
 +++ b/web/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/web",
 -  "version": "0.2.7",
-+  "version": "0.2.16",
++  "version": "0.2.17",
    "private": true,
    "type": "module",
    "scripts": {
@@ -4059,14 +4119,45 @@ index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..6cf7143c5cf569c6d6d137dc77652b5e
    }
  }
 diff --git a/web/src/App.test.tsx b/web/src/App.test.tsx
-index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311a62e7c0a 100644
+index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..a5b3646d90a5d76167ee53c92623fcf403afd5e6 100644
 --- a/web/src/App.test.tsx
 +++ b/web/src/App.test.tsx
-@@ -32,20 +32,23 @@ describe("App", () => {
+@@ -20,6 +20,7 @@ describe("App", () => {
+   });
+ 
+   afterEach(() => {
++    document.querySelector('meta[name="ll-source-endpoint"]')?.remove();
+     vi.unstubAllGlobals();
+     vi.restoreAllMocks();
+   });
+@@ -32,20 +33,46 @@ describe("App", () => {
      expect(screen.getByText("我的书架")).toBeInTheDocument();
    });
  
 -  it("opens the appearance panel and applies a liquid-glass theme immediately", async () => {
++  it("uses the private source endpoint embedded in the component HTML", async () => {
++    const meta = document.createElement("meta");
++    meta.name = "ll-source-endpoint";
++    meta.content = "https://worker.example.test/source/private-token";
++    document.head.append(meta);
++    const fetchMock = vi.fn(async (url: string) => {
++      if (url.endsWith("/appearance/load")) {
++        return jsonResponse({ updatedAt: "2026-07-18T00:00:00.000Z" });
++      }
++      return jsonResponse({ discussions: [] });
++    });
++    vi.stubGlobal("fetch", fetchMock);
++
++    render(<App />);
++
++    await waitFor(() => {
++      expect(fetchMock).toHaveBeenCalledWith(
++        "https://worker.example.test/source/private-token/appearance/load",
++        expect.objectContaining({ method: "POST" })
++      );
++    });
++  });
++
 +  it("opens the appearance panel and applies unified liquid glass immediately", async () => {
      render(<App />);
  
@@ -4093,7 +4184,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      });
    });
  
-@@ -261,7 +264,7 @@ describe("App", () => {
+@@ -261,7 +288,7 @@ describe("App", () => {
  
      fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
  
@@ -4102,7 +4193,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      expect(screen.getByText(content.slice(0, 20), { exact: false })).toBeInTheDocument();
      expect(await deviceCache.get("large-file-session")).toMatchObject({
        metadata: {
-@@ -517,7 +520,7 @@ describe("App", () => {
+@@ -517,7 +544,7 @@ describe("App", () => {
      });
    });
  
@@ -4111,7 +4202,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
          return {
-@@ -605,10 +608,8 @@ describe("App", () => {
+@@ -605,10 +632,8 @@ describe("App", () => {
  
      await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalled());
      const prompt = String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt ?? "");
@@ -4124,7 +4215,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
    });
  
    it("disables the current-paragraph action while a sync request is in flight", async () => {
-@@ -701,7 +702,8 @@ describe("App", () => {
+@@ -701,7 +726,8 @@ describe("App", () => {
      await waitFor(() => expect(action).not.toBeDisabled());
    });
  
@@ -4134,7 +4225,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const callTool = vi.fn(async (name: string) => {
        if (name === "start_reading_session") {
          return {
-@@ -726,6 +728,12 @@ describe("App", () => {
+@@ -726,6 +752,12 @@ describe("App", () => {
            }
          };
        }
@@ -4147,7 +4238,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
        return { structuredContent: {} };
      });
      Object.defineProperty(window, "openai", {
-@@ -733,7 +741,7 @@ describe("App", () => {
+@@ -733,7 +765,7 @@ describe("App", () => {
        value: {
          toolOutput: { recentSessions: [] },
          callTool,
@@ -4156,7 +4247,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
          requestDisplayMode: vi.fn(),
          setWidgetState: vi.fn()
        }
-@@ -748,7 +756,7 @@ describe("App", () => {
+@@ -748,7 +780,7 @@ describe("App", () => {
        }
      });
      fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
@@ -4165,7 +4256,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
  
      for (let index = 0; index < 27; index += 1) {
        fireEvent.click(screen.getByRole("button", { name: "下一段" }));
-@@ -756,33 +764,18 @@ describe("App", () => {
+@@ -756,33 +788,18 @@ describe("App", () => {
      await screen.findByText(/用户读到：第 28 段/);
      fireEvent.click(screen.getByRole("button", { name: "陪我看看这里" }));
  
@@ -4205,7 +4296,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const deviceCache = new IndexedDbReadingCache();
      const sourceManifest = {
        ...manifest("sequence-source", "8"),
-@@ -832,10 +825,10 @@ describe("App", () => {
+@@ -832,10 +849,10 @@ describe("App", () => {
        }
        return { structuredContent: {} };
      });
@@ -4220,7 +4311,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      );
      Object.defineProperty(window, "openai", {
        configurable: true,
-@@ -856,27 +849,30 @@ describe("App", () => {
+@@ -856,27 +873,30 @@ describe("App", () => {
      await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalledTimes(1));
      expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain("第 7");
      expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain("第 8");
@@ -4262,7 +4353,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      let preferences = {
        readingCommentMode: "light_chat",
        commentLength: "normal",
-@@ -939,56 +935,17 @@ describe("App", () => {
+@@ -939,56 +959,17 @@ describe("App", () => {
      fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
      fireEvent.click(await screen.findByRole("button", { name: "更多操作" }));
  
@@ -4328,7 +4419,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
          return {
-@@ -1098,18 +1055,64 @@ describe("App", () => {
+@@ -1098,18 +1079,64 @@ describe("App", () => {
      fireEvent.mouseUp(screen.getByText("值得保存的句子"));
      fireEvent.click(screen.getByRole("button", { name: "保存这句" }));
      fireEvent.click(screen.getByRole("button", { name: "更多操作" }));
@@ -4398,7 +4489,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
          return {
-@@ -1162,40 +1165,49 @@ describe("App", () => {
+@@ -1162,40 +1189,49 @@ describe("App", () => {
        if (name === "set_source_manifest") {
          return { structuredContent: { sourceManifest: args.sourceManifest } };
        }
@@ -4438,8 +4529,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
 +              createdAt: "2026-06-23T00:01:00.000Z"
              }
 -          }
-+          ]
-         };
+-        };
 -      }
 -      if (name === "publish_companion_comment") {
 -        savedComment = {
@@ -4448,7 +4538,8 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
 -          inRecent: true,
 -          inHistory: true,
 -          createdAt: "2026-06-23T00:00:00.000Z"
--        };
++          ]
+         };
 -        return { structuredContent: { comment: savedComment } };
 -      }
 -      if (name === "list_companion_comments") {
@@ -4470,7 +4561,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
          setWidgetState: vi.fn()
        }
      });
-@@ -1204,60 +1216,42 @@ describe("App", () => {
+@@ -1204,60 +1240,42 @@ describe("App", () => {
      fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
      fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "短评保存测试" } });
      fireEvent.change(screen.getByPlaceholderText("粘贴 TXT 或 Markdown 文本"), {
@@ -4482,17 +4573,17 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
 -    expect(await screen.findByRole("button", { name: "保存烁构短评" })).toBeInTheDocument();
 -    fireEvent.click(screen.getByRole("button", { name: "全屏阅读" }));
 -    expect(await screen.findByRole("button", { name: "退出全屏" })).toBeInTheDocument();
-+    expect(await screen.findByText(anchorComment.text)).toBeInTheDocument();
-+    expect(screen.queryByLabelText("短评内容")).not.toBeInTheDocument();
-+    fireEvent.click(screen.getByRole("button", { name: "回复哥哥" }));
- 
+-
 -    fireEvent.click(screen.getByRole("button", { name: "陪我看看这里" }));
 -    await waitFor(() => expect(sendFollowUpMessage).toHaveBeenCalled());
 -    expect(callTool).not.toHaveBeenCalledWith(
 -      "publish_companion_comment",
 -      expect.anything()
 -    );
--
++    expect(await screen.findByText(anchorComment.text)).toBeInTheDocument();
++    expect(screen.queryByLabelText("短评内容")).not.toBeInTheDocument();
++    fireEvent.click(screen.getByRole("button", { name: "回复哥哥" }));
+ 
 -    fireEvent.click(await screen.findByRole("button", { name: "保存烁构短评" }));
 -    fireEvent.change(screen.getByLabelText("短评内容"), {
 -      target: { value: "这句吐槽值得贴到小窝。" }
@@ -4554,7 +4645,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const sessionPreferences = {
        readingCommentMode: "light_chat",
        commentLength: "normal",
-@@ -1265,6 +1259,44 @@ describe("App", () => {
+@@ -1265,6 +1283,44 @@ describe("App", () => {
        liveReadingStyle: "danmaku",
        autoSaveCompanionComments: true
      };
@@ -4599,7 +4690,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
          return {
-@@ -1319,7 +1351,16 @@ describe("App", () => {
+@@ -1319,7 +1375,16 @@ describe("App", () => {
            _meta: { sourceManifest }
          };
        }
@@ -4617,7 +4708,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
        return { structuredContent: {} };
      });
      Object.defineProperty(window, "openai", {
-@@ -1339,17 +1380,14 @@ describe("App", () => {
+@@ -1339,17 +1404,14 @@ describe("App", () => {
        target: { value: "第一段。" }
      });
      fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
@@ -4640,7 +4731,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
          return {
-@@ -1440,15 +1478,6 @@ describe("App", () => {
+@@ -1440,15 +1502,6 @@ describe("App", () => {
        limit: 20
      });
  
@@ -4656,7 +4747,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      fireEvent.click(screen.getByRole("button", { name: "下一段" }));
      await waitFor(() => {
        expect(callTool).toHaveBeenCalledWith(
-@@ -1458,6 +1487,8 @@ describe("App", () => {
+@@ -1458,6 +1511,8 @@ describe("App", () => {
            userCurrentPosition: expect.objectContaining({ index: 2 })
          })
        );
@@ -4665,7 +4756,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      });
  
      fireEvent(
-@@ -1478,6 +1509,7 @@ describe("App", () => {
+@@ -1478,6 +1533,7 @@ describe("App", () => {
            userCurrentPosition: expect.objectContaining({ index: 1 })
          })
        );
@@ -4673,7 +4764,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      });
    });
  
-@@ -1538,7 +1570,7 @@ describe("App", () => {
+@@ -1538,7 +1594,7 @@ describe("App", () => {
      });
    });
  
@@ -4682,7 +4773,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const deviceCache = new IndexedDbReadingCache();
      const sessionManifest = {
        ...manifest("reader-source", "1"),
-@@ -1573,7 +1605,7 @@ describe("App", () => {
+@@ -1573,7 +1629,7 @@ describe("App", () => {
                  position: { kind: "paragraph", index: 8, label: "第 8 段" },
                  mode: "light_chat",
                  length: "normal",
@@ -4691,7 +4782,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
                  source: "catch_up_complete",
                  inRecent: true,
                  inHistory: true,
-@@ -1600,8 +1632,10 @@ describe("App", () => {
+@@ -1600,8 +1656,10 @@ describe("App", () => {
      fireEvent.click(await screen.findByRole("button", { name: "继续阅读《Reader Comment Book》" }));
  
      expect(await screen.findByText("用户读到：第 3 段")).toBeInTheDocument();
@@ -4704,7 +4795,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      await deviceCache.remove("reader-comment-session");
    });
  
-@@ -1681,8 +1715,10 @@ describe("App", () => {
+@@ -1681,8 +1739,10 @@ describe("App", () => {
          manifestObjectKey: "private/sources/cloud-upload-source/manifest.json"
        }
      };
@@ -4717,7 +4808,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      );
      vi.stubGlobal("fetch", fetchMock);
      const setWidgetState = vi.fn();
-@@ -1738,8 +1774,10 @@ describe("App", () => {
+@@ -1738,8 +1798,10 @@ describe("App", () => {
        "https://worker.example.test/source/secret/upload",
        expect.objectContaining({ method: "POST" })
      );
@@ -4730,7 +4821,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      expect(JSON.parse(String(uploadRequest?.body))).toMatchObject({
        sessionId: "cloud-upload-session",
        sourceKind: "pasted_text",
-@@ -1785,7 +1823,11 @@ describe("App", () => {
+@@ -1785,7 +1847,11 @@ describe("App", () => {
          mimeType: "text/plain; charset=utf-8"
        }
      };
@@ -4743,7 +4834,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      vi.stubGlobal("fetch", fetchMock);
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
-@@ -1833,7 +1875,7 @@ describe("App", () => {
+@@ -1833,7 +1899,7 @@ describe("App", () => {
      });
      fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
  
@@ -4752,7 +4843,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      expect(fetchMock).toHaveBeenCalledWith(
        "https://worker.example.test/source/secret/upload",
        expect.objectContaining({ method: "POST" })
-@@ -1953,8 +1995,10 @@ describe("App", () => {
+@@ -1953,8 +2019,10 @@ describe("App", () => {
      });
      const cloudManifest = withCloudSync(baseManifest, "cloud-restore-source");
      const bundle = bookshelfBundle("cloud-restore-session", "云端恢复书", 2, "light_chat", cloudManifest);
@@ -4765,7 +4856,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      );
      vi.stubGlobal("fetch", fetchMock);
      const callTool = vi.fn(async (name: string) => {
-@@ -2019,8 +2063,10 @@ describe("App", () => {
+@@ -2019,8 +2087,10 @@ describe("App", () => {
        "light_chat",
        legacyManifest
      );
@@ -4778,7 +4869,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      );
      vi.stubGlobal("fetch", fetchMock);
      const callTool = vi.fn(async (name: string) => {
-@@ -2080,7 +2126,7 @@ describe("App", () => {
+@@ -2080,7 +2150,7 @@ describe("App", () => {
  
      expect(await screen.findByText("恢复失败，请重新导入")).toBeInTheDocument();
      expect(screen.getByText("用户：第 3 段")).toBeInTheDocument();
@@ -4787,7 +4878,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      expect(screen.getByRole("button", { name: "重新导入正文《恢复失败书》" })).toBeInTheDocument();
      expect(await deviceCache.get("cloud-fail-session")).toBeNull();
    });
-@@ -2097,7 +2143,11 @@ describe("App", () => {
+@@ -2097,7 +2167,11 @@ describe("App", () => {
      });
      const cloudManifest = withCloudSync(baseManifest, "ipad-cloud-source");
      const bundle = bookshelfBundle("ipad-cloud-session", "iPad 云端书", 2, "light_chat", cloudManifest);
@@ -4800,7 +4891,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      vi.stubGlobal("fetch", fetchMock);
      const callTool = vi.fn(async (name: string) => {
        if (name === "list_companion_comments") return { structuredContent: { comments: [] } };
-@@ -2116,18 +2166,18 @@ describe("App", () => {
+@@ -2116,18 +2190,18 @@ describe("App", () => {
  
      const firstRender = render(<App />);
      expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
@@ -4822,7 +4913,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      expect(screen.queryByText(/必须重新导入正文/)).not.toBeInTheDocument();
      thirdRender.unmount();
      await deviceCache.remove("ipad-cloud-session");
-@@ -2232,8 +2282,10 @@ describe("App", () => {
+@@ -2232,8 +2306,10 @@ describe("App", () => {
          mimeType: "image/png"
        }
      ]);
@@ -4835,7 +4926,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      );
      vi.stubGlobal("fetch", fetchMock);
      const setWidgetState = vi.fn();
-@@ -2281,7 +2333,13 @@ describe("App", () => {
+@@ -2281,7 +2357,13 @@ describe("App", () => {
        value: {
          toolOutput: { recentSessions: [] },
          toolResponseMetadata: {
@@ -4850,7 +4941,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
          },
          callTool,
          requestDisplayMode: vi.fn(),
-@@ -2302,7 +2360,8 @@ describe("App", () => {
+@@ -2302,7 +2384,8 @@ describe("App", () => {
        "/source/secret/upload",
        expect.objectContaining({ method: "POST" })
      );
@@ -4860,7 +4951,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
        expect.objectContaining({
          sessionId: "cloud-manga-session",
          sourceKind: "manga_import",
-@@ -2354,7 +2413,10 @@ describe("App", () => {
+@@ -2354,7 +2437,10 @@ describe("App", () => {
          userCurrentPosition: { kind: "page" as const, index: 2, total: 2, label: "第 2 页" }
        }
      };
@@ -4872,7 +4963,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
        const body = JSON.parse(String(init?.body ?? "{}")) as { pageIndex?: number };
        return jsonResponse({
          pageIndex: body.pageIndex,
-@@ -2384,7 +2446,9 @@ describe("App", () => {
+@@ -2384,7 +2470,9 @@ describe("App", () => {
  
      expect(await screen.findByText("正在从私人云端恢复正文")).toBeInTheDocument();
      expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
@@ -4883,7 +4974,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const cacheValue = (await deviceCache.get("cloud-manga-restore-session")) as MangaLocalCache | null;
      expect(cacheValue?.pages).toHaveLength(2);
      expect(cacheValue?.metadata.sourceManifest.sourceKind).toBe("manga_import");
-@@ -2434,7 +2498,7 @@ describe("App", () => {
+@@ -2434,7 +2522,7 @@ describe("App", () => {
      expect(await deviceCache.get("cloud-manga-fail-session")).toBeNull();
    });
  
@@ -4892,7 +4983,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      const deviceCache = new IndexedDbReadingCache();
      const manifestA = manifest("source-a", "a");
      const manifestB = manifest("source-b", "b");
-@@ -2491,10 +2555,9 @@ describe("App", () => {
+@@ -2491,10 +2579,9 @@ describe("App", () => {
      expect(await screen.findByText("A 书短评")).toBeInTheDocument();
      expect(screen.queryByText("B 书短评")).not.toBeInTheDocument();
      fireEvent.click(screen.getByRole("button", { name: "更多操作" }));
@@ -4906,7 +4997,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      fireEvent.click(screen.getByRole("button", { name: "取消" }));
      fireEvent.click(screen.getByRole("button", { name: "返回首页" }));
  
-@@ -2505,10 +2568,8 @@ describe("App", () => {
+@@ -2505,10 +2592,8 @@ describe("App", () => {
      expect(await screen.findByText("B 书短评")).toBeInTheDocument();
      expect(screen.queryByText("A 书短评")).not.toBeInTheDocument();
      fireEvent.click(screen.getByRole("button", { name: "更多操作" }));
@@ -4920,7 +5011,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..271ad149fd26867da61aaa002ff96311
      await deviceCache.remove("bookshelf-a");
      await deviceCache.remove("bookshelf-b");
 diff --git a/web/src/App.tsx b/web/src/App.tsx
-index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a8d05d810 100644
+index e200d4efa50ff72f769fbe57ebb20fc46e90340a..b2472bed0d1681bdf49015957cf04b24c9953636 100644
 --- a/web/src/App.tsx
 +++ b/web/src/App.tsx
 @@ -5,6 +5,9 @@ import type {
@@ -4971,7 +5062,15 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
  };
  
  const cache = new IndexedDbReadingCache();
-@@ -150,6 +157,13 @@ export function App() {
+@@ -141,6 +148,7 @@ export function App() {
+   const initialSourceEndpointBase =
+     initialMetadata?.sourceEndpointBase ??
+     initial?.sourceEndpointBase ??
++    readEmbeddedSourceEndpoint() ??
+     deriveSourceEndpointBase();
+   const [sourceEndpointBase, setSourceEndpointBase] = useState(
+     () => initialSourceEndpointBase
+@@ -150,6 +158,13 @@ export function App() {
        initialMetadata?.cloudSourceEnabled ??
        hasPrivateSourceEndpoint(initialSourceEndpointBase)
    );
@@ -4985,7 +5084,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    const cloudSourceClient = useMemo(
      () => new CloudSourceClient(sourceEndpointBase, undefined, callTool),
      [sourceEndpointBase]
-@@ -193,13 +207,22 @@ export function App() {
+@@ -193,13 +208,22 @@ export function App() {
    const [historyComments, setHistoryComments] = useState<CompanionComment[]>([]);
    const [historyCursor, setHistoryCursor] = useState<string | undefined>();
    const [historyLoading, setHistoryLoading] = useState(false);
@@ -5009,7 +5108,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    const hostLayout = useReadingHostLayout();
  
    useLayoutEffect(() => {
-@@ -207,6 +230,91 @@ export function App() {
+@@ -207,6 +231,91 @@ export function App() {
      saveAppearancePreferences(appearance);
    }, [appearance, appearanceBackground]);
  
@@ -5101,7 +5200,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    useEffect(
      () =>
        subscribeToolResults((result) => {
-@@ -219,6 +327,9 @@ export function App() {
+@@ -219,6 +328,9 @@ export function App() {
          if (typeof result._meta?.cloudSourceEnabled === "boolean") {
            setCloudSourceEnabled(result._meta.cloudSourceEnabled);
          }
@@ -5111,7 +5210,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
          if (output?.bookshelfSessions || output?.recentSessions) {
            setRecent(toBookshelfItems(output));
          }
-@@ -275,6 +386,45 @@ export function App() {
+@@ -275,6 +387,45 @@ export function App() {
            .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
            .slice(0, 20)
        );
@@ -5157,7 +5256,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        setCompanionError("");
      } catch {
        if (!background) {
-@@ -286,6 +436,33 @@ export function App() {
+@@ -286,6 +437,33 @@ export function App() {
      }
    }, []);
  
@@ -5191,7 +5290,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    useEffect(() => {
      const sessionId = sessionBundle?.session.id;
      const reading = screen === "novel" || screen === "manga";
-@@ -294,16 +471,59 @@ export function App() {
+@@ -294,16 +472,59 @@ export function App() {
        setCompanionComments([]);
        setCompanionError("");
        setPendingCommentDraft(null);
@@ -5252,7 +5351,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
  
    useEffect(() => {
      if (!readerImmersive) return;
-@@ -323,7 +543,6 @@ export function App() {
+@@ -323,7 +544,6 @@ export function App() {
    useEffect(() => {
      if (screen !== "novel" && screen !== "manga") return;
      setOverlay(null);
@@ -5260,7 +5359,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    }, [hostLayout.revision]);
  
    useEffect(() => {
-@@ -343,6 +562,31 @@ export function App() {
+@@ -343,6 +563,31 @@ export function App() {
              sourceManifest: local.metadata.sourceManifest
            };
          }
@@ -5292,7 +5391,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
          let sourceAvailability = getSourceAvailability(
            session.sourceManifest ?? null,
            local?.metadata.sourceManifest ?? null
-@@ -421,19 +665,21 @@ export function App() {
+@@ -421,19 +666,21 @@ export function App() {
            ...(latestComment ? { latestComment } : {})
          };
        })
@@ -5324,7 +5423,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
  
    useEffect(() => {
      if (!toast) return;
-@@ -446,6 +692,28 @@ export function App() {
+@@ -446,6 +693,28 @@ export function App() {
    }, [mangaPages]);
  
    const position = sessionBundle?.session.userCurrentPosition;
@@ -5353,7 +5452,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
  
    useEffect(() => {
      if ((screen === "novel" || screen === "manga") && !sessionBundle) return;
-@@ -473,7 +741,7 @@ export function App() {
+@@ -473,7 +742,7 @@ export function App() {
      setScreen("setup");
    }
  
@@ -5362,7 +5461,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
      let nextItem = item;
      const local = await cache.get(item.session.id).catch(() => undefined);
      if (local && !item.session.sourceManifest) {
-@@ -489,13 +757,18 @@ export function App() {
+@@ -489,13 +758,18 @@ export function App() {
          }
        };
      }
@@ -5383,7 +5482,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        setChunks(local.chunks);
        setSourceText(local.sourceText);
        setRemembered(true);
-@@ -503,6 +776,12 @@ export function App() {
+@@ -503,6 +777,12 @@ export function App() {
        return;
      }
      if (local && "pages" in local && (availability === "available_local" || availability === "unknown")) {
@@ -5396,7 +5495,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        setMangaPages(
          local.pages.map((page) => ({
            file: new File([page.blob], page.fileName, { type: page.mimeType }),
-@@ -513,6 +792,64 @@ export function App() {
+@@ -513,6 +793,64 @@ export function App() {
        setScreen("manga");
        return;
      }
@@ -5461,7 +5560,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
      setExistingSession(nextItem.session);
      setTitle(nextItem.session.title);
      setSetupType(nextItem.session.type);
-@@ -527,6 +864,39 @@ export function App() {
+@@ -527,6 +865,39 @@ export function App() {
      );
    }
  
@@ -5501,7 +5600,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    function prepareReimport(item: BookshelfItem) {
      setSessionBundle(item);
      setSourceAvailability(item.sourceAvailability);
-@@ -543,9 +913,22 @@ export function App() {
+@@ -543,9 +914,22 @@ export function App() {
    async function openBookManagement(item: BookshelfItem) {
      setManagedBook(item);
      setHistoryComments([]);
@@ -5525,7 +5624,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    }
  
    async function openFullscreenReader() {
-@@ -608,7 +991,7 @@ export function App() {
+@@ -608,7 +992,7 @@ export function App() {
          result.structuredContent?.nextCursor as string | undefined
        );
      } catch {
@@ -5534,7 +5633,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
      } finally {
        setHistoryLoading(false);
      }
-@@ -910,7 +1293,7 @@ export function App() {
+@@ -910,7 +1294,7 @@ export function App() {
      let cloudUploadError = "";
      let cloudDiagnostics: CloudUploadDiagnostics | undefined;
      let serverSideCloudUploadOnly = false;
@@ -5543,7 +5642,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        if (setupType === "novel") {
          const sessionId = session.id;
          setImportProgress((current) => ({
-@@ -1150,8 +1533,7 @@ export function App() {
+@@ -1150,8 +1534,7 @@ export function App() {
          mode: activePreferences.readingCommentMode,
          length: activePreferences.commentLength,
          operationId,
@@ -5553,7 +5652,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        });
        const result = await callTool("send_current_context", {
          sessionId: sessionBundle.session.id,
-@@ -1178,7 +1560,9 @@ export function App() {
+@@ -1178,7 +1561,9 @@ export function App() {
          successPrompt: policyPrompt,
          fallbackPrompt,
          updateModelContext,
@@ -5564,7 +5663,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        });
        rememberPendingCommentDraft({
          position: sessionBundle.session.userCurrentPosition,
-@@ -1188,7 +1572,7 @@ export function App() {
+@@ -1188,7 +1573,7 @@ export function App() {
        });
        setToast(
          mode === "context"
@@ -5573,7 +5672,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
            : "已用兼容模式发送当前段落。"
        );
      } finally {
-@@ -1202,7 +1586,7 @@ export function App() {
+@@ -1202,7 +1587,7 @@ export function App() {
      const userIndex = sessionBundle.session.userCurrentPosition.index;
      const assistantIndex = sessionBundle.session.assistantSyncedPosition?.index ?? 0;
      if (userIndex <= assistantIndex) {
@@ -5582,7 +5681,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        await lookAtNovel(currentText, selectedText);
        return;
      }
-@@ -1213,10 +1597,6 @@ export function App() {
+@@ -1213,10 +1598,6 @@ export function App() {
        rangeEnd: userIndex,
        idFactory: (ordinal) => `${sessionBundle.session.id}-${Date.now()}-${ordinal}`
      });
@@ -5593,7 +5692,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
      await startFullCatchUp(batches);
    }
  
-@@ -1245,10 +1625,9 @@ export function App() {
+@@ -1245,10 +1626,9 @@ export function App() {
        activeBatchIndex: 0,
        createdAt: new Date().toISOString()
      };
@@ -5605,7 +5704,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    }
  
    async function requestMangaSync() {
-@@ -1261,10 +1640,6 @@ export function App() {
+@@ -1261,10 +1641,6 @@ export function App() {
        return;
      }
      if (!allowAutomaticSync("range_sync")) return;
@@ -5616,7 +5715,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
      await startMangaCatchUp(assistantIndex + 1);
    }
  
-@@ -1300,10 +1675,152 @@ export function App() {
+@@ -1300,10 +1676,152 @@ export function App() {
        activeBatchIndex: 0,
        createdAt: new Date().toISOString()
      };
@@ -5771,7 +5870,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    }
  
    async function sendSyncBatch(job: ReadingSyncJob) {
-@@ -1419,7 +1936,7 @@ export function App() {
+@@ -1419,7 +1937,7 @@ export function App() {
        if (confirmed.mode === "live_reading") {
          clearSyncJobState();
          await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
@@ -5780,7 +5879,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
          return;
        }
        const formalMode = sessionBundle.session.sessionPreferences.readingCommentMode;
-@@ -1431,8 +1948,7 @@ export function App() {
+@@ -1431,8 +1949,7 @@ export function App() {
                mode: formalMode,
                length: formalLength,
                operationId: formalOperationId,
@@ -5790,7 +5889,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
              })
            : buildReadingCommentPrompt({
                sessionId: confirmed.sessionId,
-@@ -1446,8 +1962,7 @@ export function App() {
+@@ -1446,8 +1963,7 @@ export function App() {
                },
                source: "catch_up_complete",
                operationId: formalOperationId,
@@ -5800,7 +5899,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
              });
        void askChatGpt(prompt, { scrollToBottom: false }).catch(() => {
          setToast("正式短评没有发送成功，请重试。");
-@@ -1460,7 +1975,7 @@ export function App() {
+@@ -1460,7 +1976,7 @@ export function App() {
        });
        clearSyncJobState();
        await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
@@ -5809,7 +5908,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        return;
      }
      storeSyncJob(confirmed);
-@@ -1477,7 +1992,6 @@ export function App() {
+@@ -1477,7 +1993,6 @@ export function App() {
        .slice(start - 1, end)
        .map((chunk, offset) => `【第 ${start + offset} 段】\n${chunk}`)
        .join("\n\n");
@@ -5817,7 +5916,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
      await askChatGpt(
        buildRecentOnlyPrompt({
          sessionId: sessionBundle.session.id,
-@@ -1488,15 +2002,13 @@ export function App() {
+@@ -1488,15 +2003,13 @@ export function App() {
          mode: sessionBundle.session.sessionPreferences.readingCommentMode,
          length: sessionBundle.session.sessionPreferences.commentLength,
          operationId: crypto.randomUUID(),
@@ -5834,7 +5933,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
      if (!syncJob) return;
      const cancelled = cancelSyncJob(syncJob);
      clearSyncJobState();
-@@ -1584,8 +2096,7 @@ export function App() {
+@@ -1584,8 +2097,7 @@ export function App() {
              title: session.title,
              position: job.targetPosition,
              operationId: batch.id,
@@ -5844,7 +5943,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
              requestedMode: mode,
              requestedLength: length
            }),
-@@ -1679,8 +2190,7 @@ export function App() {
+@@ -1679,8 +2191,7 @@ export function App() {
          position,
          source: "current_only",
          operationId,
@@ -5854,7 +5953,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        });
        const result = await callTool("send_current_context", {
          sessionId: sessionBundle.session.id,
-@@ -1717,7 +2227,9 @@ export function App() {
+@@ -1717,7 +2228,9 @@ export function App() {
          successPrompt: policyPrompt,
          fallbackPrompt,
          updateModelContext,
@@ -5865,7 +5964,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
        });
        rememberPendingCommentDraft({
          position,
-@@ -1925,6 +2437,144 @@ export function App() {
+@@ -1925,6 +2438,144 @@ export function App() {
      }
    }
  
@@ -6010,7 +6109,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    function allowAutomaticSync(mode: "range_sync" | "recent_only" | "live_reading") {
      const permission = checkSourceSyncPermission({ mode, sourceAvailability });
      if (permission.allowed) return true;
-@@ -1986,26 +2636,12 @@ export function App() {
+@@ -1986,26 +2637,12 @@ export function App() {
      await callTool("finish_today_reading", {
        sessionId: sessionBundle.session.id,
        position: sessionBundle.session.userCurrentPosition,
@@ -6038,7 +6137,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
    async function openDiary() {
      if (!sessionBundle) return;
      const result = await callTool("generate_diary_context", { sessionId: sessionBundle.session.id });
-@@ -2154,15 +2790,15 @@ export function App() {
+@@ -2154,15 +2791,15 @@ export function App() {
                : "正文/图片只保存在本设备，不会上传到服务器。只有你主动同步的片段或页面会发送给 ChatGPT；请保留原文件以防设备缓存被清理。"}
            </p>
            {existingSession ? (
@@ -6058,7 +6157,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
                ) : null}
                {!companionLoading && !companionError
                  ? companionComments.slice(0, 3).map((comment) => (
-@@ -2198,18 +2834,15 @@ export function App() {
+@@ -2198,18 +2835,15 @@ export function App() {
            onFullscreen={() => void openFullscreenReader()}
            fullscreenLabel={readerImmersive ? "退出全屏" : "全屏阅读"}
            immersive={readerImmersive}
@@ -6082,7 +6181,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
            initialScrollTop={readerScrollTop}
            onScrollPosition={setReaderScrollTop}
            {...readerProps}
-@@ -2220,28 +2853,22 @@ export function App() {
+@@ -2220,28 +2854,22 @@ export function App() {
            session={sessionBundle.session}
            pages={mangaPages}
            description={pageDescription}
@@ -6116,7 +6215,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
            initialScrollTop={readerScrollTop}
            onScrollPosition={setReaderScrollTop}
            {...readerProps}
-@@ -2251,6 +2878,7 @@ export function App() {
+@@ -2251,6 +2879,7 @@ export function App() {
          <AppearanceSheet
            value={appearance}
            backgroundImage={appearanceBackground}
@@ -6124,7 +6223,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
            onChange={setAppearance}
            onBackgroundChange={(dataUrl) => {
              if (!saveAppearanceBackground(dataUrl)) {
-@@ -2265,13 +2893,6 @@ export function App() {
+@@ -2265,13 +2894,6 @@ export function App() {
        {overlay === "cache" && sessionBundle ? <CacheSettings type={sessionBundle.session.type} remembered={remembered} liveReadingEnabled={sessionBundle.session.liveReadingEnabled} onRememberChange={changeRemember} onLiveReadingChange={(enabled) => void changeLiveReading(enabled)} onClear={clearCache} onClose={() => setOverlay(null)} /> : null}
        {overlay === "more" && sessionBundle ? (
          <MoreActions
@@ -6138,7 +6237,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
            onDiary={openDiary}
            onComplete={completeWork}
            onClose={() => setOverlay(null)}
-@@ -2283,12 +2904,15 @@ export function App() {
+@@ -2283,12 +2905,15 @@ export function App() {
            bundle={managedBook}
            cloudSourceEnabled={cloudSourceEnabled}
            comments={historyComments}
@@ -6155,7 +6254,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
            onDelete={(options) => void deleteManagedBook(options)}
            onClose={() => {
              setManagedBook(null);
-@@ -2296,41 +2920,26 @@ export function App() {
+@@ -2296,41 +2921,26 @@ export function App() {
            }}
          />
        ) : null}
@@ -6211,7 +6310,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
            onCancel={() => void cancelCurrentSync()}
          />
        ) : null}
-@@ -2432,6 +3041,61 @@ function nextFrame() {
+@@ -2432,6 +3042,61 @@ function nextFrame() {
    });
  }
  
@@ -6273,7 +6372,22 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..3928c42c241798becc1a42c97e8f634a
  function deriveSourceEndpointBase(): string {
    if (typeof window === "undefined") return "/source";
    const match = window.location.pathname.match(/\/mcp\/([^/]+)/);
-@@ -2496,6 +3160,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
+@@ -2439,6 +3104,14 @@ function deriveSourceEndpointBase(): string {
+   return `/source/${match[1]}`;
+ }
+ 
++function readEmbeddedSourceEndpoint(): string | undefined {
++  if (typeof document === "undefined") return undefined;
++  const value = document
++    .querySelector<HTMLMetaElement>('meta[name="ll-source-endpoint"]')
++    ?.content.trim();
++  return value || undefined;
++}
++
+ function toBookshelfItems(output?: OpenOutput): BookshelfItem[] {
+   return (output?.bookshelfSessions ?? output?.recentSessions ?? []).map(
+     ({ cacheState: _cacheState, ...item }) => ({
+@@ -2496,6 +3169,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
    };
  }
  
@@ -6310,7 +6424,7 @@ index abd502381499a52c09052f004b1ebb609a5639f1..89a4375238c28acb0ce6251938aca39c
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37b0c0ac24d0be3669363489c7474aed801..394d546a1829e3e440a4a4a6623f2ba6f0bfb876 100644
+index c23bd37b0c0ac24d0be3669363489c7474aed801..db0fd11b9b0acc5d3225cdeb85ab6b901f43abbb 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -6320,12 +6434,12 @@ index c23bd37b0c0ac24d0be3669363489c7474aed801..394d546a1829e3e440a4a4a6623f2ba6
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
 +const RESOURCE_VERSION = "app-v0214";
-+const APP_VERSION = "0.2.16";
++const APP_VERSION = "0.2.17";
  
  type AppModule = {
    App: ComponentType;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28caba9ed1572f1b58d39264eed2545953d76..fb7b91a94b76bc922d45015e972126dcc38579be 100644
+index 08a28caba9ed1572f1b58d39264eed2545953d76..ccd8e18ec23f0a9b6c01ef1f53355be92f02bfbf 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -6333,7 +6447,7 @@ index 08a28caba9ed1572f1b58d39264eed2545953d76..fb7b91a94b76bc922d45015e972126dc
    if (typeof window === "undefined" || window.parent === window) return undefined;
    if (!app) {
 -    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
-+    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.16" });
++    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.17" });
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
@@ -6372,7 +6486,7 @@ index 08a28caba9ed1572f1b58d39264eed2545953d76..fb7b91a94b76bc922d45015e972126dc
  
  export async function requestReaderPip(): Promise<boolean> {
 diff --git a/web/src/bridge/standalone.ts b/web/src/bridge/standalone.ts
-index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..a4312f2552e81fd4250a90581c82117032a5fc19 100644
+index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..1c7c2628ffa5cb969a74ca5452b4ceffc836b1c3 100644
 --- a/web/src/bridge/standalone.ts
 +++ b/web/src/bridge/standalone.ts
 @@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
@@ -6380,7 +6494,7 @@ index f6c1e54b9f57bed282d0d7d85c65bacdf6416cbc..a4312f2552e81fd4250a90581c821170
    if (!config) throw new Error("Standalone reader path is unavailable");
    standaloneClient ??= (async () => {
 -    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.7" });
-+    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.16" });
++    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.17" });
      await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
      return client;
    })();
@@ -8235,7 +8349,7 @@ index d6fc26f0671c933c4b04b98900aebaa38f40b4b8..2416a6cc51c04a53e66898343f9355d6
    sessionId: string;
    title: string;
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197e6ba2317df34567a63db060563be71fcc..d852e36a702eddb1cc4eb05f5d416022ef1b506c 100644
+index 2523197e6ba2317df34567a63db060563be71fcc..dfaf25bf038e639eab8f5dceef6236ffd2d290a3 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
 @@ -2,6 +2,131 @@ import { describe, expect, it, vi } from "vitest";
@@ -8377,12 +8491,12 @@ index 2523197e6ba2317df34567a63db060563be71fcc..d852e36a702eddb1cc4eb05f5d416022
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
 +    expect(message).toContain("resourceVersion=app-v0214");
-+    expect(message).toContain("appVersion=0.2.16");
++    expect(message).toContain("appVersion=0.2.17");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..6e1f2f21dd73d16801031534ae91452bfd31f705 100644
+index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..b30e294cf215853274d899319a6fffe3dbc5e187 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
 @@ -1,5 +1,14 @@
@@ -8414,7 +8528,7 @@ index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..6e1f2f21dd73d16801031534ae91452b
 +};
 +
 +const RESOURCE_VERSION = "app-v0214";
-+const APP_VERSION = "0.2.16";
++const APP_VERSION = "0.2.17";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
  export class CloudSourceClient {
