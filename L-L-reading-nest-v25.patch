@@ -160,7 +160,7 @@ index e719dcd..038ffd8 100644
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 8173759..b7164f4 100644
+index 8173759..7b644b5 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -197,10 +197,10 @@ index 8173759..b7164f4 100644
    assert(tools.tools.length === 23, `expected 23 tools, got ${tools.tools.length}`);
    const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
    assert(Boolean(openTool?._meta?.ui), "open_reading_nest is missing its UI resource metadata");
-+  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0217.html";
++  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0218.html";
 +  assert(
 +    openTool?._meta?.ui?.resourceUri === primaryTemplateUri,
-+    "open_reading_nest is not pointing at the v0217 UI resource"
++    "open_reading_nest is not pointing at the v0218 UI resource"
 +  );
 +  assert(
 +    openTool?._meta?.["ui/resourceUri"] === primaryTemplateUri,
@@ -242,7 +242,7 @@ index 8173759..b7164f4 100644
 +    );
 +  }
 +  const templateDescriptor = resources.resources.find((resource) => resource.uri === primaryTemplateUri);
-+  assert(Boolean(templateDescriptor), "v0217 UI resource was not listed");
++  assert(Boolean(templateDescriptor), "v0218 UI resource was not listed");
 +
 +  const templateResult = await client.readResource({ uri: primaryTemplateUri });
 +  const template = templateResult.contents.find((content) => content.uri === primaryTemplateUri);
@@ -311,7 +311,7 @@ index 3a031d8..7a79428 100644
 +  export default content;
 +}
 diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
-index e4c685d..e84ace5 100644
+index e4c685d..e28302f 100644
 --- a/server/src/mcp/register-resource.test.ts
 +++ b/server/src/mcp/register-resource.test.ts
 @@ -3,34 +3,67 @@ import { describe, expect, it, vi } from "vitest";
@@ -341,8 +341,8 @@ index e4c685d..e84ace5 100644
  
 -    expect(READING_NEST_URI).toBe("ui://ss-reading-nest/app-v24.html");
 -    expect(uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0217.html");
-+    expect(uri).toBe("ui://widget/ll-reading-nest-v0217.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0218.html");
++    expect(uri).toBe("ui://widget/ll-reading-nest-v0218.html");
 +    expect(registerAppResource.mock.calls.map((call) => call[2])).toEqual([
 +      READING_NEST_URI,
 +      ...READING_NEST_COMPAT_URIS
@@ -360,7 +360,7 @@ index e4c685d..e84ace5 100644
  
      const loaded = await loader();
 -    expect(loaded.contents[0].uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0217.html");
++    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0218.html");
 +    expect(loaded.contents[0].mimeType).toBe("text/html;profile=mcp-app");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-styles");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-script");
@@ -501,11 +501,12 @@ index 35b4bd0..d235656 100644
 +  return new URL(value).origin;
  }
 diff --git a/server/src/mcp/register-tools.test.ts b/server/src/mcp/register-tools.test.ts
-index 7640547..0f5cb2e 100644
+index 7640547..18dfa24 100644
 --- a/server/src/mcp/register-tools.test.ts
 +++ b/server/src/mcp/register-tools.test.ts
 @@ -1,6 +1,7 @@
- import { describe, expect, it } from "vitest";
+-import { describe, expect, it } from "vitest";
++import { describe, expect, it, vi } from "vitest";
  import {
    buildCurrentReadingContext,
 +  READING_NEST_COMPAT_URIS,
@@ -520,7 +521,7 @@ index 7640547..0f5cb2e 100644
 +      resourceUri: READING_NEST_URI,
 +      visibility: ["model", "app"]
      });
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0217.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0218.html");
 +    expect(TOOL_CONFIGS.open_reading_nest._meta?.["ui/resourceUri"]).toBe(
 +      READING_NEST_URI
 +    );
@@ -595,12 +596,51 @@ index 7640547..0f5cb2e 100644
        "list_companion_comments",
        "clear_companion_comments"
      ] as const) {
-@@ -229,8 +259,18 @@ describe("tool descriptors", () => {
+@@ -229,8 +259,57 @@ describe("tool descriptors", () => {
      }
    });
  
 -  it("exposes the three book-management tools and reaches twenty-three tools", () => {
 -    expect(Object.keys(TOOL_CONFIGS)).toHaveLength(23);
++  it("routes a compatibility discussion reply through publish_companion_comment into the discussion store", async () => {
++    const handlers = new Map<string, (args: any) => Promise<any>>();
++    const server = {
++      registerTool: (name: string, _config: unknown, handler: (args: any) => Promise<any>) => {
++        handlers.set(name, handler);
++      }
++    };
++    const publishAssistantReply = vi.fn().mockResolvedValue({
++      message: { id: "assistant-1", role: "assistant", text: "哥哥也喜欢这一句。" }
++    });
++    const discussionId = "discussion-compat-1";
++    const operationId = `discussion-reply:${discussionId}:request-1`;
++
++    registerReadingTools(
++      server as never,
++      {} as never,
++      { publishAssistantReply } as never,
++      {} as never
++    );
++    const result = await handlers.get("publish_companion_comment")?.({
++      sessionId: "session-1",
++      position: { kind: "paragraph", index: 5, label: "第 5 段" },
++      mode: "light_chat",
++      length: "normal",
++      text: "哥哥也喜欢这一句。",
++      source: "current_context",
++      operationId
++    });
++
++    expect(publishAssistantReply).toHaveBeenCalledWith({
++      discussionId,
++      sessionId: "session-1",
++      position: { kind: "paragraph", index: 5, label: "第 5 段" },
++      text: "哥哥也喜欢这一句。",
++      operationId
++    });
++    expect(result?.structuredContent).toMatchObject({ saved: true, discussionId });
++  });
++
 +  it("exposes the three book-management tools and all app-only discussion tools", () => {
 +    expect(Object.keys(TOOL_CONFIGS)).toHaveLength(30);
 +    for (const name of [
@@ -616,7 +656,7 @@ index 7640547..0f5cb2e 100644
      expect(TOOL_CONFIGS.rename_reading_session.annotations).toMatchObject({
        readOnlyHint: false,
        idempotentHint: true
-@@ -314,7 +354,7 @@ describe("tool descriptors", () => {
+@@ -314,7 +393,7 @@ describe("tool descriptors", () => {
        deleteCloudSource: async () => ({ deleted: true, cloudSourceDeleted: true })
      };
  
@@ -626,7 +666,7 @@ index 7640547..0f5cb2e 100644
        sessionId: "session-1",
        sourceKind: "pasted_text",
 diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
-index 21a3b3d..4061860 100644
+index 21a3b3d..10506fc 100644
 --- a/server/src/mcp/register-tools.ts
 +++ b/server/src/mcp/register-tools.ts
 @@ -3,19 +3,27 @@ import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
@@ -657,7 +697,7 @@ index 21a3b3d..4061860 100644
    setReadingSessionStatusInputSchema,
    setSourceManifestInputSchema,
    startReadingSessionInputSchema,
-@@ -27,10 +35,25 @@ import {
+@@ -27,10 +35,26 @@ import {
  } from "@ss/shared";
  import type { ReadingSession, SendCurrentContextInput, SourceManifest } from "@ss/shared";
  import { ReadingService } from "../services/reading-service.js";
@@ -669,8 +709,9 @@ index 21a3b3d..4061860 100644
  import { toolResult } from "./tool-result.js";
  
 -export const READING_NEST_URI = "ui://ss-reading-nest/app-v24.html";
-+export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0217.html";
++export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0218.html";
 +export const READING_NEST_COMPAT_URIS = [
++  "ui://widget/ll-reading-nest-v0217.html",
 +  "ui://widget/ll-reading-nest-v0216.html",
 +  "ui://widget/ll-reading-nest-v0215.html",
 +  "ui://widget/ll-reading-nest-v0214.html",
@@ -684,7 +725,7 @@ index 21a3b3d..4061860 100644
  
  const readOnly = {
    readOnlyHint: true,
-@@ -48,10 +71,13 @@ export const TOOL_CONFIGS = {
+@@ -48,10 +72,13 @@ export const TOOL_CONFIGS = {
      title: "打开 L&L 共读小窝",
      description: "Use this when the user wants to open the reading nest or continue recent reading.",
      inputSchema: openReadingNestInputSchema,
@@ -699,7 +740,7 @@ index 21a3b3d..4061860 100644
        "openai/toolInvocation/invoking": "正在点亮小窝…",
        "openai/toolInvocation/invoked": "小窝已经准备好"
      }
-@@ -69,7 +95,7 @@ export const TOOL_CONFIGS = {
+@@ -69,7 +96,7 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    confirm_assistant_synced_position: {
@@ -708,21 +749,22 @@ index 21a3b3d..4061860 100644
      description:
        "Use this only after the user explicitly confirms that ChatGPT replied it has read through a batch end.",
      inputSchema: confirmAssistantSyncedPositionInputSchema,
-@@ -124,26 +150,75 @@ export const TOOL_CONFIGS = {
+@@ -124,26 +151,75 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    publish_companion_comment: {
 -    title: "发布烁构陪读短评",
 +    title: "发布林序言陪读短评",
      description:
-       "Use this before replying with a lightweight reading comment so the same short text appears in the reading Dock.",
+-      "Use this before replying with a lightweight reading comment so the same short text appears in the reading Dock.",
++      "Save a lightweight reading comment. For compatibility, an operationId beginning with discussion-reply: saves the text as the assistant turn in that reading discussion.",
      inputSchema: publishCompanionCommentInputSchema,
      annotations: { ...mutation, idempotentHint: true }
    },
 +  save_reading_discussion_reply: {
 +    title: "保存林序言共读回复",
 +    description:
-+      "Required for replies initiated from the L&L reading-discussion drawer. Call this exactly once with the final natural reply text before sending that same reply in chat. This persists the assistant turn in the paragraph discussion; do not substitute publish_companion_comment.",
++      "Save the final natural assistant reply for a reading-discussion drawer turn. Use this dedicated tool when it is available; older compatible clients may persist the same turn through publish_companion_comment with a discussion-reply operation id.",
 +    inputSchema: saveReadingDiscussionReplyInputSchema,
 +    annotations: { ...mutation, idempotentHint: true }
 +  },
@@ -787,7 +829,7 @@ index 21a3b3d..4061860 100644
    rename_reading_session: {
      title: "重命名书籍",
      description: "Use this when the user explicitly changes one reading session title.",
-@@ -217,6 +292,7 @@ export const TOOL_CONFIGS = {
+@@ -217,6 +293,7 @@ export const TOOL_CONFIGS = {
  export function registerReadingTools(
    server: McpServer,
    service: ReadingService,
@@ -795,7 +837,7 @@ index 21a3b3d..4061860 100644
    cloudSourceService?: CloudSourceService,
    options: { sourceEndpointBase?: string } = {}
  ) {
-@@ -239,6 +315,7 @@ export function registerReadingTools(
+@@ -239,6 +316,7 @@ export function registerReadingTools(
        ...response,
        _meta: {
          cloudSourceEnabled: Boolean(cloudSourceService),
@@ -803,7 +845,7 @@ index 21a3b3d..4061860 100644
          ...(options.sourceEndpointBase ? { sourceEndpointBase: options.sourceEndpointBase } : {})
        }
      };
-@@ -282,7 +359,7 @@ export function registerReadingTools(
+@@ -282,7 +360,7 @@ export function registerReadingTools(
            confirmedBatchId: input.batchId,
            updatedAt: session.updatedAt
          },
@@ -812,7 +854,7 @@ index 21a3b3d..4061860 100644
        );
      }
    );
-@@ -399,6 +476,20 @@ export function registerReadingTools(
+@@ -399,6 +477,20 @@ export function registerReadingTools(
      "publish_companion_comment",
      TOOL_CONFIGS.publish_companion_comment,
      async (input) => {
@@ -833,7 +875,7 @@ index 21a3b3d..4061860 100644
        const comment = await service.publishCompanionComment(input);
        return toolResult(
          { saved: true, comment },
-@@ -407,12 +498,28 @@ export function registerReadingTools(
+@@ -407,12 +499,28 @@ export function registerReadingTools(
      }
    );
  
@@ -863,7 +905,7 @@ index 21a3b3d..4061860 100644
      }
    );
  
-@@ -428,6 +535,66 @@ export function registerReadingTools(
+@@ -428,6 +536,66 @@ export function registerReadingTools(
      }
    );
  
@@ -930,7 +972,7 @@ index 21a3b3d..4061860 100644
    server.registerTool(
      "rename_reading_session",
      TOOL_CONFIGS.rename_reading_session,
-@@ -471,6 +638,7 @@ export function registerReadingTools(
+@@ -471,6 +639,7 @@ export function registerReadingTools(
        const result = await service.deleteSession(sessionId, operationId, {
          deleteCloudSource: false
        });
@@ -2661,7 +2703,7 @@ index 282f116..f7c5920 100644
    const value = (await request.json()) as unknown;
    if (!value || typeof value !== "object" || Array.isArray(value)) {
 diff --git a/server/src/standalone-pwa.test.ts b/server/src/standalone-pwa.test.ts
-index ea35efc..c8306f5 100644
+index ea35efc..8e360b3 100644
 --- a/server/src/standalone-pwa.test.ts
 +++ b/server/src/standalone-pwa.test.ts
 @@ -1,15 +1,51 @@
@@ -2708,13 +2750,13 @@ index ea35efc..c8306f5 100644
    it("adds install metadata and service-worker registration to the widget shell", () => {
 -    const html = buildStandaloneHtml("<html><head><title>Nest</title></head><body>reader</body></html>");
 +    const html = buildStandaloneHtml(
-+      '<html><head><title>Nest</title><link rel="stylesheet" href="/widget-assets/v0217/ll-reading-nest-v0217.css"></head><body>reader<script src="/widget-assets/v0217/ll-reading-nest-v0217.bundle.js"></script></body></html>'
++      '<html><head><title>Nest</title><link rel="stylesheet" href="/widget-assets/v0218/ll-reading-nest-v0218.css"></head><body>reader<script src="/widget-assets/v0218/ll-reading-nest-v0218.bundle.js"></script></body></html>'
 +    );
      expect(html).toContain('name="sxs-standalone"');
      expect(html).toContain('rel="manifest" href="./manifest.webmanifest"');
      expect(html).toContain('navigator.serviceWorker.register("./sw.js"');
-+    expect(html).toContain("ll-reading-nest-v0217.css?v=discussion2");
-+    expect(html).toContain("ll-reading-nest-v0217.bundle.js?v=discussion2");
++    expect(html).toContain("ll-reading-nest-v0218.css?v=discussion3");
++    expect(html).toContain("ll-reading-nest-v0218.bundle.js?v=discussion3");
      expect(html).toContain("reader");
    });
  
@@ -2733,21 +2775,21 @@ index ea35efc..c8306f5 100644
      const response = handleStandaloneApp(new Request(swUrl), new URL(swUrl), token, "");
      const script = await response.text();
 -    expect(script).toContain('const SHELL = ["./", "./manifest.webmanifest", "./icon.svg"]');
-+    expect(script).toContain("/widget-assets/v0217/ll-reading-nest-v0217.bundle.js?v=discussion2");
-+    expect(script).toContain("/widget-assets/v0217/ll-reading-nest-v0217.css?v=discussion2");
++    expect(script).toContain("/widget-assets/v0218/ll-reading-nest-v0218.bundle.js?v=discussion3");
++    expect(script).toContain("/widget-assets/v0218/ll-reading-nest-v0218.css?v=discussion3");
      expect(script).not.toContain("/mcp/");
      expect(script).not.toContain("/source/");
    });
 diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
-index e509afa..1e7d40c 100644
+index e509afa..7db6c58 100644
 --- a/server/src/standalone-pwa.ts
 +++ b/server/src/standalone-pwa.ts
 @@ -1,4 +1,107 @@
 -const SHELL_CACHE_VERSION = "v24";
 +import { WIDGET_SCRIPT_PATH, WIDGET_STYLE_PATH } from "./widget-assets.js";
 +
-+const SHELL_CACHE_VERSION = "v0217-discussion2";
-+const STANDALONE_ASSET_REVISION = "discussion2";
++const SHELL_CACHE_VERSION = "v0218-discussion3";
++const STANDALONE_ASSET_REVISION = "discussion3";
 +const SESSION_COOKIE_NAME = "__Secure-ll_nest_session";
 +const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 +
@@ -3411,16 +3453,16 @@ index 0000000..1650849
 +});
 diff --git a/server/src/widget-assets.ts b/server/src/widget-assets.ts
 new file mode 100644
-index 0000000..c1ff206
+index 0000000..f8e7b7c
 --- /dev/null
 +++ b/server/src/widget-assets.ts
 @@ -0,0 +1,108 @@
-+export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0217";
-+export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0217.bundle.js`;
-+export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0217.css`;
++export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0218";
++export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0218.bundle.js`;
++export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0218.css`;
 +export const PREVIOUS_WIDGET_SCRIPT_PATH =
-+  "/widget-assets/v0216/ll-reading-nest-v0216.bundle.js";
-+export const PREVIOUS_WIDGET_STYLE_PATH = "/widget-assets/v0216/ll-reading-nest-v0216.css";
++  "/widget-assets/v0217/ll-reading-nest-v0217.bundle.js";
++export const PREVIOUS_WIDGET_STYLE_PATH = "/widget-assets/v0217/ll-reading-nest-v0217.css";
 +export const OLDER_WIDGET_SCRIPT_PATH =
 +  "/widget-assets/v0213/ll-reading-nest-v0213.bundle.js";
 +export const OLDER_WIDGET_STYLE_PATH = "/widget-assets/v0213/ll-reading-nest-v0213.css";
@@ -3524,7 +3566,7 @@ index 0000000..c1ff206
 +  return value.replace(/<\/style/gi, "<\\/style");
 +}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705..754bc48 100644
+index 1e35705..e04abd9 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
 @@ -4,6 +4,48 @@ import { getWorkerRoute } from "./worker-router.js";
@@ -3539,19 +3581,19 @@ index 1e35705..754bc48 100644
 +  it("serves only the versioned public widget assets without requiring the private token", () => {
 +    expect(
 +      getWorkerRoute(
++        new URL("https://example.workers.dev/widget-assets/v0218/ll-reading-nest-v0218.bundle.js"),
++        undefined
++      )
++    ).toBe("widget-asset");
++    expect(
++      getWorkerRoute(
++        new URL("https://example.workers.dev/widget-assets/v0218/ll-reading-nest-v0218.css"),
++        undefined
++      )
++    ).toBe("widget-asset");
++    expect(
++      getWorkerRoute(
 +        new URL("https://example.workers.dev/widget-assets/v0217/ll-reading-nest-v0217.bundle.js"),
-+        undefined
-+      )
-+    ).toBe("widget-asset");
-+    expect(
-+      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0217/ll-reading-nest-v0217.css"),
-+        undefined
-+      )
-+    ).toBe("widget-asset");
-+    expect(
-+      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0216/ll-reading-nest-v0216.bundle.js"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
@@ -3569,7 +3611,7 @@ index 1e35705..754bc48 100644
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0217/private.json"),
++        new URL("https://example.workers.dev/widget-assets/v0218/private.json"),
 +        undefined
 +      )
 +    ).toBe("misconfigured");
@@ -3651,14 +3693,14 @@ index 1f8027f..3098de3 100644
      return "source";
    }
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2..9e8a466 100644
+index 6f84bb2..cb685f6 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
 @@ -1,22 +1,57 @@
  import { createMcpHandler } from "agents/mcp";
  import widgetHtml from "../../web/dist/index.html";
-+import widgetScript from "../../web/dist/ll-reading-nest-v0217.bundle.js";
-+import widgetStyles from "../../web/dist/ll-reading-nest-v0217.css";
++import widgetScript from "../../web/dist/ll-reading-nest-v0218.bundle.js";
++import widgetStyles from "../../web/dist/ll-reading-nest-v0218.css";
  import { createMcpServerFromRepository } from "./mcp/server-factory.js";
  import { D1ReadingRepository } from "./repositories/d1-reading-repository.js";
 +import { D1ReadingDiscussionRepository } from "./repositories/d1-reading-discussion-repository.js";
@@ -4192,7 +4234,7 @@ index d5e154d..ce15d2c 100644
    .object({
      sessionId: sessionIdSchema,
 diff --git a/web/index.html b/web/index.html
-index b261313..ea2e848 100644
+index b261313..e886fd4 100644
 --- a/web/index.html
 +++ b/web/index.html
 @@ -3,14 +3,14 @@
@@ -4217,7 +4259,7 @@ index b261313..ea2e848 100644
          <dl style="display:grid;grid-template-columns:max-content 1fr;gap:8px 14px">
            <dt>resourceVersion</dt>
 -          <dd>app-v24</dd>
-+          <dd>app-v0217</dd>
++          <dd>app-v0218</dd>
            <dt>bootStage</dt>
            <dd>html-loaded</dd>
          </dl>
@@ -5218,7 +5260,7 @@ index 7b93b47..c5d5be1 100644
      await deviceCache.remove("bookshelf-a");
      await deviceCache.remove("bookshelf-b");
 diff --git a/web/src/App.tsx b/web/src/App.tsx
-index e200d4e..80ff901 100644
+index e200d4e..b4fd972 100644
 --- a/web/src/App.tsx
 +++ b/web/src/App.tsx
 @@ -5,6 +5,9 @@ import type {
@@ -5231,7 +5273,15 @@ index e200d4e..80ff901 100644
    ReadingPosition,
    ReadingSession,
    ReadingType,
-@@ -34,8 +37,8 @@ import { AppearanceSheet } from "./components/AppearanceSheet.js";
+@@ -25,6 +28,7 @@ import {
+   requestReaderFullscreen,
+   requestReaderInline,
+   requestReaderPip,
++  sampleChatGptText,
+   saveReaderWidgetState,
+   subscribeToolResults,
+   updateModelContext
+@@ -34,8 +38,8 @@ import { AppearanceSheet } from "./components/AppearanceSheet.js";
  import { CacheSettings } from "./components/CacheSettings.js";
  import { BookManagementSheet } from "./components/BookManagementSheet.js";
  import { DiaryPreview } from "./components/DiaryPreview.js";
@@ -5241,7 +5291,7 @@ index e200d4e..80ff901 100644
  import { SyncProgressSheet } from "./components/SyncProgressSheet.js";
  import type { PendingCompanionCommentDraft } from "./components/CompanionDock.js";
  import { prepareCurrentPageContext } from "./features/manga/image-sync.js";
-@@ -56,6 +59,7 @@ import { buildSyncBatches } from "./features/reading-sync/build-batches.js";
+@@ -56,6 +60,7 @@ import { buildSyncBatches } from "./features/reading-sync/build-batches.js";
  import {
    buildBatchChatMessage,
    buildBatchUserNote,
@@ -5249,7 +5299,7 @@ index e200d4e..80ff901 100644
    buildCurrentOnlyPrompt,
    buildFormalReadingPrompt,
    buildRecentOnlyPrompt
-@@ -68,8 +72,10 @@ import {
+@@ -68,8 +73,10 @@ import {
    applyAppearance,
    loadAppearanceBackground,
    loadAppearancePreferences,
@@ -5261,7 +5311,7 @@ index e200d4e..80ff901 100644
  } from "./features/appearance/appearance.js";
  import {
    cancelSyncJob,
-@@ -122,6 +128,7 @@ type OpenOutput = {
+@@ -122,6 +129,7 @@ type OpenOutput = {
  type OpenMetadata = {
    sourceEndpointBase?: string;
    cloudSourceEnabled?: boolean;
@@ -5269,7 +5319,7 @@ index e200d4e..80ff901 100644
  };
  
  const cache = new IndexedDbReadingCache();
-@@ -138,10 +145,12 @@ export function App() {
+@@ -138,10 +146,12 @@ export function App() {
    );
    const initial = initialToolOutput<OpenOutput>();
    const initialMetadata = initialToolMetadata<OpenMetadata>();
@@ -5286,7 +5336,7 @@ index e200d4e..80ff901 100644
    const [sourceEndpointBase, setSourceEndpointBase] = useState(
      () => initialSourceEndpointBase
    );
-@@ -150,6 +159,13 @@ export function App() {
+@@ -150,6 +160,13 @@ export function App() {
        initialMetadata?.cloudSourceEnabled ??
        hasPrivateSourceEndpoint(initialSourceEndpointBase)
    );
@@ -5300,7 +5350,7 @@ index e200d4e..80ff901 100644
    const cloudSourceClient = useMemo(
      () => new CloudSourceClient(sourceEndpointBase, undefined, callTool),
      [sourceEndpointBase]
-@@ -193,13 +209,22 @@ export function App() {
+@@ -193,13 +210,22 @@ export function App() {
    const [historyComments, setHistoryComments] = useState<CompanionComment[]>([]);
    const [historyCursor, setHistoryCursor] = useState<string | undefined>();
    const [historyLoading, setHistoryLoading] = useState(false);
@@ -5324,7 +5374,7 @@ index e200d4e..80ff901 100644
    const hostLayout = useReadingHostLayout();
  
    useLayoutEffect(() => {
-@@ -207,6 +232,91 @@ export function App() {
+@@ -207,6 +233,91 @@ export function App() {
      saveAppearancePreferences(appearance);
    }, [appearance, appearanceBackground]);
  
@@ -5416,7 +5466,7 @@ index e200d4e..80ff901 100644
    useEffect(
      () =>
        subscribeToolResults((result) => {
-@@ -215,10 +325,19 @@ export function App() {
+@@ -215,10 +326,19 @@ export function App() {
            typeof result._meta?.sourceEndpointBase === "string"
              ? result._meta.sourceEndpointBase
              : output?.sourceEndpointBase;
@@ -5437,7 +5487,7 @@ index e200d4e..80ff901 100644
          if (output?.bookshelfSessions || output?.recentSessions) {
            setRecent(toBookshelfItems(output));
          }
-@@ -275,6 +394,45 @@ export function App() {
+@@ -275,6 +395,45 @@ export function App() {
            .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
            .slice(0, 20)
        );
@@ -5483,7 +5533,7 @@ index e200d4e..80ff901 100644
        setCompanionError("");
      } catch {
        if (!background) {
-@@ -286,6 +444,33 @@ export function App() {
+@@ -286,6 +445,33 @@ export function App() {
      }
    }, []);
  
@@ -5517,7 +5567,7 @@ index e200d4e..80ff901 100644
    useEffect(() => {
      const sessionId = sessionBundle?.session.id;
      const reading = screen === "novel" || screen === "manga";
-@@ -294,16 +479,59 @@ export function App() {
+@@ -294,16 +480,59 @@ export function App() {
        setCompanionComments([]);
        setCompanionError("");
        setPendingCommentDraft(null);
@@ -5578,7 +5628,7 @@ index e200d4e..80ff901 100644
  
    useEffect(() => {
      if (!readerImmersive) return;
-@@ -323,7 +551,6 @@ export function App() {
+@@ -323,7 +552,6 @@ export function App() {
    useEffect(() => {
      if (screen !== "novel" && screen !== "manga") return;
      setOverlay(null);
@@ -5586,7 +5636,7 @@ index e200d4e..80ff901 100644
    }, [hostLayout.revision]);
  
    useEffect(() => {
-@@ -343,11 +570,41 @@ export function App() {
+@@ -343,11 +571,41 @@ export function App() {
              sourceManifest: local.metadata.sourceManifest
            };
          }
@@ -5629,7 +5679,7 @@ index e200d4e..80ff901 100644
            setRecent((items) =>
              items.map((candidate) =>
                candidate.session.id === session.id
-@@ -389,7 +646,9 @@ export function App() {
+@@ -389,7 +647,9 @@ export function App() {
              }
              sourceAvailability = "available_local";
            } catch {
@@ -5640,7 +5690,7 @@ index e200d4e..80ff901 100644
            }
          }
          let latestComment: string | undefined;
-@@ -421,19 +680,21 @@ export function App() {
+@@ -421,19 +681,21 @@ export function App() {
            ...(latestComment ? { latestComment } : {})
          };
        })
@@ -5672,7 +5722,7 @@ index e200d4e..80ff901 100644
  
    useEffect(() => {
      if (!toast) return;
-@@ -446,6 +707,28 @@ export function App() {
+@@ -446,6 +708,28 @@ export function App() {
    }, [mangaPages]);
  
    const position = sessionBundle?.session.userCurrentPosition;
@@ -5701,7 +5751,7 @@ index e200d4e..80ff901 100644
  
    useEffect(() => {
      if ((screen === "novel" || screen === "manga") && !sessionBundle) return;
-@@ -473,7 +756,7 @@ export function App() {
+@@ -473,7 +757,7 @@ export function App() {
      setScreen("setup");
    }
  
@@ -5710,7 +5760,7 @@ index e200d4e..80ff901 100644
      let nextItem = item;
      const local = await cache.get(item.session.id).catch(() => undefined);
      if (local && !item.session.sourceManifest) {
-@@ -489,13 +772,18 @@ export function App() {
+@@ -489,13 +773,18 @@ export function App() {
          }
        };
      }
@@ -5731,7 +5781,7 @@ index e200d4e..80ff901 100644
        setChunks(local.chunks);
        setSourceText(local.sourceText);
        setRemembered(true);
-@@ -503,6 +791,12 @@ export function App() {
+@@ -503,6 +792,12 @@ export function App() {
        return;
      }
      if (local && "pages" in local && (availability === "available_local" || availability === "unknown")) {
@@ -5744,7 +5794,7 @@ index e200d4e..80ff901 100644
        setMangaPages(
          local.pages.map((page) => ({
            file: new File([page.blob], page.fileName, { type: page.mimeType }),
-@@ -513,6 +807,64 @@ export function App() {
+@@ -513,6 +808,64 @@ export function App() {
        setScreen("manga");
        return;
      }
@@ -5809,7 +5859,7 @@ index e200d4e..80ff901 100644
      setExistingSession(nextItem.session);
      setTitle(nextItem.session.title);
      setSetupType(nextItem.session.type);
-@@ -527,6 +879,39 @@ export function App() {
+@@ -527,6 +880,39 @@ export function App() {
      );
    }
  
@@ -5849,7 +5899,7 @@ index e200d4e..80ff901 100644
    function prepareReimport(item: BookshelfItem) {
      setSessionBundle(item);
      setSourceAvailability(item.sourceAvailability);
-@@ -543,9 +928,22 @@ export function App() {
+@@ -543,9 +929,22 @@ export function App() {
    async function openBookManagement(item: BookshelfItem) {
      setManagedBook(item);
      setHistoryComments([]);
@@ -5873,7 +5923,7 @@ index e200d4e..80ff901 100644
    }
  
    async function openFullscreenReader() {
-@@ -608,7 +1006,7 @@ export function App() {
+@@ -608,7 +1007,7 @@ export function App() {
          result.structuredContent?.nextCursor as string | undefined
        );
      } catch {
@@ -5882,7 +5932,7 @@ index e200d4e..80ff901 100644
      } finally {
        setHistoryLoading(false);
      }
-@@ -910,7 +1308,7 @@ export function App() {
+@@ -910,7 +1309,7 @@ export function App() {
      let cloudUploadError = "";
      let cloudDiagnostics: CloudUploadDiagnostics | undefined;
      let serverSideCloudUploadOnly = false;
@@ -5891,7 +5941,7 @@ index e200d4e..80ff901 100644
        if (setupType === "novel") {
          const sessionId = session.id;
          setImportProgress((current) => ({
-@@ -1150,8 +1548,7 @@ export function App() {
+@@ -1150,8 +1549,7 @@ export function App() {
          mode: activePreferences.readingCommentMode,
          length: activePreferences.commentLength,
          operationId,
@@ -5901,7 +5951,7 @@ index e200d4e..80ff901 100644
        });
        const result = await callTool("send_current_context", {
          sessionId: sessionBundle.session.id,
-@@ -1178,7 +1575,9 @@ export function App() {
+@@ -1178,7 +1576,9 @@ export function App() {
          successPrompt: policyPrompt,
          fallbackPrompt,
          updateModelContext,
@@ -5912,7 +5962,7 @@ index e200d4e..80ff901 100644
        });
        rememberPendingCommentDraft({
          position: sessionBundle.session.userCurrentPosition,
-@@ -1188,7 +1587,7 @@ export function App() {
+@@ -1188,7 +1588,7 @@ export function App() {
        });
        setToast(
          mode === "context"
@@ -5921,7 +5971,7 @@ index e200d4e..80ff901 100644
            : "已用兼容模式发送当前段落。"
        );
      } finally {
-@@ -1202,7 +1601,7 @@ export function App() {
+@@ -1202,7 +1602,7 @@ export function App() {
      const userIndex = sessionBundle.session.userCurrentPosition.index;
      const assistantIndex = sessionBundle.session.assistantSyncedPosition?.index ?? 0;
      if (userIndex <= assistantIndex) {
@@ -5930,7 +5980,7 @@ index e200d4e..80ff901 100644
        await lookAtNovel(currentText, selectedText);
        return;
      }
-@@ -1213,10 +1612,6 @@ export function App() {
+@@ -1213,10 +1613,6 @@ export function App() {
        rangeEnd: userIndex,
        idFactory: (ordinal) => `${sessionBundle.session.id}-${Date.now()}-${ordinal}`
      });
@@ -5941,7 +5991,7 @@ index e200d4e..80ff901 100644
      await startFullCatchUp(batches);
    }
  
-@@ -1245,10 +1640,9 @@ export function App() {
+@@ -1245,10 +1641,9 @@ export function App() {
        activeBatchIndex: 0,
        createdAt: new Date().toISOString()
      };
@@ -5953,7 +6003,7 @@ index e200d4e..80ff901 100644
    }
  
    async function requestMangaSync() {
-@@ -1261,10 +1655,6 @@ export function App() {
+@@ -1261,10 +1656,6 @@ export function App() {
        return;
      }
      if (!allowAutomaticSync("range_sync")) return;
@@ -5964,7 +6014,7 @@ index e200d4e..80ff901 100644
      await startMangaCatchUp(assistantIndex + 1);
    }
  
-@@ -1300,10 +1690,152 @@ export function App() {
+@@ -1300,10 +1691,152 @@ export function App() {
        activeBatchIndex: 0,
        createdAt: new Date().toISOString()
      };
@@ -6119,7 +6169,7 @@ index e200d4e..80ff901 100644
    }
  
    async function sendSyncBatch(job: ReadingSyncJob) {
-@@ -1419,7 +1951,7 @@ export function App() {
+@@ -1419,7 +1952,7 @@ export function App() {
        if (confirmed.mode === "live_reading") {
          clearSyncJobState();
          await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
@@ -6128,7 +6178,7 @@ index e200d4e..80ff901 100644
          return;
        }
        const formalMode = sessionBundle.session.sessionPreferences.readingCommentMode;
-@@ -1431,8 +1963,7 @@ export function App() {
+@@ -1431,8 +1964,7 @@ export function App() {
                mode: formalMode,
                length: formalLength,
                operationId: formalOperationId,
@@ -6138,7 +6188,7 @@ index e200d4e..80ff901 100644
              })
            : buildReadingCommentPrompt({
                sessionId: confirmed.sessionId,
-@@ -1446,8 +1977,7 @@ export function App() {
+@@ -1446,8 +1978,7 @@ export function App() {
                },
                source: "catch_up_complete",
                operationId: formalOperationId,
@@ -6148,7 +6198,7 @@ index e200d4e..80ff901 100644
              });
        void askChatGpt(prompt, { scrollToBottom: false }).catch(() => {
          setToast("正式短评没有发送成功，请重试。");
-@@ -1460,7 +1990,7 @@ export function App() {
+@@ -1460,7 +1991,7 @@ export function App() {
        });
        clearSyncJobState();
        await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
@@ -6157,7 +6207,7 @@ index e200d4e..80ff901 100644
        return;
      }
      storeSyncJob(confirmed);
-@@ -1477,7 +2007,6 @@ export function App() {
+@@ -1477,7 +2008,6 @@ export function App() {
        .slice(start - 1, end)
        .map((chunk, offset) => `【第 ${start + offset} 段】\n${chunk}`)
        .join("\n\n");
@@ -6165,7 +6215,7 @@ index e200d4e..80ff901 100644
      await askChatGpt(
        buildRecentOnlyPrompt({
          sessionId: sessionBundle.session.id,
-@@ -1488,15 +2017,13 @@ export function App() {
+@@ -1488,15 +2018,13 @@ export function App() {
          mode: sessionBundle.session.sessionPreferences.readingCommentMode,
          length: sessionBundle.session.sessionPreferences.commentLength,
          operationId: crypto.randomUUID(),
@@ -6182,7 +6232,7 @@ index e200d4e..80ff901 100644
      if (!syncJob) return;
      const cancelled = cancelSyncJob(syncJob);
      clearSyncJobState();
-@@ -1584,8 +2111,7 @@ export function App() {
+@@ -1584,8 +2112,7 @@ export function App() {
              title: session.title,
              position: job.targetPosition,
              operationId: batch.id,
@@ -6192,7 +6242,7 @@ index e200d4e..80ff901 100644
              requestedMode: mode,
              requestedLength: length
            }),
-@@ -1679,8 +2205,7 @@ export function App() {
+@@ -1679,8 +2206,7 @@ export function App() {
          position,
          source: "current_only",
          operationId,
@@ -6202,7 +6252,7 @@ index e200d4e..80ff901 100644
        });
        const result = await callTool("send_current_context", {
          sessionId: sessionBundle.session.id,
-@@ -1717,7 +2242,9 @@ export function App() {
+@@ -1717,7 +2243,9 @@ export function App() {
          successPrompt: policyPrompt,
          fallbackPrompt,
          updateModelContext,
@@ -6213,7 +6263,7 @@ index e200d4e..80ff901 100644
        });
        rememberPendingCommentDraft({
          position,
-@@ -1925,6 +2452,149 @@ export function App() {
+@@ -1925,6 +2453,183 @@ export function App() {
      }
    }
  
@@ -6323,6 +6373,40 @@ index e200d4e..80ff901 100644
 +      const requestId = crypto.randomUUID();
 +      const replyOperationId = `discussion-reply:${discussion.id}:${requestId}`;
 +      setAwaitingDiscussionReply(replyOperationId);
++      let sampledReply: string | null = null;
++      try {
++        sampledReply = await sampleChatGptText(
++          buildDiscussionNaturalReplyPrompt({
++            bookTitle: sessionBundle?.session.title ?? managedBook?.session.title ?? "这本书",
++            detail,
++            userText: text
++          })
++        );
++      } catch {
++        sampledReply = null;
++      }
++      if (sampledReply) {
++        const savedReply = await callTool("publish_companion_comment", {
++          sessionId: discussion.sessionId,
++          position: discussion.position,
++          mode: "light_chat",
++          length: "normal",
++          text: sampledReply,
++          source: "current_context",
++          operationId: replyOperationId
++        });
++        if (savedReply.isError || savedReply.structuredContent?.saved !== true) {
++          throw new Error("Discussion reply was not persisted");
++        }
++        const refreshed = await cloudSourceClient.getReadingDiscussion(discussion.id);
++        const refreshedDetail = readDiscussionDetail(refreshed);
++        if (!refreshedDetail) throw new Error("Missing refreshed discussion");
++        setActiveDiscussion(refreshedDetail);
++        upsertDiscussionSummary(refreshedDetail);
++        setAwaitingDiscussionReply(null);
++        setDiscussionError("");
++        return;
++      }
 +      const sent = await askChatGpt(
 +        buildDiscussionReplyPrompt({
 +          bookTitle: sessionBundle?.session.title ?? managedBook?.session.title ?? "这本书",
@@ -6363,7 +6447,7 @@ index e200d4e..80ff901 100644
    function allowAutomaticSync(mode: "range_sync" | "recent_only" | "live_reading") {
      const permission = checkSourceSyncPermission({ mode, sourceAvailability });
      if (permission.allowed) return true;
-@@ -1986,26 +2656,12 @@ export function App() {
+@@ -1986,26 +2691,12 @@ export function App() {
      await callTool("finish_today_reading", {
        sessionId: sessionBundle.session.id,
        position: sessionBundle.session.userCurrentPosition,
@@ -6391,7 +6475,7 @@ index e200d4e..80ff901 100644
    async function openDiary() {
      if (!sessionBundle) return;
      const result = await callTool("generate_diary_context", { sessionId: sessionBundle.session.id });
-@@ -2154,15 +2810,15 @@ export function App() {
+@@ -2154,15 +2845,15 @@ export function App() {
                : "正文/图片只保存在本设备，不会上传到服务器。只有你主动同步的片段或页面会发送给 ChatGPT；请保留原文件以防设备缓存被清理。"}
            </p>
            {existingSession ? (
@@ -6411,7 +6495,7 @@ index e200d4e..80ff901 100644
                ) : null}
                {!companionLoading && !companionError
                  ? companionComments.slice(0, 3).map((comment) => (
-@@ -2198,18 +2854,15 @@ export function App() {
+@@ -2198,18 +2889,15 @@ export function App() {
            onFullscreen={() => void openFullscreenReader()}
            fullscreenLabel={readerImmersive ? "退出全屏" : "全屏阅读"}
            immersive={readerImmersive}
@@ -6435,7 +6519,7 @@ index e200d4e..80ff901 100644
            initialScrollTop={readerScrollTop}
            onScrollPosition={setReaderScrollTop}
            {...readerProps}
-@@ -2220,28 +2873,22 @@ export function App() {
+@@ -2220,28 +2908,22 @@ export function App() {
            session={sessionBundle.session}
            pages={mangaPages}
            description={pageDescription}
@@ -6469,7 +6553,7 @@ index e200d4e..80ff901 100644
            initialScrollTop={readerScrollTop}
            onScrollPosition={setReaderScrollTop}
            {...readerProps}
-@@ -2251,6 +2898,7 @@ export function App() {
+@@ -2251,6 +2933,7 @@ export function App() {
          <AppearanceSheet
            value={appearance}
            backgroundImage={appearanceBackground}
@@ -6477,7 +6561,7 @@ index e200d4e..80ff901 100644
            onChange={setAppearance}
            onBackgroundChange={(dataUrl) => {
              if (!saveAppearanceBackground(dataUrl)) {
-@@ -2265,13 +2913,6 @@ export function App() {
+@@ -2265,13 +2948,6 @@ export function App() {
        {overlay === "cache" && sessionBundle ? <CacheSettings type={sessionBundle.session.type} remembered={remembered} liveReadingEnabled={sessionBundle.session.liveReadingEnabled} onRememberChange={changeRemember} onLiveReadingChange={(enabled) => void changeLiveReading(enabled)} onClear={clearCache} onClose={() => setOverlay(null)} /> : null}
        {overlay === "more" && sessionBundle ? (
          <MoreActions
@@ -6491,7 +6575,7 @@ index e200d4e..80ff901 100644
            onDiary={openDiary}
            onComplete={completeWork}
            onClose={() => setOverlay(null)}
-@@ -2283,12 +2924,15 @@ export function App() {
+@@ -2283,12 +2959,15 @@ export function App() {
            bundle={managedBook}
            cloudSourceEnabled={cloudSourceEnabled}
            comments={historyComments}
@@ -6508,7 +6592,7 @@ index e200d4e..80ff901 100644
            onDelete={(options) => void deleteManagedBook(options)}
            onClose={() => {
              setManagedBook(null);
-@@ -2296,41 +2940,26 @@ export function App() {
+@@ -2296,41 +2975,26 @@ export function App() {
            }}
          />
        ) : null}
@@ -6564,7 +6648,7 @@ index e200d4e..80ff901 100644
            onCancel={() => void cancelCurrentSync()}
          />
        ) : null}
-@@ -2432,6 +3061,61 @@ function nextFrame() {
+@@ -2432,6 +3096,73 @@ function nextFrame() {
    });
  }
  
@@ -6591,18 +6675,10 @@ index e200d4e..80ff901 100644
 +  userText: string;
 +  replyOperationId: string;
 +}) {
++  const naturalReplyPrompt = buildDiscussionNaturalReplyPrompt(input);
 +  const discussion = input.detail.discussion;
-+  const history = input.detail.messages
-+    .slice(-12)
-+    .map((message) => `${message.role === "assistant" ? "林序言" : "小闪"}：${message.text}`)
-+    .join("\n");
 +  return [
-+    "这是 L&L 共读小窝里正在进行的段落讨论，不是补课或进度确认。",
-+    `书名：《${input.bookTitle}》；位置：${discussion.position.label}。`,
-+    `林序言最初短评：${discussion.anchorText}`,
-+    history ? `最近讨论：\n${history}` : "",
-+    `小闪刚刚回复：${input.userText}`,
-+    "请像真正一起读书一样自然回应小闪，可以共鸣、追问、解释或接着聊；不要只说已读到哪里。回复不超过 450 个汉字。",
++    naturalReplyPrompt,
 +    "重要：这是共读讨论回复。先组织好最终回复，在输出任何聊天文字之前，必须且只能先调用一次 publish_companion_comment，把最终回复原文完整写进 text。服务器会凭 discussion-reply 操作号把它保存进当前讨论。工具参数必须严格使用下面这些固定值：",
 +    JSON.stringify(
 +      {
@@ -6618,6 +6694,26 @@ index e200d4e..80ff901 100644
 +      2
 +    ),
 +    "只有 publish_companion_comment 返回“已同步到这段共读讨论”后，才在普通聊天区发送完全相同的回复。不要改用其他工具，也不要调用进度、补课或书签工具。"
++  ].join("\n\n");
++}
++
++function buildDiscussionNaturalReplyPrompt(input: {
++  bookTitle: string;
++  detail: ReadingDiscussionDetail;
++  userText: string;
++}) {
++  const discussion = input.detail.discussion;
++  const history = input.detail.messages
++    .slice(-12)
++    .map((message) => `${message.role === "assistant" ? "林序言" : "小闪"}：${message.text}`)
++    .join("\n");
++  return [
++    "这是 L&L 共读小窝里正在进行的段落讨论，不是补课或进度确认。",
++    `书名：《${input.bookTitle}》；位置：${discussion.position.label}。`,
++    `林序言最初短评：${discussion.anchorText}`,
++    history ? `最近讨论：\n${history}` : "",
++    `小闪刚刚回复：${input.userText}`,
++    "请像真正一起读书一样自然回应小闪，可以共鸣、追问、解释或接着聊；不要只说已读到哪里。只写这一轮要对小闪说的话，不要说明保存流程，不要输出 JSON。回复不超过 450 个汉字。"
 +  ]
 +    .filter(Boolean)
 +    .join("\n\n");
@@ -6626,7 +6722,7 @@ index e200d4e..80ff901 100644
  function deriveSourceEndpointBase(): string {
    if (typeof window === "undefined") return "/source";
    const match = window.location.pathname.match(/\/mcp\/([^/]+)/);
-@@ -2439,6 +3123,19 @@ function deriveSourceEndpointBase(): string {
+@@ -2439,6 +3170,19 @@ function deriveSourceEndpointBase(): string {
    return `/source/${match[1]}`;
  }
  
@@ -6646,7 +6742,7 @@ index e200d4e..80ff901 100644
  function toBookshelfItems(output?: OpenOutput): BookshelfItem[] {
    return (output?.bookshelfSessions ?? output?.recentSessions ?? []).map(
      ({ cacheState: _cacheState, ...item }) => ({
-@@ -2496,6 +3193,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
+@@ -2496,6 +3240,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
    };
  }
  
@@ -6661,7 +6757,7 @@ index e200d4e..80ff901 100644
    return {
      kind: type === "novel" ? "paragraph" : "page",
 diff --git a/web/src/Boot.test.tsx b/web/src/Boot.test.tsx
-index abd5023..bd02d59 100644
+index abd5023..24ec5fc 100644
 --- a/web/src/Boot.test.tsx
 +++ b/web/src/Boot.test.tsx
 @@ -46,7 +46,7 @@ describe("Boot", () => {
@@ -6669,7 +6765,7 @@ index abd5023..bd02d59 100644
  
      expect(await screen.findByText("failed")).toBeInTheDocument();
 -    expect(screen.getByText("app-v24")).toBeInTheDocument();
-+    expect(screen.getByText("app-v0217")).toBeInTheDocument();
++    expect(screen.getByText("app-v0218")).toBeInTheDocument();
      expect(screen.getAllByText("present")).toHaveLength(3);
      expect(screen.getByText("1")).toBeInTheDocument();
      const diagnosticText = screen.getByRole("alert").textContent ?? "";
@@ -6678,12 +6774,12 @@ index abd5023..bd02d59 100644
  
      expect(html).toContain("data-startup-fallback");
 -    expect(html).toContain("app-v24");
-+    expect(html).toContain("app-v0217");
++    expect(html).toContain("app-v0218");
      expect(html).not.toContain("sourceText");
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37..e95722a 100644
+index c23bd37..1ec5fee 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -6692,16 +6788,38 @@ index c23bd37..e95722a 100644
  
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
-+const RESOURCE_VERSION = "app-v0217";
++const RESOURCE_VERSION = "app-v0218";
 +const APP_VERSION = "0.2.19";
  
  type AppModule = {
    App: ComponentType;
 diff --git a/web/src/bridge/host.test.ts b/web/src/bridge/host.test.ts
-index d185c41..16cd265 100644
+index d185c41..8fee340 100644
 --- a/web/src/bridge/host.test.ts
 +++ b/web/src/bridge/host.test.ts
-@@ -91,6 +91,15 @@ describe("host bridge", () => {
+@@ -3,6 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
+ const bridge = {
+   connect: vi.fn().mockResolvedValue(undefined),
+   callServerTool: vi.fn(),
++  createSamplingMessage: vi.fn().mockResolvedValue({
++    role: "assistant",
++    content: { type: "text", text: "哥哥也被这一句轻轻戳了一下。" },
++    model: "test-model"
++  }),
++  getHostCapabilities: vi.fn().mockReturnValue({ sampling: {} }),
+   sendMessage: vi.fn().mockResolvedValue(undefined),
+   updateModelContext: vi.fn().mockResolvedValue({}),
+   requestDisplayMode: vi.fn().mockResolvedValue({ mode: "fullscreen" })
+@@ -18,6 +24,8 @@ vi.mock("@modelcontextprotocol/ext-apps", () => ({
+   App: class {
+     connect = bridge.connect;
+     callServerTool = bridge.callServerTool;
++    createSamplingMessage = bridge.createSamplingMessage;
++    getHostCapabilities = bridge.getHostCapabilities;
+     sendMessage = bridge.sendMessage;
+     updateModelContext = bridge.updateModelContext;
+     requestDisplayMode = bridge.requestDisplayMode;
+@@ -91,6 +99,42 @@ describe("host bridge", () => {
      });
    });
  
@@ -6714,11 +6832,38 @@ index d185c41..16cd265 100644
 +    ).resolves.toBe(false);
 +  });
 +
++  it("returns sampled assistant text directly to the embedded app when the host supports sampling", async () => {
++    const { sampleChatGptText } = await import("./host.js");
++
++    await expect(sampleChatGptText("继续聊这一段")).resolves.toBe(
++      "哥哥也被这一句轻轻戳了一下。"
++    );
++    expect(bridge.createSamplingMessage).toHaveBeenCalledWith(
++      expect.objectContaining({
++        messages: [
++          {
++            role: "user",
++            content: { type: "text", text: "继续聊这一段" }
++          }
++        ],
++        maxTokens: 700
++      })
++    );
++  });
++
++  it("does not start sampling when the host has not advertised that capability", async () => {
++    bridge.getHostCapabilities.mockReturnValueOnce({});
++    const { sampleChatGptText } = await import("./host.js");
++
++    await expect(sampleChatGptText("继续聊这一段")).resolves.toBeNull();
++    expect(bridge.createSamplingMessage).not.toHaveBeenCalled();
++  });
++
    it("starts the direct ChatGPT fullscreen request in the user gesture call stack", async () => {
      const requestDisplayMode = vi.fn().mockResolvedValue(undefined);
      if (window.openai) window.openai.requestDisplayMode = requestDisplayMode;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28ca..37a3c22 100644
+index 08a28ca..a505755 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -6730,7 +6875,7 @@ index 08a28ca..37a3c22 100644
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
-@@ -54,25 +54,30 @@ export async function callTool(
+@@ -54,25 +54,52 @@ export async function callTool(
  
  export async function askChatGpt(
    prompt: string,
@@ -6765,6 +6910,28 @@ index 08a28ca..37a3c22 100644
      scrollToBottom: options.scrollToBottom ?? false
    });
 +  return true;
++}
++
++export async function sampleChatGptText(prompt: string): Promise<string | null> {
++  if (isStandaloneMode()) return null;
++  const bridge = connectApp();
++  if (!bridge) return null;
++  await appReady;
++  if (!bridge.getHostCapabilities()?.sampling) return null;
++  const result = await bridge.createSamplingMessage({
++    systemPrompt:
++      "你是林序言，正在 L&L 共读小窝里陪小闪读书。请只输出这一轮要放进共读讨论里的自然中文回复，不要解释保存流程，不要输出 JSON，也不要调用工具。",
++    messages: [
++      {
++        role: "user",
++        content: { type: "text", text: prompt }
++      }
++    ],
++    maxTokens: 700
++  });
++  if (result.role !== "assistant" || result.content.type !== "text") return null;
++  const text = result.content.text.trim();
++  return text || null;
  }
  
  export async function requestReaderPip(): Promise<boolean> {
@@ -8660,7 +8827,7 @@ index d6fc26f..2416a6c 100644
    sessionId: string;
    title: string;
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197..c11b39f 100644
+index 2523197..e91ceb2 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
 @@ -2,6 +2,166 @@ import { describe, expect, it, vi } from "vitest";
@@ -8836,13 +9003,13 @@ index 2523197..c11b39f 100644
  
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
-+    expect(message).toContain("resourceVersion=app-v0217");
++    expect(message).toContain("resourceVersion=app-v0218");
 +    expect(message).toContain("appVersion=0.2.19");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f..00a9fbd 100644
+index fd4eb1f..fb6b2ad 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
 @@ -1,5 +1,14 @@
@@ -8873,7 +9040,7 @@ index fd4eb1f..00a9fbd 100644
 +  updatedAt?: string;
 +};
 +
-+const RESOURCE_VERSION = "app-v0217";
++const RESOURCE_VERSION = "app-v0218";
 +const APP_VERSION = "0.2.19";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
@@ -9018,7 +9185,7 @@ index fd4eb1f..00a9fbd 100644
      const uploadUrl = `${this.endpointBase}${path}`;
      let response: Response;
 diff --git a/web/src/main.tsx b/web/src/main.tsx
-index b9391dd..f84deb2 100644
+index b9391dd..3274a14 100644
 --- a/web/src/main.tsx
 +++ b/web/src/main.tsx
 @@ -15,6 +15,6 @@ if (rootElement) {
@@ -9026,7 +9193,7 @@ index b9391dd..f84deb2 100644
    document.body.insertAdjacentHTML(
      "afterbegin",
 -    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v24</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
-+    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0217</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
++    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0218</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
    );
  }
 diff --git a/web/src/pages/Home.test.tsx b/web/src/pages/Home.test.tsx
@@ -10694,7 +10861,7 @@ index f68bf4f..3e3896f 100644
 +  background: var(--backdrop-base);
  }
 diff --git a/web/vite.config.ts b/web/vite.config.ts
-index d41559e..7ec395e 100644
+index d41559e..d24f65d 100644
 --- a/web/vite.config.ts
 +++ b/web/vite.config.ts
 @@ -1,14 +1,27 @@
@@ -10702,7 +10869,7 @@ index d41559e..7ec395e 100644
  import react from "@vitejs/plugin-react";
 -import { viteSingleFile } from "vite-plugin-singlefile";
 +
-+const WIDGET_ASSET_BASE = "/widget-assets/v0217/";
++const WIDGET_ASSET_BASE = "/widget-assets/v0218/";
  
  export default defineConfig({
 -  plugins: [react(), viteSingleFile()],
@@ -10719,10 +10886,10 @@ index d41559e..7ec395e 100644
 +    rollupOptions: {
 +      output: {
 +        codeSplitting: false,
-+        entryFileNames: "ll-reading-nest-v0217.bundle.js",
++        entryFileNames: "ll-reading-nest-v0218.bundle.js",
 +        assetFileNames: (assetInfo) =>
 +          assetInfo.names.some((name) => name.endsWith(".css"))
-+            ? "ll-reading-nest-v0217.css"
++            ? "ll-reading-nest-v0218.css"
 +            : "assets/[name]-[hash][extname]"
 +      }
 +    }
