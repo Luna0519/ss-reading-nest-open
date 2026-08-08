@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index 0820d9c..f098ae3 100644
+index 0820d9c..d5c4bd2 100644
 --- a/package.json
 +++ b/package.json
 @@ -1,7 +1,7 @@
@@ -7,7 +7,7 @@ index 0820d9c..f098ae3 100644
    "name": "ss-reading-nest",
    "private": true,
 -  "version": "0.2.7",
-+  "version": "0.2.18",
++  "version": "0.2.19",
    "packageManager": "pnpm@10.15.1",
    "scripts": {
      "build": "pnpm --filter @ss/shared build && pnpm --filter @ss/web build && pnpm --filter @ss/server build",
@@ -127,14 +127,14 @@ index 0000000..ea64a1d
 +CREATE INDEX IF NOT EXISTS reading_discussion_messages_order_idx
 +  ON reading_discussion_messages(discussion_id, sequence);
 diff --git a/server/package.json b/server/package.json
-index c1ce2a3..81a6693 100644
+index c1ce2a3..5d5f454 100644
 --- a/server/package.json
 +++ b/server/package.json
 @@ -1,13 +1,13 @@
  {
    "name": "@ss/server",
 -  "version": "0.2.7",
-+  "version": "0.2.18",
++  "version": "0.2.19",
    "private": true,
    "type": "module",
    "scripts": {
@@ -147,7 +147,7 @@ index c1ce2a3..81a6693 100644
      "smoke:mcp": "node scripts/remote-smoke/mcp-smoke.mjs",
      "cf-types": "wrangler types",
 diff --git a/server/scripts/remote-smoke/cloud-source-smoke.mjs b/server/scripts/remote-smoke/cloud-source-smoke.mjs
-index e719dcd..d6ed2b0 100644
+index e719dcd..038ffd8 100644
 --- a/server/scripts/remote-smoke/cloud-source-smoke.mjs
 +++ b/server/scripts/remote-smoke/cloud-source-smoke.mjs
 @@ -61,7 +61,7 @@ const expectedTools = [
@@ -155,12 +155,12 @@ index e719dcd..d6ed2b0 100644
  ];
  
 -const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.18" });
++const client = new Client({ name: "ll-cloud-source-smoke", version: "0.2.19" });
  const cleanup = {
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 8173759..bd7dcb2 100644
+index 8173759..c9e6dd3 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -168,7 +168,7 @@ index 8173759..bd7dcb2 100644
  const expectCloudSource = process.env.EXPECT_CLOUD_SOURCE === "true";
  const mcpUrl = new URL(`/mcp/${token}`, workerUrl.origin);
 -const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.7" });
-+const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.18" });
++const client = new Client({ name: "ll-reading-nest-smoke", version: "0.2.19" });
  
  const healthResponse = await fetch(new URL("/health", workerUrl));
  assert(healthResponse.ok, `health returned HTTP ${healthResponse.status}`);
@@ -267,7 +267,7 @@ index 8173759..bd7dcb2 100644
        tokenHiddenFromModel: true
      })
 diff --git a/server/src/app.test.ts b/server/src/app.test.ts
-index 629ce24..a158bd2 100644
+index 629ce24..f5827c9 100644
 --- a/server/src/app.test.ts
 +++ b/server/src/app.test.ts
 @@ -6,7 +6,7 @@ describe("server app", () => {
@@ -275,12 +275,12 @@ index 629ce24..a158bd2 100644
      const response = await request(createApp()).get("/health");
      expect(response.status).toBe(200);
 -    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.18" });
++    expect(response.body).toEqual({ ok: true, app: "L&L 共读小窝", version: "0.2.19" });
    });
  
    it("accepts an MCP initialize request", async () => {
 diff --git a/server/src/app.ts b/server/src/app.ts
-index f4e9bd5..22439bd 100644
+index f4e9bd5..69834f3 100644
 --- a/server/src/app.ts
 +++ b/server/src/app.ts
 @@ -12,7 +12,7 @@ export function createApp() {
@@ -288,7 +288,7 @@ index f4e9bd5..22439bd 100644
  
    app.get("/health", (_request, response) => {
 -    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.18" });
++    response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.19" });
    });
  
    app.post("/mcp", async (request: Request, response: Response) => {
@@ -887,7 +887,7 @@ index 21a3b3d..d85d60b 100644
        return toolResult(combined, result.deleted ? "这本书的云端阅读数据已删除。" : "这本书已不在书架中。");
      }
 diff --git a/server/src/mcp/server-factory.ts b/server/src/mcp/server-factory.ts
-index 9e76434..ff1ef6b 100644
+index 9e76434..3f96d19 100644
 --- a/server/src/mcp/server-factory.ts
 +++ b/server/src/mcp/server-factory.ts
 @@ -1,6 +1,9 @@
@@ -914,7 +914,7 @@ index 9e76434..ff1ef6b 100644
    const server = new McpServer({
      name: "L&L 共读小窝",
 -    version: "0.2.7"
-+    version: "0.2.18"
++    version: "0.2.19"
    });
    const service = new ReadingService(repository);
 -  registerReadingResource(server, widgetHtml, options.workerOrigin);
@@ -934,7 +934,7 @@ index 9e76434..ff1ef6b 100644
  }
 diff --git a/server/src/mcp/ui-template.integration.test.ts b/server/src/mcp/ui-template.integration.test.ts
 new file mode 100644
-index 0000000..3d8427c
+index 0000000..37f4e8e
 --- /dev/null
 +++ b/server/src/mcp/ui-template.integration.test.ts
 @@ -0,0 +1,67 @@
@@ -952,7 +952,7 @@ index 0000000..3d8427c
 +
 +describe("ChatGPT UI template MCP chain", () => {
 +  it("keeps the tool, listed resource, and readable HTML on one exact URI", async () => {
-+    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.18" });
++    const server = new McpServer({ name: "L&L UI integration test", version: "0.2.19" });
 +    const widgetHtml = buildInlineWidgetHtml(
 +      `<!doctype html><html><head><link rel="stylesheet" href="${WIDGET_STYLE_PATH}"></head><body><div id="root"></div><script type="module" src="${WIDGET_SCRIPT_PATH}"></script></body></html>`,
 +      {
@@ -963,7 +963,7 @@ index 0000000..3d8427c
 +    registerReadingResource(server, widgetHtml, "https://reading-nest.example.workers.dev");
 +    registerReadingTools(server, {} as never, {} as never);
 +
-+    const client = new Client({ name: "L&L UI integration client", version: "0.2.18" });
++    const client = new Client({ name: "L&L UI integration client", version: "0.2.19" });
 +    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 +
 +    try {
@@ -3556,7 +3556,7 @@ index 1f8027f..3098de3 100644
      return "source";
    }
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2..b1e5925 100644
+index 6f84bb2..5f426a9 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
 @@ -1,22 +1,57 @@
@@ -3592,7 +3592,7 @@ index 6f84bb2..b1e5925 100644
  
      if (route === "health") {
 -      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.7" });
-+      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.18" });
++      return Response.json({ ok: true, app: "L&L 共读小窝", version: "0.2.19" });
 +    }
 +    if (route === "discussion-health") {
 +      try {
@@ -3687,14 +3687,14 @@ index 7aab7e4..773289d 100644
      }
    ],
 diff --git a/shared/package.json b/shared/package.json
-index d2cbeca..77d797f 100644
+index d2cbeca..0bb7b22 100644
 --- a/shared/package.json
 +++ b/shared/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/shared",
 -  "version": "0.2.7",
-+  "version": "0.2.18",
++  "version": "0.2.19",
    "private": true,
    "type": "module",
    "main": "./dist/index.js",
@@ -4099,14 +4099,14 @@ index b261313..d283626 100644
            <dd>html-loaded</dd>
          </dl>
 diff --git a/web/package.json b/web/package.json
-index 088c892..dafdd57 100644
+index 088c892..997a5b6 100644
 --- a/web/package.json
 +++ b/web/package.json
 @@ -1,6 +1,6 @@
  {
    "name": "@ss/web",
 -  "version": "0.2.7",
-+  "version": "0.2.18",
++  "version": "0.2.19",
    "private": true,
    "type": "module",
    "scripts": {
@@ -4119,7 +4119,7 @@ index 088c892..dafdd57 100644
    }
  }
 diff --git a/web/src/App.test.tsx b/web/src/App.test.tsx
-index 7b93b47..6b7930b 100644
+index 7b93b47..4555574 100644
 --- a/web/src/App.test.tsx
 +++ b/web/src/App.test.tsx
 @@ -20,6 +20,7 @@ describe("App", () => {
@@ -4178,7 +4178,7 @@ index 7b93b47..6b7930b 100644
 -      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.50");
 -      expect(localStorage.getItem("ll:appearance:v1")).toContain('"theme":"lavender"');
 +      expect(document.documentElement.dataset.llTheme).toBeUndefined();
-+      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.24");
++      expect(document.documentElement.style.getPropertyValue("--glass-opacity")).toBe("0.139");
 +      expect(localStorage.getItem("ll:appearance:v4")).toContain('"glassOpacity":0.24');
 +      expect(localStorage.getItem("ll:appearance:v4")).not.toContain("theme");
      });
@@ -6544,7 +6544,7 @@ index abd5023..89a4375 100644
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37..9cd4410 100644
+index c23bd37..7a1d392 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -6554,12 +6554,12 @@ index c23bd37..9cd4410 100644
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
 +const RESOURCE_VERSION = "app-v0214";
-+const APP_VERSION = "0.2.18";
++const APP_VERSION = "0.2.19";
  
  type AppModule = {
    App: ComponentType;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28ca..6ae11c4 100644
+index 08a28ca..98c7b7a 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -6567,7 +6567,7 @@ index 08a28ca..6ae11c4 100644
    if (typeof window === "undefined" || window.parent === window) return undefined;
    if (!app) {
 -    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.7" });
-+    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.18" });
++    app = new McpApp({ name: "L&L 共读小窝", version: "0.2.19" });
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
@@ -6606,7 +6606,7 @@ index 08a28ca..6ae11c4 100644
  
  export async function requestReaderPip(): Promise<boolean> {
 diff --git a/web/src/bridge/standalone.ts b/web/src/bridge/standalone.ts
-index f6c1e54..e8333d9 100644
+index f6c1e54..3ffec7d 100644
 --- a/web/src/bridge/standalone.ts
 +++ b/web/src/bridge/standalone.ts
 @@ -44,7 +44,7 @@ async function connectStandaloneClient(): Promise<Client> {
@@ -6614,7 +6614,7 @@ index f6c1e54..e8333d9 100644
    if (!config) throw new Error("Standalone reader path is unavailable");
    standaloneClient ??= (async () => {
 -    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.7" });
-+    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.18" });
++    const client = new Client({ name: "ll-reading-nest-pwa", version: "0.2.19" });
      await client.connect(new StreamableHTTPClientTransport(config.mcpUrl));
      return client;
    })();
@@ -8162,7 +8162,7 @@ index 77b05b9..32e8ec5 100644
        </section>
      </div>
 diff --git a/web/src/features/appearance/appearance.test.ts b/web/src/features/appearance/appearance.test.ts
-index a90656c..1f46a32 100644
+index a90656c..4fda905 100644
 --- a/web/src/features/appearance/appearance.test.ts
 +++ b/web/src/features/appearance/appearance.test.ts
 @@ -13,15 +13,13 @@ describe("appearance preferences", () => {
@@ -8207,7 +8207,7 @@ index a90656c..1f46a32 100644
          glassBlur: 18,
          readerFont: "rounded",
          readerScale: 1.15
-@@ -55,10 +53,38 @@ describe("appearance preferences", () => {
+@@ -55,10 +53,47 @@ describe("appearance preferences", () => {
        "data:image/jpeg;base64,abc",
        root
      );
@@ -8215,11 +8215,20 @@ index a90656c..1f46a32 100644
 +    expect(root.dataset.llTheme).toBeUndefined();
      expect(root.dataset.llCustomBackground).toBe("true");
 -    expect(root.style.getPropertyValue("--glass-opacity")).toBe("0.50");
-+    expect(root.style.getPropertyValue("--glass-opacity")).toBe("0.24");
-+    expect(root.style.getPropertyValue("--glass-reader-opacity")).toBe("0.130");
++    expect(root.style.getPropertyValue("--glass-opacity")).toBe("0.139");
++    expect(root.style.getPropertyValue("--glass-reader-opacity")).toBe("0.090");
      expect(root.style.getPropertyValue("--glass-blur")).toBe("18px");
      expect(root.style.getPropertyValue("--reader-font-scale")).toBe("1.15");
    });
++
++  it("renders the default 94.5% transmission profile without a milky tint", () => {
++    const root = document.createElement("html");
++    applyAppearance(DEFAULT_APPEARANCE, undefined, root);
++    expect(root.style.getPropertyValue("--glass-opacity")).toBe("0.032");
++    expect(root.style.getPropertyValue("--glass-panel-opacity")).toBe("0.042");
++    expect(root.style.getPropertyValue("--glass-control-opacity")).toBe("0.050");
++    expect(root.style.getPropertyValue("--glass-reader-opacity")).toBe("0.029");
++  });
 +
 +  it("migrates glass settings from the previous appearance key without restoring themes", () => {
 +    const legacy = JSON.stringify({
@@ -8249,7 +8258,7 @@ index a90656c..1f46a32 100644
 +  });
  });
 diff --git a/web/src/features/appearance/appearance.ts b/web/src/features/appearance/appearance.ts
-index 017aaae..387148f 100644
+index 017aaae..43cf7c5 100644
 --- a/web/src/features/appearance/appearance.ts
 +++ b/web/src/features/appearance/appearance.ts
 @@ -1,8 +1,6 @@
@@ -8299,33 +8308,37 @@ index 017aaae..387148f 100644
    } catch {
      return DEFAULT_APPEARANCE;
    }
-@@ -82,11 +85,23 @@ export function applyAppearance(
+@@ -82,11 +85,26 @@ export function applyAppearance(
    root: HTMLElement = document.documentElement
  ) {
    const normalized = normalizeAppearance(preferences);
 -  root.dataset.llTheme = normalized.theme;
+-  root.style.setProperty("--glass-opacity", normalized.glassOpacity.toFixed(2));
++  // Keep the visible tint lighter than the stored material opacity. Blur and
++  // highlight layers otherwise make a high-transmission setting look milky.
++  const renderedOpacity = Math.max(0.012, normalized.glassOpacity * 0.58);
 +  delete root.dataset.llTheme;
-   root.style.setProperty("--glass-opacity", normalized.glassOpacity.toFixed(2));
++  root.style.setProperty("--glass-opacity", renderedOpacity.toFixed(3));
    root.style.setProperty(
      "--glass-panel-opacity",
 -    Math.min(0.88, normalized.glassOpacity + 0.14).toFixed(2)
-+    Math.min(0.15, normalized.glassOpacity + 0.018).toFixed(3)
++    Math.min(0.15, renderedOpacity + 0.01).toFixed(3)
 +  );
 +  root.style.setProperty(
 +    "--glass-control-opacity",
-+    Math.min(0.19, normalized.glassOpacity + 0.04).toFixed(3)
++    Math.min(0.17, renderedOpacity + 0.018).toFixed(3)
 +  );
 +  root.style.setProperty(
 +    "--glass-reader-opacity",
-+    Math.min(0.13, normalized.glassOpacity + 0.008).toFixed(3)
++    Math.min(0.09, renderedOpacity * 0.82 + 0.003).toFixed(3)
 +  );
 +  root.style.setProperty(
 +    "--glass-readability-opacity",
-+    Math.max(0.012, 0.028 - normalized.glassOpacity * 0.08).toFixed(3)
++    Math.max(0.006, 0.012 - normalized.glassOpacity * 0.018).toFixed(3)
    );
    root.style.setProperty("--glass-blur", `${normalized.glassBlur}px`);
    root.style.setProperty("--reader-font-family", FONT_STACKS[normalized.readerFont]);
-@@ -105,9 +120,8 @@ export function normalizeAppearance(
+@@ -105,9 +123,8 @@ export function normalizeAppearance(
    value: Partial<AppearancePreferences>
  ): AppearancePreferences {
    return {
@@ -8337,7 +8350,7 @@ index 017aaae..387148f 100644
      readerFont: isReaderFont(value.readerFont) ? value.readerFont : DEFAULT_APPEARANCE.readerFont,
      readerScale: clamp(value.readerScale, 0.9, 1.3, DEFAULT_APPEARANCE.readerScale),
      readerLineHeight: clamp(
-@@ -119,10 +133,6 @@ export function normalizeAppearance(
+@@ -119,10 +136,6 @@ export function normalizeAppearance(
    };
  }
  
@@ -8469,7 +8482,7 @@ index d6fc26f..2416a6c 100644
    sessionId: string;
    title: string;
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197..fa63cdf 100644
+index 2523197..27e60e6 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
 @@ -2,6 +2,166 @@ import { describe, expect, it, vi } from "vitest";
@@ -8646,12 +8659,12 @@ index 2523197..fa63cdf 100644
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
 +    expect(message).toContain("resourceVersion=app-v0214");
-+    expect(message).toContain("appVersion=0.2.18");
++    expect(message).toContain("appVersion=0.2.19");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f..4605387 100644
+index fd4eb1f..c8f4cb1 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
 @@ -1,5 +1,14 @@
@@ -8683,7 +8696,7 @@ index fd4eb1f..4605387 100644
 +};
 +
 +const RESOURCE_VERSION = "app-v0214";
-+const APP_VERSION = "0.2.18";
++const APP_VERSION = "0.2.19";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
  export class CloudSourceClient {
@@ -9228,7 +9241,7 @@ index bedb68d..5523a5f 100644
        <ReaderActions
          primaryLabel="陪我看看这里"
 diff --git a/web/src/styles/app.css b/web/src/styles/app.css
-index a60e55d..25a86a8 100644
+index a60e55d..b1f8a04 100644
 --- a/web/src/styles/app.css
 +++ b/web/src/styles/app.css
 @@ -2,8 +2,8 @@
@@ -9613,7 +9626,7 @@ index a60e55d..25a86a8 100644
  .sheet-action { width: 100%; margin-bottom: 9px; text-align: left; background: var(--surface); border: 1px solid var(--line); }
  .quiet-danger, .danger-button { color: var(--danger); }
  .danger-button { width: 100%; background: color-mix(in srgb, var(--peach) 55%, transparent); }
-@@ -1067,6 +1136,396 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+@@ -1067,6 +1136,402 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
    text-align: center;
  }
  
@@ -9691,8 +9704,8 @@ index a60e55d..25a86a8 100644
 +
 +.app :is(h1, h2, h3, strong, p, span, label, button, input, textarea) {
 +  text-shadow:
-+    0 1px 1px rgb(255 255 255 / .38),
-+    0 0 12px rgb(255 255 255 / .08);
++    0 1px 1px rgb(255 255 255 / .5),
++    0 0 10px rgb(255 255 255 / .13);
 +}
 +
 +.home-hero {
@@ -9771,10 +9784,10 @@ index a60e55d..25a86a8 100644
 +.font-choice[aria-pressed="true"],
 +.reader-actions .action-primary,
 +.action-primary {
-+  border-color: rgb(255 255 255 / .48);
++  border-color: rgb(255 255 255 / .58);
 +  background:
-+    linear-gradient(145deg, rgb(255 255 255 / .22), transparent 48%),
-+    linear-gradient(135deg, rgb(43 77 105 / .72), rgb(91 74 113 / .58));
++    linear-gradient(145deg, rgb(255 255 255 / .2), transparent 48%),
++    linear-gradient(135deg, rgb(43 77 105 / .48), rgb(91 74 113 / .38));
 +  color: #f8fbff;
 +  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
 +  backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
@@ -9857,11 +9870,11 @@ index a60e55d..25a86a8 100644
 +  -webkit-backdrop-filter: var(--glass-filter-strong);
 +  backdrop-filter: var(--glass-filter-strong);
 +  box-shadow:
-+    inset 0 1px 0 rgb(255 255 255 / .58),
-+    inset 1px 0 0 rgb(255 255 255 / .13),
++    inset 0 1.5px 0 rgb(255 255 255 / .72),
++    inset 1px 0 0 rgb(255 255 255 / .2),
 +    inset -1px -1px 0 rgb(26 66 94 / .075),
-+    inset 0 -18px 38px rgb(24 78 112 / .035),
-+    0 18px 48px rgb(24 51 72 / .11);
++    inset 0 -18px 38px rgb(24 78 112 / .018),
++    0 16px 42px rgb(24 51 72 / .075);
 +}
 +
 +.novel-paper p {
@@ -9902,9 +9915,9 @@ index a60e55d..25a86a8 100644
 +
 +.sheet-backdrop,
 +.appearance-backdrop {
-+  background: rgb(17 36 52 / .1);
-+  -webkit-backdrop-filter: blur(9px) saturate(1.18);
-+  backdrop-filter: blur(9px) saturate(1.18);
++  background: rgb(17 36 52 / .035);
++  -webkit-backdrop-filter: blur(3px) saturate(1.08);
++  backdrop-filter: blur(3px) saturate(1.08);
 +}
 +
 +.bottom-sheet,
@@ -9918,6 +9931,12 @@ index a60e55d..25a86a8 100644
 +    inset 0 1px 0 rgb(255 255 255 / .58),
 +    inset 1px 0 0 rgb(255 255 255 / .12),
 +    0 -20px 58px rgb(24 51 72 / .16);
++}
++
++.appearance-heading .icon-button {
++  background: var(--glass-control);
++  -webkit-backdrop-filter: var(--glass-filter);
++  backdrop-filter: var(--glass-filter);
 +}
 +
 +.appearance-section,
@@ -10010,7 +10029,7 @@ index a60e55d..25a86a8 100644
  @media (min-width: 700px) {
    .home-shell { padding-inline: 40px; }
    .mode-grid { grid-template-columns: 1fr 1fr; }
-@@ -1086,3 +1545,306 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
+@@ -1086,3 +1551,306 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
    .mode-card, .recent-row, button { transition: transform .16s ease, filter .16s ease; }
    .mode-card:active, .recent-row:active, button:active { transform: scale(.985); }
  }
@@ -10032,7 +10051,7 @@ index a60e55d..25a86a8 100644
 +  border: 1px solid var(--glass-border);
 +  border-radius: 24px;
 +  background:
-+    linear-gradient(145deg, rgb(255 255 255 / .12), transparent 52%),
++    linear-gradient(145deg, rgb(255 255 255 / .045), transparent 52%),
 +    rgb(var(--glass-rgb) / calc(var(--glass-opacity) * .62));
 +  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .82)) saturate(1.46);
 +  backdrop-filter: blur(calc(var(--glass-blur) * .82)) saturate(1.46);
@@ -10090,8 +10109,8 @@ index a60e55d..25a86a8 100644
 +.discussion-moods button[aria-pressed="true"] {
 +  border-color: rgb(255 255 255 / .72);
 +  background:
-+    linear-gradient(145deg, rgb(255 255 255 / .25), transparent),
-+    linear-gradient(135deg, rgb(85 125 153 / .52), rgb(135 102 139 / .42));
++    linear-gradient(145deg, rgb(255 255 255 / .18), transparent),
++    linear-gradient(135deg, rgb(85 125 153 / .4), rgb(135 102 139 / .32));
 +  color: #fff;
 +  box-shadow:
 +    inset 0 1px 0 rgb(255 255 255 / .54),
@@ -10105,8 +10124,8 @@ index a60e55d..25a86a8 100644
 +}
 +.discussion-card-actions .discussion-reply-button {
 +  background:
-+    linear-gradient(145deg, rgb(255 255 255 / .2), transparent),
-+    linear-gradient(135deg, rgb(43 77 105 / .7), rgb(91 74 113 / .56));
++    linear-gradient(145deg, rgb(255 255 255 / .16), transparent),
++    linear-gradient(135deg, rgb(43 77 105 / .48), rgb(91 74 113 / .38));
 +  color: #f8fbff;
 +}
 +.discussion-card-actions .discussion-light-button { color: var(--sage-strong); }
@@ -10119,9 +10138,9 @@ index a60e55d..25a86a8 100644
 +  align-items: flex-end;
 +  justify-content: center;
 +  padding-top: max(48px, var(--safe-top));
-+  background: rgb(14 32 46 / .14);
-+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
-+  backdrop-filter: blur(10px) saturate(1.2);
++  background: rgb(14 32 46 / .04);
++  -webkit-backdrop-filter: blur(4px) saturate(1.08);
++  backdrop-filter: blur(4px) saturate(1.08);
 +}
 +.discussion-drawer {
 +  display: grid;
@@ -10135,7 +10154,7 @@ index a60e55d..25a86a8 100644
 +  border-bottom: 0;
 +  border-radius: 30px 30px 0 0;
 +  background:
-+    linear-gradient(155deg, rgb(255 255 255 / .14), transparent 48%),
++    linear-gradient(155deg, rgb(255 255 255 / .05), transparent 48%),
 +    rgb(var(--glass-rgb) / calc(var(--glass-opacity) * .76));
 +  -webkit-backdrop-filter: var(--glass-filter-strong);
 +  backdrop-filter: var(--glass-filter-strong);
@@ -10244,8 +10263,8 @@ index a60e55d..25a86a8 100644
 +  border: 1px solid var(--glass-border-soft);
 +  border-radius: 14px;
 +  background:
-+    linear-gradient(145deg, rgb(255 255 255 / .18), transparent),
-+    rgb(49 83 111 / .68);
++    linear-gradient(145deg, rgb(255 255 255 / .14), transparent),
++    rgb(49 83 111 / .46);
 +  color: #fff;
 +  font-weight: 760;
 +}
@@ -10318,7 +10337,7 @@ index a60e55d..25a86a8 100644
 +  .discussion-composer { padding-bottom: calc(18px + var(--safe-bottom)); }
 +}
 diff --git a/web/src/styles/tokens.css b/web/src/styles/tokens.css
-index f68bf4f..ada1a13 100644
+index f68bf4f..edbd7ca 100644
 --- a/web/src/styles/tokens.css
 +++ b/web/src/styles/tokens.css
 @@ -1,34 +1,66 @@
@@ -10365,33 +10384,33 @@ index f68bf4f..ada1a13 100644
 +  --backdrop-a: #91b6d2;
 +  --backdrop-b: #d8b9ce;
 +  --backdrop-c: #a6c8c6;
-+  --glass-rgb: 119 170 204;
-+  --glass-opacity: 0.055;
-+  --glass-panel-opacity: 0.073;
-+  --glass-control-opacity: 0.095;
-+  --glass-reader-opacity: 0.063;
-+  --glass-readability-opacity: 0.024;
++  --glass-rgb: 238 247 252;
++  --glass-opacity: 0.032;
++  --glass-panel-opacity: 0.042;
++  --glass-control-opacity: 0.05;
++  --glass-reader-opacity: 0.029;
++  --glass-readability-opacity: 0.011;
 +  --glass-blur: 16px;
-+  --glass-border: rgb(255 255 255 / 0.48);
-+  --glass-border-soft: rgb(255 255 255 / 0.32);
-+  --glass-highlight: rgb(255 255 255 / 0.62);
++  --glass-border: rgb(255 255 255 / 0.56);
++  --glass-border-soft: rgb(255 255 255 / 0.36);
++  --glass-highlight: rgb(255 255 255 / 0.76);
 +  --glass-surface:
-+    linear-gradient(138deg, rgb(255 255 255 / 0.095), transparent 31%, rgb(39 103 145 / 0.03) 68%, rgb(255 255 255 / 0.035)),
++    linear-gradient(138deg, rgb(255 255 255 / 0.046), transparent 31%, rgb(39 103 145 / 0.014) 68%, rgb(255 255 255 / 0.018)),
 +    linear-gradient(180deg, rgb(255 255 255 / var(--glass-readability-opacity)), transparent 54%),
 +    rgb(var(--glass-rgb) / var(--glass-opacity));
 +  --glass-panel:
-+    linear-gradient(142deg, rgb(255 255 255 / 0.105), transparent 28%, rgb(34 95 138 / 0.034) 65%, rgb(255 255 255 / 0.038)),
++    linear-gradient(142deg, rgb(255 255 255 / 0.05), transparent 28%, rgb(34 95 138 / 0.016) 65%, rgb(255 255 255 / 0.02)),
 +    linear-gradient(180deg, rgb(255 255 255 / var(--glass-readability-opacity)), transparent 58%),
 +    rgb(var(--glass-rgb) / var(--glass-panel-opacity));
 +  --glass-control:
-+    linear-gradient(145deg, rgb(255 255 255 / 0.13), transparent 43%, rgb(36 98 139 / 0.04)),
++    linear-gradient(145deg, rgb(255 255 255 / 0.062), transparent 43%, rgb(36 98 139 / 0.018)),
 +    rgb(var(--glass-rgb) / var(--glass-control-opacity));
 +  --glass-reader:
-+    linear-gradient(135deg, rgb(255 255 255 / 0.075), transparent 25%, rgb(31 91 132 / 0.025) 71%, rgb(255 255 255 / 0.03)),
++    linear-gradient(135deg, rgb(255 255 255 / 0.038), transparent 25%, rgb(31 91 132 / 0.012) 71%, rgb(255 255 255 / 0.016)),
 +    linear-gradient(180deg, rgb(255 255 255 / var(--glass-readability-opacity)), transparent 43%),
 +    rgb(var(--glass-rgb) / var(--glass-reader-opacity));
-+  --glass-filter: blur(var(--glass-blur)) saturate(1.2) contrast(1.035);
-+  --glass-filter-strong: blur(calc(var(--glass-blur) + 2px)) saturate(1.24) contrast(1.04);
++  --glass-filter: blur(var(--glass-blur)) saturate(1.34) contrast(1.045) brightness(1.015);
++  --glass-filter-strong: blur(calc(var(--glass-blur) + 2px)) saturate(1.4) contrast(1.05) brightness(1.018);
    --reader-font-family: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
    --reader-font-scale: 1;
    --reader-line-height: 1.86;
@@ -10403,15 +10422,15 @@ index f68bf4f..ada1a13 100644
 +  --shadow-soft: 0 12px 30px rgb(24 51 72 / 0.11);
 +  --glass-shadow:
 +    inset 0 1px 0 var(--glass-highlight),
-+    inset 1px 0 0 rgb(255 255 255 / 0.13),
-+    inset -1px -1px 0 rgb(17 55 82 / 0.065),
-+    inset 0 -10px 24px rgb(22 75 111 / 0.025),
-+    0 16px 42px rgb(20 50 73 / 0.1);
++    inset 1px 0 0 rgb(255 255 255 / 0.2),
++    inset -1px -1px 0 rgb(17 55 82 / 0.075),
++    inset 0 -12px 28px rgb(22 75 111 / 0.018),
++    0 14px 38px rgb(20 50 73 / 0.075);
 +  --glass-shadow-soft:
-+    inset 0 1px 0 rgb(255 255 255 / 0.54),
-+    inset 1px 0 0 rgb(255 255 255 / 0.12),
-+    inset -1px -1px 0 rgb(17 55 82 / 0.055),
-+    0 9px 24px rgb(20 50 73 / 0.09);
++    inset 0 1px 0 rgb(255 255 255 / 0.64),
++    inset 1px 0 0 rgb(255 255 255 / 0.16),
++    inset -1px -1px 0 rgb(17 55 82 / 0.06),
++    0 8px 22px rgb(20 50 73 / 0.065);
    --radius-lg: 28px;
    --radius-md: 20px;
    --safe-top: env(safe-area-inset-top, 0px);
