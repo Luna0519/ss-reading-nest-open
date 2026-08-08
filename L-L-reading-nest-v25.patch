@@ -160,7 +160,7 @@ index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..038ffd8ca53191de7118b35e34661b51
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 81737592c12db53b0f77280f424ac1c7422fed9a..c9e6dd38423ce7db5c592f5d9715cf1d8a72977a 100644
+index 81737592c12db53b0f77280f424ac1c7422fed9a..d657132a1a492d1788c418a0caa997875f2581a2 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -197,10 +197,10 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..c9e6dd38423ce7db5c592f5d9715cf1d
    assert(tools.tools.length === 23, `expected 23 tools, got ${tools.tools.length}`);
    const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
    assert(Boolean(openTool?._meta?.ui), "open_reading_nest is missing its UI resource metadata");
-+  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0214.html";
++  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0215.html";
 +  assert(
 +    openTool?._meta?.ui?.resourceUri === primaryTemplateUri,
-+    "open_reading_nest is not pointing at the v0214 UI resource"
++    "open_reading_nest is not pointing at the v0215 UI resource"
 +  );
 +  assert(
 +    openTool?._meta?.["ui/resourceUri"] === primaryTemplateUri,
@@ -242,7 +242,7 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..c9e6dd38423ce7db5c592f5d9715cf1d
 +    );
 +  }
 +  const templateDescriptor = resources.resources.find((resource) => resource.uri === primaryTemplateUri);
-+  assert(Boolean(templateDescriptor), "v0214 UI resource was not listed");
++  assert(Boolean(templateDescriptor), "v0215 UI resource was not listed");
 +
 +  const templateResult = await client.readResource({ uri: primaryTemplateUri });
 +  const template = templateResult.contents.find((content) => content.uri === primaryTemplateUri);
@@ -311,7 +311,7 @@ index 3a031d8f71be198d6852d79a24240a8200c0f4e7..7a79428938f473d23d1c44301a55ba57
 +  export default content;
 +}
 diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
-index e4c685d13228068801b94b092509e01e9a00c149..c0551de159228681116b623cfdebc4d13ca4c5a0 100644
+index e4c685d13228068801b94b092509e01e9a00c149..e5b2dbb760a978c463be7063634d22f15e3b4d99 100644
 --- a/server/src/mcp/register-resource.test.ts
 +++ b/server/src/mcp/register-resource.test.ts
 @@ -3,34 +3,67 @@ import { describe, expect, it, vi } from "vitest";
@@ -341,8 +341,8 @@ index e4c685d13228068801b94b092509e01e9a00c149..c0551de159228681116b623cfdebc4d1
  
 -    expect(READING_NEST_URI).toBe("ui://ss-reading-nest/app-v24.html");
 -    expect(uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0214.html");
-+    expect(uri).toBe("ui://widget/ll-reading-nest-v0214.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0215.html");
++    expect(uri).toBe("ui://widget/ll-reading-nest-v0215.html");
 +    expect(registerAppResource.mock.calls.map((call) => call[2])).toEqual([
 +      READING_NEST_URI,
 +      ...READING_NEST_COMPAT_URIS
@@ -360,7 +360,7 @@ index e4c685d13228068801b94b092509e01e9a00c149..c0551de159228681116b623cfdebc4d1
  
      const loaded = await loader();
 -    expect(loaded.contents[0].uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0214.html");
++    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0215.html");
 +    expect(loaded.contents[0].mimeType).toBe("text/html;profile=mcp-app");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-styles");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-script");
@@ -501,7 +501,7 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..d235656c0bde112be9c109df853adfbc
 +  return new URL(value).origin;
  }
 diff --git a/server/src/mcp/register-tools.test.ts b/server/src/mcp/register-tools.test.ts
-index 764054784994f1f1ca68789fa9c713a8133d132a..11b22db2e4f5b43eb2609dc0f8463f137ad45aba 100644
+index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f371eb07d 100644
 --- a/server/src/mcp/register-tools.test.ts
 +++ b/server/src/mcp/register-tools.test.ts
 @@ -1,6 +1,7 @@
@@ -520,7 +520,7 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..11b22db2e4f5b43eb2609dc0f8463f13
 +      resourceUri: READING_NEST_URI,
 +      visibility: ["model", "app"]
      });
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0214.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0215.html");
 +    expect(TOOL_CONFIGS.open_reading_nest._meta?.["ui/resourceUri"]).toBe(
 +      READING_NEST_URI
 +    );
@@ -606,7 +606,7 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..11b22db2e4f5b43eb2609dc0f8463f13
        sessionId: "session-1",
        sourceKind: "pasted_text",
 diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
-index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff2d9897f4 100644
+index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938370d8204 100644
 --- a/server/src/mcp/register-tools.ts
 +++ b/server/src/mcp/register-tools.ts
 @@ -3,12 +3,18 @@ import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
@@ -636,7 +636,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
    setReadingSessionStatusInputSchema,
    setSourceManifestInputSchema,
    startReadingSessionInputSchema,
-@@ -27,10 +34,22 @@ import {
+@@ -27,10 +34,23 @@ import {
  } from "@ss/shared";
  import type { ReadingSession, SendCurrentContextInput, SourceManifest } from "@ss/shared";
  import { ReadingService } from "../services/reading-service.js";
@@ -648,8 +648,9 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
  import { toolResult } from "./tool-result.js";
  
 -export const READING_NEST_URI = "ui://ss-reading-nest/app-v24.html";
-+export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0214.html";
++export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0215.html";
 +export const READING_NEST_COMPAT_URIS = [
++  "ui://widget/ll-reading-nest-v0214.html",
 +  "ui://widget/ll-reading-nest-v0213.html",
 +  "ui://widget/ll-reading-nest-v0211.html",
 +  "ui://widget/ll-reading-nest-v27.html",
@@ -660,7 +661,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
  
  const readOnly = {
    readOnlyHint: true,
-@@ -48,10 +67,13 @@ export const TOOL_CONFIGS = {
+@@ -48,10 +68,13 @@ export const TOOL_CONFIGS = {
      title: "打开 L&L 共读小窝",
      description: "Use this when the user wants to open the reading nest or continue recent reading.",
      inputSchema: openReadingNestInputSchema,
@@ -675,7 +676,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
        "openai/toolInvocation/invoking": "正在点亮小窝…",
        "openai/toolInvocation/invoked": "小窝已经准备好"
      }
-@@ -69,7 +91,7 @@ export const TOOL_CONFIGS = {
+@@ -69,7 +92,7 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    confirm_assistant_synced_position: {
@@ -684,7 +685,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
      description:
        "Use this only after the user explicitly confirms that ChatGPT replied it has read through a batch end.",
      inputSchema: confirmAssistantSyncedPositionInputSchema,
-@@ -124,26 +146,68 @@ export const TOOL_CONFIGS = {
+@@ -124,26 +147,68 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    publish_companion_comment: {
@@ -756,7 +757,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
    rename_reading_session: {
      title: "重命名书籍",
      description: "Use this when the user explicitly changes one reading session title.",
-@@ -217,6 +281,7 @@ export const TOOL_CONFIGS = {
+@@ -217,6 +282,7 @@ export const TOOL_CONFIGS = {
  export function registerReadingTools(
    server: McpServer,
    service: ReadingService,
@@ -764,7 +765,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
    cloudSourceService?: CloudSourceService,
    options: { sourceEndpointBase?: string } = {}
  ) {
-@@ -239,6 +304,7 @@ export function registerReadingTools(
+@@ -239,6 +305,7 @@ export function registerReadingTools(
        ...response,
        _meta: {
          cloudSourceEnabled: Boolean(cloudSourceService),
@@ -772,7 +773,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
          ...(options.sourceEndpointBase ? { sourceEndpointBase: options.sourceEndpointBase } : {})
        }
      };
-@@ -282,7 +348,7 @@ export function registerReadingTools(
+@@ -282,7 +349,7 @@ export function registerReadingTools(
            confirmedBatchId: input.batchId,
            updatedAt: session.updatedAt
          },
@@ -781,7 +782,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
        );
      }
    );
-@@ -399,6 +465,20 @@ export function registerReadingTools(
+@@ -399,6 +466,20 @@ export function registerReadingTools(
      "publish_companion_comment",
      TOOL_CONFIGS.publish_companion_comment,
      async (input) => {
@@ -802,7 +803,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
        const comment = await service.publishCompanionComment(input);
        return toolResult(
          { saved: true, comment },
-@@ -412,7 +492,7 @@ export function registerReadingTools(
+@@ -412,7 +493,7 @@ export function registerReadingTools(
      TOOL_CONFIGS.list_companion_comments,
      async (input) => {
        const result = await service.listCompanionComments(input);
@@ -811,7 +812,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
      }
    );
  
-@@ -428,6 +508,66 @@ export function registerReadingTools(
+@@ -428,6 +509,66 @@ export function registerReadingTools(
      }
    );
  
@@ -878,7 +879,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d85d60b1cd78c362db4b4bd8439bb9ff
    server.registerTool(
      "rename_reading_session",
      TOOL_CONFIGS.rename_reading_session,
-@@ -471,6 +611,7 @@ export function registerReadingTools(
+@@ -471,6 +612,7 @@ export function registerReadingTools(
        const result = await service.deleteSession(sessionId, operationId, {
          deleteCloudSource: false
        });
@@ -2599,7 +2600,7 @@ index 282f116eb4575c838544f3ac0d164a767a7db760..f7c5920077374be332c6ccceea1fb62f
    const value = (await request.json()) as unknown;
    if (!value || typeof value !== "object" || Array.isArray(value)) {
 diff --git a/server/src/standalone-pwa.test.ts b/server/src/standalone-pwa.test.ts
-index ea35efc2291adbaa285eb936597afa90b5fee935..af52c4cf3ba4bb704a3b870abff2ec35f124a278 100644
+index ea35efc2291adbaa285eb936597afa90b5fee935..2ce3abfa45edc0d377b2bcff948622724c37a1c2 100644
 --- a/server/src/standalone-pwa.test.ts
 +++ b/server/src/standalone-pwa.test.ts
 @@ -1,15 +1,51 @@
@@ -2646,13 +2647,13 @@ index ea35efc2291adbaa285eb936597afa90b5fee935..af52c4cf3ba4bb704a3b870abff2ec35
    it("adds install metadata and service-worker registration to the widget shell", () => {
 -    const html = buildStandaloneHtml("<html><head><title>Nest</title></head><body>reader</body></html>");
 +    const html = buildStandaloneHtml(
-+      '<html><head><title>Nest</title><link rel="stylesheet" href="/widget-assets/v0214/ll-reading-nest-v0214.css"></head><body>reader<script src="/widget-assets/v0214/ll-reading-nest-v0214.bundle.js"></script></body></html>'
++      '<html><head><title>Nest</title><link rel="stylesheet" href="/widget-assets/v0215/ll-reading-nest-v0215.css"></head><body>reader<script src="/widget-assets/v0215/ll-reading-nest-v0215.bundle.js"></script></body></html>'
 +    );
      expect(html).toContain('name="sxs-standalone"');
      expect(html).toContain('rel="manifest" href="./manifest.webmanifest"');
      expect(html).toContain('navigator.serviceWorker.register("./sw.js"');
-+    expect(html).toContain("ll-reading-nest-v0214.css?v=glass3");
-+    expect(html).toContain("ll-reading-nest-v0214.bundle.js?v=glass3");
++    expect(html).toContain("ll-reading-nest-v0215.css?v=glass4");
++    expect(html).toContain("ll-reading-nest-v0215.bundle.js?v=glass4");
      expect(html).toContain("reader");
    });
  
@@ -2671,21 +2672,21 @@ index ea35efc2291adbaa285eb936597afa90b5fee935..af52c4cf3ba4bb704a3b870abff2ec35
      const response = handleStandaloneApp(new Request(swUrl), new URL(swUrl), token, "");
      const script = await response.text();
 -    expect(script).toContain('const SHELL = ["./", "./manifest.webmanifest", "./icon.svg"]');
-+    expect(script).toContain("/widget-assets/v0214/ll-reading-nest-v0214.bundle.js?v=glass3");
-+    expect(script).toContain("/widget-assets/v0214/ll-reading-nest-v0214.css?v=glass3");
++    expect(script).toContain("/widget-assets/v0215/ll-reading-nest-v0215.bundle.js?v=glass4");
++    expect(script).toContain("/widget-assets/v0215/ll-reading-nest-v0215.css?v=glass4");
      expect(script).not.toContain("/mcp/");
      expect(script).not.toContain("/source/");
    });
 diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
-index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..199f7262d5a547987ac4f80528dd7f0d5e4f2440 100644
+index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..0cd606cad6e5ef7f185597c2939731793f342971 100644
 --- a/server/src/standalone-pwa.ts
 +++ b/server/src/standalone-pwa.ts
 @@ -1,4 +1,107 @@
 -const SHELL_CACHE_VERSION = "v24";
 +import { WIDGET_SCRIPT_PATH, WIDGET_STYLE_PATH } from "./widget-assets.js";
 +
-+const SHELL_CACHE_VERSION = "v0214-glass3";
-+const STANDALONE_ASSET_REVISION = "glass3";
++const SHELL_CACHE_VERSION = "v0215-glass4";
++const STANDALONE_ASSET_REVISION = "glass4";
 +const SESSION_COOKIE_NAME = "__Secure-ll_nest_session";
 +const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 +
@@ -3207,16 +3208,18 @@ index 0000000000000000000000000000000000000000..567e623e065eca6509d9d1bc019472a4
 +}
 diff --git a/server/src/widget-assets.test.ts b/server/src/widget-assets.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..62d1b2f607b022f3a5ee7f57cb448ba5d7131ea9
+index 0000000000000000000000000000000000000000..1650849ed75cff48fdb9ab332c0c806a574bdd3f
 --- /dev/null
 +++ b/server/src/widget-assets.test.ts
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,136 @@
 +import { describe, expect, it } from "vitest";
 +import {
 +  buildInlineWidgetHtml,
 +  handleWidgetAsset,
 +  LEGACY_WIDGET_SCRIPT_PATH,
 +  LEGACY_WIDGET_STYLE_PATH,
++  OLDER_WIDGET_SCRIPT_PATH,
++  OLDER_WIDGET_STYLE_PATH,
 +  PREVIOUS_WIDGET_SCRIPT_PATH,
 +  PREVIOUS_WIDGET_STYLE_PATH,
 +  WIDGET_SCRIPT_PATH,
@@ -3293,7 +3296,7 @@ index 0000000000000000000000000000000000000000..62d1b2f607b022f3a5ee7f57cb448ba5
 +    expect(await styles.text()).toBe(assets.styles);
 +  });
 +
-+  it("keeps the immediately previous v0213 asset URLs alive", async () => {
++  it("keeps the immediately previous v0214 asset URLs alive", async () => {
 +    const script = handleWidgetAsset(
 +      new Request(`https://example.workers.dev${PREVIOUS_WIDGET_SCRIPT_PATH}`),
 +      new URL(`https://example.workers.dev${PREVIOUS_WIDGET_SCRIPT_PATH}`),
@@ -3302,6 +3305,24 @@ index 0000000000000000000000000000000000000000..62d1b2f607b022f3a5ee7f57cb448ba5
 +    const styles = handleWidgetAsset(
 +      new Request(`https://example.workers.dev${PREVIOUS_WIDGET_STYLE_PATH}`),
 +      new URL(`https://example.workers.dev${PREVIOUS_WIDGET_STYLE_PATH}`),
++      assets
++    );
++
++    expect(script.status).toBe(200);
++    expect(await script.text()).toBe(assets.script);
++    expect(styles.status).toBe(200);
++    expect(await styles.text()).toBe(assets.styles);
++  });
++
++  it("keeps the older v0213 asset URLs alive", async () => {
++    const script = handleWidgetAsset(
++      new Request(`https://example.workers.dev${OLDER_WIDGET_SCRIPT_PATH}`),
++      new URL(`https://example.workers.dev${OLDER_WIDGET_SCRIPT_PATH}`),
++      assets
++    );
++    const styles = handleWidgetAsset(
++      new Request(`https://example.workers.dev${OLDER_WIDGET_STYLE_PATH}`),
++      new URL(`https://example.workers.dev${OLDER_WIDGET_STYLE_PATH}`),
 +      assets
 +    );
 +
@@ -3329,16 +3350,19 @@ index 0000000000000000000000000000000000000000..62d1b2f607b022f3a5ee7f57cb448ba5
 +});
 diff --git a/server/src/widget-assets.ts b/server/src/widget-assets.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a088a245e9bd5b801605c465bbf0174b5c7621a
+index 0000000000000000000000000000000000000000..318fa52e943d2f77fd878d28c09222d0b1f26eff
 --- /dev/null
 +++ b/server/src/widget-assets.ts
-@@ -0,0 +1,101 @@
-+export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0214";
-+export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0214.bundle.js`;
-+export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0214.css`;
+@@ -0,0 +1,108 @@
++export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0215";
++export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0215.bundle.js`;
++export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0215.css`;
 +export const PREVIOUS_WIDGET_SCRIPT_PATH =
++  "/widget-assets/v0214/ll-reading-nest-v0214.bundle.js";
++export const PREVIOUS_WIDGET_STYLE_PATH = "/widget-assets/v0214/ll-reading-nest-v0214.css";
++export const OLDER_WIDGET_SCRIPT_PATH =
 +  "/widget-assets/v0213/ll-reading-nest-v0213.bundle.js";
-+export const PREVIOUS_WIDGET_STYLE_PATH = "/widget-assets/v0213/ll-reading-nest-v0213.css";
++export const OLDER_WIDGET_STYLE_PATH = "/widget-assets/v0213/ll-reading-nest-v0213.css";
 +export const LEGACY_WIDGET_SCRIPT_PATH =
 +  "/widget-assets/v26/ll-reading-nest-v26.bundle.js";
 +export const LEGACY_WIDGET_STYLE_PATH = "/widget-assets/v26/ll-reading-nest-v26.css";
@@ -3354,6 +3378,8 @@ index 0000000000000000000000000000000000000000..3a088a245e9bd5b801605c465bbf0174
 +    pathname === WIDGET_STYLE_PATH ||
 +    pathname === PREVIOUS_WIDGET_SCRIPT_PATH ||
 +    pathname === PREVIOUS_WIDGET_STYLE_PATH ||
++    pathname === OLDER_WIDGET_SCRIPT_PATH ||
++    pathname === OLDER_WIDGET_STYLE_PATH ||
 +    pathname === LEGACY_WIDGET_SCRIPT_PATH ||
 +    pathname === LEGACY_WIDGET_STYLE_PATH
 +  );
@@ -3397,6 +3423,7 @@ index 0000000000000000000000000000000000000000..3a088a245e9bd5b801605c465bbf0174
 +  if (
 +    url.pathname === WIDGET_SCRIPT_PATH ||
 +    url.pathname === PREVIOUS_WIDGET_SCRIPT_PATH ||
++    url.pathname === OLDER_WIDGET_SCRIPT_PATH ||
 +    url.pathname === LEGACY_WIDGET_SCRIPT_PATH
 +  ) {
 +    return assetResponse(request, assets.script, "text/javascript; charset=utf-8");
@@ -3404,6 +3431,7 @@ index 0000000000000000000000000000000000000000..3a088a245e9bd5b801605c465bbf0174
 +  if (
 +    url.pathname === WIDGET_STYLE_PATH ||
 +    url.pathname === PREVIOUS_WIDGET_STYLE_PATH ||
++    url.pathname === OLDER_WIDGET_STYLE_PATH ||
 +    url.pathname === LEGACY_WIDGET_STYLE_PATH
 +  ) {
 +    return assetResponse(request, assets.styles, "text/css; charset=utf-8");
@@ -3435,10 +3463,10 @@ index 0000000000000000000000000000000000000000..3a088a245e9bd5b801605c465bbf0174
 +  return value.replace(/<\/style/gi, "<\\/style");
 +}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705c2ccadfeece1585fb2d379b7846862cae..12ee247daf3e21f1c961f4f68d91f1e7dadd71d7 100644
+index 1e35705c2ccadfeece1585fb2d379b7846862cae..0469e5b983eda2ca8d30f284ef4e2c62b0c13b33 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
-@@ -4,6 +4,42 @@ import { getWorkerRoute } from "./worker-router.js";
+@@ -4,6 +4,48 @@ import { getWorkerRoute } from "./worker-router.js";
  describe("getWorkerRoute", () => {
    it("keeps health public without exposing the token", () => {
      expect(getWorkerRoute(new URL("https://example.workers.dev/health"), "secret")).toBe("health");
@@ -3450,13 +3478,19 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..12ee247daf3e21f1c961f4f68d91f1e7
 +  it("serves only the versioned public widget assets without requiring the private token", () => {
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0214/ll-reading-nest-v0214.bundle.js"),
++        new URL("https://example.workers.dev/widget-assets/v0215/ll-reading-nest-v0215.bundle.js"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0214/ll-reading-nest-v0214.css"),
++        new URL("https://example.workers.dev/widget-assets/v0215/ll-reading-nest-v0215.css"),
++        undefined
++      )
++    ).toBe("widget-asset");
++    expect(
++      getWorkerRoute(
++        new URL("https://example.workers.dev/widget-assets/v0214/ll-reading-nest-v0214.bundle.js"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
@@ -3474,14 +3508,14 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..12ee247daf3e21f1c961f4f68d91f1e7
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0214/private.json"),
++        new URL("https://example.workers.dev/widget-assets/v0215/private.json"),
 +        undefined
 +      )
 +    ).toBe("misconfigured");
    });
  
    it("accepts only the exact private MCP path", () => {
-@@ -13,6 +49,8 @@ describe("getWorkerRoute", () => {
+@@ -13,6 +55,8 @@ describe("getWorkerRoute", () => {
    });
  
    it("routes only the private standalone reader shell", () => {
@@ -3490,7 +3524,7 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..12ee247daf3e21f1c961f4f68d91f1e7
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/"), "secret")).toBe("app");
      expect(getWorkerRoute(new URL("https://example.workers.dev/app/secret/manifest.webmanifest"), "secret")).toBe("app");
-@@ -25,6 +63,18 @@ describe("getWorkerRoute", () => {
+@@ -25,6 +69,18 @@ describe("getWorkerRoute", () => {
    it("routes only exact private source paths", () => {
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/upload"), "secret")).toBe("source");
      expect(getWorkerRoute(new URL("https://example.workers.dev/source/secret/restore"), "secret")).toBe("source");
@@ -3556,14 +3590,14 @@ index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..3098de31bea4b58d29d3df790ec4c676
      return "source";
    }
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..5f426a974ef3ed8e6cda6d2dc286378e99abf201 100644
+index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..adb4bb199fa631c8aa4f72f60d21a91408753e60 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
 @@ -1,22 +1,57 @@
  import { createMcpHandler } from "agents/mcp";
  import widgetHtml from "../../web/dist/index.html";
-+import widgetScript from "../../web/dist/ll-reading-nest-v0214.bundle.js";
-+import widgetStyles from "../../web/dist/ll-reading-nest-v0214.css";
++import widgetScript from "../../web/dist/ll-reading-nest-v0215.bundle.js";
++import widgetStyles from "../../web/dist/ll-reading-nest-v0215.css";
  import { createMcpServerFromRepository } from "./mcp/server-factory.js";
  import { D1ReadingRepository } from "./repositories/d1-reading-repository.js";
 +import { D1ReadingDiscussionRepository } from "./repositories/d1-reading-discussion-repository.js";
@@ -4069,7 +4103,7 @@ index d5e154d051a9fdffeb4ca117723a7ff4b14b7acb..62f4193231f76236f6e9328d8239a55a
    .object({
      sessionId: sessionIdSchema,
 diff --git a/web/index.html b/web/index.html
-index b26131350103fa1e2f004ff508fea591ef27e284..d283626d667f108f0ff6e1e2d1e04743c2d78409 100644
+index b26131350103fa1e2f004ff508fea591ef27e284..c4480446c0802dea117a51e56fa4a8973f19fbae 100644
 --- a/web/index.html
 +++ b/web/index.html
 @@ -3,14 +3,14 @@
@@ -4094,7 +4128,7 @@ index b26131350103fa1e2f004ff508fea591ef27e284..d283626d667f108f0ff6e1e2d1e04743
          <dl style="display:grid;grid-template-columns:max-content 1fr;gap:8px 14px">
            <dt>resourceVersion</dt>
 -          <dd>app-v24</dd>
-+          <dd>app-v0214</dd>
++          <dd>app-v0215</dd>
            <dt>bootStage</dt>
            <dd>html-loaded</dd>
          </dl>
@@ -6522,7 +6556,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
    return {
      kind: type === "novel" ? "paragraph" : "page",
 diff --git a/web/src/Boot.test.tsx b/web/src/Boot.test.tsx
-index abd502381499a52c09052f004b1ebb609a5639f1..89a4375238c28acb0ce6251938aca39ce9a2480c 100644
+index abd502381499a52c09052f004b1ebb609a5639f1..653d43156048f8f4878754f87116c10a930b40f3 100644
 --- a/web/src/Boot.test.tsx
 +++ b/web/src/Boot.test.tsx
 @@ -46,7 +46,7 @@ describe("Boot", () => {
@@ -6530,7 +6564,7 @@ index abd502381499a52c09052f004b1ebb609a5639f1..89a4375238c28acb0ce6251938aca39c
  
      expect(await screen.findByText("failed")).toBeInTheDocument();
 -    expect(screen.getByText("app-v24")).toBeInTheDocument();
-+    expect(screen.getByText("app-v0214")).toBeInTheDocument();
++    expect(screen.getByText("app-v0215")).toBeInTheDocument();
      expect(screen.getAllByText("present")).toHaveLength(3);
      expect(screen.getByText("1")).toBeInTheDocument();
      const diagnosticText = screen.getByRole("alert").textContent ?? "";
@@ -6539,12 +6573,12 @@ index abd502381499a52c09052f004b1ebb609a5639f1..89a4375238c28acb0ce6251938aca39c
  
      expect(html).toContain("data-startup-fallback");
 -    expect(html).toContain("app-v24");
-+    expect(html).toContain("app-v0214");
++    expect(html).toContain("app-v0215");
      expect(html).not.toContain("sourceText");
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37b0c0ac24d0be3669363489c7474aed801..7a1d39225fb60611a593eb7d9cc78407197d450f 100644
+index c23bd37b0c0ac24d0be3669363489c7474aed801..e97a4228eca0147f498cf1e9711b58abdf8fc42d 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -6553,7 +6587,7 @@ index c23bd37b0c0ac24d0be3669363489c7474aed801..7a1d39225fb60611a593eb7d9cc78407
  
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
-+const RESOURCE_VERSION = "app-v0214";
++const RESOURCE_VERSION = "app-v0215";
 +const APP_VERSION = "0.2.19";
  
  type AppModule = {
@@ -8483,7 +8517,7 @@ index d6fc26f0671c933c4b04b98900aebaa38f40b4b8..2416a6cc51c04a53e66898343f9355d6
    sessionId: string;
    title: string;
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197e6ba2317df34567a63db060563be71fcc..27e60e6c453e40f5938b8f0d0f5451998aad124d 100644
+index 2523197e6ba2317df34567a63db060563be71fcc..9eabdfbb12a8a372bc80ea0d9898fc437c7d3053 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
 @@ -2,6 +2,166 @@ import { describe, expect, it, vi } from "vitest";
@@ -8659,13 +8693,13 @@ index 2523197e6ba2317df34567a63db060563be71fcc..27e60e6c453e40f5938b8f0d0f545199
  
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
-+    expect(message).toContain("resourceVersion=app-v0214");
++    expect(message).toContain("resourceVersion=app-v0215");
 +    expect(message).toContain("appVersion=0.2.19");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..c8f4cb161930ff6a47d12701897b3db16598cfdb 100644
+index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..defcc27fd576615e9065c61b6d63e05fac873e62 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
 @@ -1,5 +1,14 @@
@@ -8696,7 +8730,7 @@ index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..c8f4cb161930ff6a47d12701897b3db1
 +  updatedAt?: string;
 +};
 +
-+const RESOURCE_VERSION = "app-v0214";
++const RESOURCE_VERSION = "app-v0215";
 +const APP_VERSION = "0.2.19";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
@@ -8841,7 +8875,7 @@ index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..c8f4cb161930ff6a47d12701897b3db1
      const uploadUrl = `${this.endpointBase}${path}`;
      let response: Response;
 diff --git a/web/src/main.tsx b/web/src/main.tsx
-index b9391dda60310d338ab66c41abb279614aae667b..e9daf41d5c1ca0e2134dc16f11b03e553ea41da0 100644
+index b9391dda60310d338ab66c41abb279614aae667b..848c37c98af2675c7a377f453e51ef950a379405 100644
 --- a/web/src/main.tsx
 +++ b/web/src/main.tsx
 @@ -15,6 +15,6 @@ if (rootElement) {
@@ -8849,7 +8883,7 @@ index b9391dda60310d338ab66c41abb279614aae667b..e9daf41d5c1ca0e2134dc16f11b03e55
    document.body.insertAdjacentHTML(
      "afterbegin",
 -    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v24</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
-+    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0214</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
++    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0215</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
    );
  }
 diff --git a/web/src/pages/Home.test.tsx b/web/src/pages/Home.test.tsx
@@ -9242,7 +9276,7 @@ index bedb68d0c5eebbe7fdee424f91e08c7dc94afd00..5523a5f053951a55a502b800ab49459f
        <ReaderActions
          primaryLabel="陪我看看这里"
 diff --git a/web/src/styles/app.css b/web/src/styles/app.css
-index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab6d84cd8f 100644
+index a60e55d90802978d379749982b11b507d27f0356..8a1ea074d0eb8f9340ff0ea39839266a35afd025 100644
 --- a/web/src/styles/app.css
 +++ b/web/src/styles/app.css
 @@ -2,8 +2,8 @@
@@ -9686,8 +9720,8 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +.background-preview span {
 +  border: 1px solid var(--glass-border-soft);
 +  background: var(--glass-control);
-+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
++  -webkit-backdrop-filter: var(--glass-filter);
++  backdrop-filter: var(--glass-filter);
 +  box-shadow: var(--glass-shadow-soft);
 +}
 +
@@ -9730,8 +9764,8 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +  background:
 +    linear-gradient(145deg, rgb(255 255 255 / .22), transparent 46%),
 +    rgb(37 70 97 / .7);
-+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
++  -webkit-backdrop-filter: var(--glass-filter);
++  backdrop-filter: var(--glass-filter);
 +  box-shadow: var(--glass-shadow-soft);
 +}
 +
@@ -9790,8 +9824,8 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +    linear-gradient(145deg, rgb(255 255 255 / .2), transparent 48%),
 +    linear-gradient(135deg, rgb(43 77 105 / .48), rgb(91 74 113 / .38));
 +  color: #f8fbff;
-+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
-+  backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
++  -webkit-backdrop-filter: var(--glass-filter);
++  backdrop-filter: var(--glass-filter);
 +  box-shadow:
 +    inset 0 1px 0 rgb(255 255 255 / .38),
 +    0 10px 24px rgb(25 49 68 / .16);
@@ -9962,8 +9996,8 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +
 +.appearance-footer {
 +  background: linear-gradient(transparent, rgb(var(--glass-rgb) / .045) 42%);
-+  -webkit-backdrop-filter: blur(var(--glass-blur));
-+  backdrop-filter: blur(var(--glass-blur));
++  -webkit-backdrop-filter: var(--glass-filter);
++  backdrop-filter: var(--glass-filter);
 +}
 +
 +.appearance-range input[type="range"] {
@@ -10054,8 +10088,8 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +  background:
 +    linear-gradient(145deg, rgb(255 255 255 / .045), transparent 52%),
 +    rgb(var(--glass-rgb) / calc(var(--glass-opacity) * .62));
-+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .82)) saturate(1.46);
-+  backdrop-filter: blur(calc(var(--glass-blur) * .82)) saturate(1.46);
++  -webkit-backdrop-filter: var(--glass-filter);
++  backdrop-filter: var(--glass-filter);
 +  box-shadow:
 +    inset 0 1px 0 rgb(255 255 255 / .62),
 +    inset 1px 0 0 rgb(255 255 255 / .16),
@@ -10100,8 +10134,8 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +  border-radius: 13px;
 +  background: var(--glass-control);
 +  color: var(--ink);
-+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .7)) saturate(1.36);
-+  backdrop-filter: blur(calc(var(--glass-blur) * .7)) saturate(1.36);
++  -webkit-backdrop-filter: var(--glass-filter);
++  backdrop-filter: var(--glass-filter);
 +  box-shadow: var(--glass-shadow-soft);
 +  font-size: 11px;
 +  font-weight: 720;
@@ -10213,8 +10247,8 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +  border: 1px solid var(--glass-border-soft);
 +  border-radius: 18px;
 +  background: rgb(var(--glass-rgb) / calc(var(--glass-control-opacity) * .82));
-+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * .72)) saturate(1.34);
-+  backdrop-filter: blur(calc(var(--glass-blur) * .72)) saturate(1.34);
++  -webkit-backdrop-filter: var(--glass-filter);
++  backdrop-filter: var(--glass-filter);
 +  box-shadow: var(--glass-shadow-soft);
 +}
 +.discussion-message-user {
@@ -10250,8 +10284,8 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +  padding: 10px 12px calc(78px + var(--safe-bottom));
 +  border-top: 1px solid var(--glass-border-soft);
 +  background: rgb(var(--glass-rgb) / calc(var(--glass-opacity) * .62));
-+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
-+  backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
++  -webkit-backdrop-filter: var(--glass-filter-strong);
++  backdrop-filter: var(--glass-filter-strong);
 +}
 +.discussion-composer textarea {
 +  min-height: 52px;
@@ -10338,7 +10372,7 @@ index a60e55d90802978d379749982b11b507d27f0356..aaf9765c3bdc057e98e690928fe807ab
 +  .discussion-composer { padding-bottom: calc(18px + var(--safe-bottom)); }
 +}
 diff --git a/web/src/styles/tokens.css b/web/src/styles/tokens.css
-index f68bf4f0daa48f16dc61904941146c825a41511c..4e5530118a635d4c14d6b807be3b960e2115ac32 100644
+index f68bf4f0daa48f16dc61904941146c825a41511c..3e3896ff50a357ccc5bd06206180a66dae1d3e39 100644
 --- a/web/src/styles/tokens.css
 +++ b/web/src/styles/tokens.css
 @@ -1,34 +1,66 @@
@@ -10410,8 +10444,8 @@ index f68bf4f0daa48f16dc61904941146c825a41511c..4e5530118a635d4c14d6b807be3b960e
 +    linear-gradient(135deg, rgb(255 255 255 / 0.018), transparent 25%, rgb(31 91 132 / 0.008) 71%, rgb(255 255 255 / 0.008)),
 +    linear-gradient(180deg, rgb(255 255 255 / var(--glass-readability-opacity)), transparent 43%),
 +    rgb(var(--glass-rgb) / var(--glass-reader-opacity));
-+  --glass-filter: blur(clamp(3px, calc(var(--glass-blur) * 0.42), 11px)) saturate(1.3) contrast(1.035) brightness(1.006);
-+  --glass-filter-strong: blur(clamp(4px, calc(var(--glass-blur) * 0.52), 14px)) saturate(1.34) contrast(1.04) brightness(1.008);
++  --glass-filter: blur(clamp(1.5px, calc(var(--glass-blur) * 0.18), 5.2px)) saturate(1.18) contrast(1.02) brightness(1.002);
++  --glass-filter-strong: blur(clamp(2px, calc(var(--glass-blur) * 0.24), 7px)) saturate(1.22) contrast(1.025) brightness(1.003);
    --reader-font-family: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
    --reader-font-scale: 1;
    --reader-line-height: 1.86;
@@ -10517,7 +10551,7 @@ index f68bf4f0daa48f16dc61904941146c825a41511c..4e5530118a635d4c14d6b807be3b960e
 +  background: var(--backdrop-base);
  }
 diff --git a/web/vite.config.ts b/web/vite.config.ts
-index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..2b819cec37f19267b1b9ea7b0c6fd09077f47290 100644
+index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..020acbccdb636fa216d92a2261fe3247b4f65367 100644
 --- a/web/vite.config.ts
 +++ b/web/vite.config.ts
 @@ -1,14 +1,27 @@
@@ -10525,7 +10559,7 @@ index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..2b819cec37f19267b1b9ea7b0c6fd090
  import react from "@vitejs/plugin-react";
 -import { viteSingleFile } from "vite-plugin-singlefile";
 +
-+const WIDGET_ASSET_BASE = "/widget-assets/v0214/";
++const WIDGET_ASSET_BASE = "/widget-assets/v0215/";
  
  export default defineConfig({
 -  plugins: [react(), viteSingleFile()],
@@ -10542,10 +10576,10 @@ index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..2b819cec37f19267b1b9ea7b0c6fd090
 +    rollupOptions: {
 +      output: {
 +        codeSplitting: false,
-+        entryFileNames: "ll-reading-nest-v0214.bundle.js",
++        entryFileNames: "ll-reading-nest-v0215.bundle.js",
 +        assetFileNames: (assetInfo) =>
 +          assetInfo.names.some((name) => name.endsWith(".css"))
-+            ? "ll-reading-nest-v0214.css"
++            ? "ll-reading-nest-v0215.css"
 +            : "assets/[name]-[hash][extname]"
 +      }
 +    }
