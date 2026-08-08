@@ -160,7 +160,7 @@ index e719dcd7ad0916ae0a769cbc328fe1e5be68c70c..038ffd8ca53191de7118b35e34661b51
    sessions: new Set(),
    r2Keys: new Set()
 diff --git a/server/scripts/remote-smoke/mcp-smoke.mjs b/server/scripts/remote-smoke/mcp-smoke.mjs
-index 81737592c12db53b0f77280f424ac1c7422fed9a..d657132a1a492d1788c418a0caa997875f2581a2 100644
+index 81737592c12db53b0f77280f424ac1c7422fed9a..aea7581fbfca67b1041a024fb6a87fccc4ee2e06 100644
 --- a/server/scripts/remote-smoke/mcp-smoke.mjs
 +++ b/server/scripts/remote-smoke/mcp-smoke.mjs
 @@ -5,13 +5,28 @@ const workerUrl = requireUrl("WORKER_URL");
@@ -197,10 +197,10 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..d657132a1a492d1788c418a0caa99787
    assert(tools.tools.length === 23, `expected 23 tools, got ${tools.tools.length}`);
    const openTool = tools.tools.find((tool) => tool.name === "open_reading_nest");
    assert(Boolean(openTool?._meta?.ui), "open_reading_nest is missing its UI resource metadata");
-+  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0215.html";
++  const primaryTemplateUri = "ui://widget/ll-reading-nest-v0216.html";
 +  assert(
 +    openTool?._meta?.ui?.resourceUri === primaryTemplateUri,
-+    "open_reading_nest is not pointing at the v0215 UI resource"
++    "open_reading_nest is not pointing at the v0216 UI resource"
 +  );
 +  assert(
 +    openTool?._meta?.["ui/resourceUri"] === primaryTemplateUri,
@@ -242,7 +242,7 @@ index 81737592c12db53b0f77280f424ac1c7422fed9a..d657132a1a492d1788c418a0caa99787
 +    );
 +  }
 +  const templateDescriptor = resources.resources.find((resource) => resource.uri === primaryTemplateUri);
-+  assert(Boolean(templateDescriptor), "v0215 UI resource was not listed");
++  assert(Boolean(templateDescriptor), "v0216 UI resource was not listed");
 +
 +  const templateResult = await client.readResource({ uri: primaryTemplateUri });
 +  const template = templateResult.contents.find((content) => content.uri === primaryTemplateUri);
@@ -311,7 +311,7 @@ index 3a031d8f71be198d6852d79a24240a8200c0f4e7..7a79428938f473d23d1c44301a55ba57
 +  export default content;
 +}
 diff --git a/server/src/mcp/register-resource.test.ts b/server/src/mcp/register-resource.test.ts
-index e4c685d13228068801b94b092509e01e9a00c149..e5b2dbb760a978c463be7063634d22f15e3b4d99 100644
+index e4c685d13228068801b94b092509e01e9a00c149..0d2ad84b91b3daa7249584b24d14186bea9c48b5 100644
 --- a/server/src/mcp/register-resource.test.ts
 +++ b/server/src/mcp/register-resource.test.ts
 @@ -3,34 +3,67 @@ import { describe, expect, it, vi } from "vitest";
@@ -341,8 +341,8 @@ index e4c685d13228068801b94b092509e01e9a00c149..e5b2dbb760a978c463be7063634d22f1
  
 -    expect(READING_NEST_URI).toBe("ui://ss-reading-nest/app-v24.html");
 -    expect(uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0215.html");
-+    expect(uri).toBe("ui://widget/ll-reading-nest-v0215.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0216.html");
++    expect(uri).toBe("ui://widget/ll-reading-nest-v0216.html");
 +    expect(registerAppResource.mock.calls.map((call) => call[2])).toEqual([
 +      READING_NEST_URI,
 +      ...READING_NEST_COMPAT_URIS
@@ -360,7 +360,7 @@ index e4c685d13228068801b94b092509e01e9a00c149..e5b2dbb760a978c463be7063634d22f1
  
      const loaded = await loader();
 -    expect(loaded.contents[0].uri).toBe("ui://ss-reading-nest/app-v24.html");
-+    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0215.html");
++    expect(loaded.contents[0].uri).toBe("ui://widget/ll-reading-nest-v0216.html");
 +    expect(loaded.contents[0].mimeType).toBe("text/html;profile=mcp-app");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-styles");
 +    expect(loaded.contents[0].text).toContain("data-ll-widget-script");
@@ -501,7 +501,7 @@ index 35b4bd074843bf2de2d5d69a1bf792a46dc34afa..d235656c0bde112be9c109df853adfbc
 +  return new URL(value).origin;
  }
 diff --git a/server/src/mcp/register-tools.test.ts b/server/src/mcp/register-tools.test.ts
-index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f371eb07d 100644
+index 764054784994f1f1ca68789fa9c713a8133d132a..77829ea260d88a19681134887f0ff8dde9afdd64 100644
 --- a/server/src/mcp/register-tools.test.ts
 +++ b/server/src/mcp/register-tools.test.ts
 @@ -1,6 +1,7 @@
@@ -512,7 +512,7 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f
    READING_NEST_URI,
    registerReadingTools,
    TOOL_CONFIGS
-@@ -9,10 +10,32 @@ import {
+@@ -9,10 +10,33 @@ import {
  describe("tool descriptors", () => {
    it("binds the UI resource only to the primary render tool", () => {
      expect(TOOL_CONFIGS.open_reading_nest._meta?.ui).toEqual({
@@ -520,7 +520,7 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f
 +      resourceUri: READING_NEST_URI,
 +      visibility: ["model", "app"]
      });
-+    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0215.html");
++    expect(READING_NEST_URI).toBe("ui://widget/ll-reading-nest-v0216.html");
 +    expect(TOOL_CONFIGS.open_reading_nest._meta?.["ui/resourceUri"]).toBe(
 +      READING_NEST_URI
 +    );
@@ -530,6 +530,7 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f
 +    expect(TOOL_CONFIGS.open_reading_nest._meta?.["openai/widgetAccessible"]).toBe(true);
 +    expect(TOOL_CONFIGS.open_reading_nest.outputSchema).toBeDefined();
 +    expect(READING_NEST_COMPAT_URIS).toContain("ui://widget/ll-reading-nest-v0211.html");
++    expect(READING_NEST_COMPAT_URIS).toContain("ui://widget/ll-reading-nest-v0215.html");
 +    expect(READING_NEST_COMPAT_URIS).toContain("ui://widget/ll-reading-nest-v27.html");
 +    expect(READING_NEST_COMPAT_URIS).toContain("ui://widget/ll-reading-nest-v25.html");
 +    const appOnlyTools = new Set([
@@ -547,7 +548,7 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f
          const meta = "_meta" in config ? (config._meta as Record<string, unknown>) : undefined;
          expect(meta?.ui).toBeUndefined();
        }
-@@ -67,7 +90,7 @@ describe("tool descriptors", () => {
+@@ -67,7 +91,7 @@ describe("tool descriptors", () => {
        })
      };
  
@@ -556,7 +557,7 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f
        sourceEndpointBase: "https://worker.example.test/source/secret"
      });
      const result = (await handlers.get("open_reading_nest")?.()) as {
-@@ -97,13 +120,16 @@ describe("tool descriptors", () => {
+@@ -97,13 +121,16 @@ describe("tool descriptors", () => {
        getSessionBundle: async () => ({ session: {}, quotes: [], reactions: [], bookmarks: [] })
      };
  
@@ -575,14 +576,33 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f
      expect(result.structuredContent).not.toHaveProperty("sourceEndpointBase");
    });
  
-@@ -229,8 +255,18 @@ describe("tool descriptors", () => {
+@@ -213,15 +240,18 @@ describe("tool descriptors", () => {
+     expect(Object.keys(TOOL_CONFIGS)).toEqual(
+       expect.arrayContaining([
+         "publish_companion_comment",
++        "save_reading_discussion_reply",
+         "list_companion_comments",
+         "clear_companion_comments"
+       ])
+     );
+     expect(TOOL_CONFIGS.publish_companion_comment.annotations.idempotentHint).toBe(true);
++    expect(TOOL_CONFIGS.save_reading_discussion_reply.annotations.idempotentHint).toBe(true);
+     expect(TOOL_CONFIGS.list_companion_comments.annotations.readOnlyHint).toBe(true);
+     expect(TOOL_CONFIGS.clear_companion_comments.annotations.readOnlyHint).toBe(false);
+     for (const name of [
+       "publish_companion_comment",
++      "save_reading_discussion_reply",
+       "list_companion_comments",
+       "clear_companion_comments"
+     ] as const) {
+@@ -229,8 +259,18 @@ describe("tool descriptors", () => {
      }
    });
  
 -  it("exposes the three book-management tools and reaches twenty-three tools", () => {
 -    expect(Object.keys(TOOL_CONFIGS)).toHaveLength(23);
 +  it("exposes the three book-management tools and all app-only discussion tools", () => {
-+    expect(Object.keys(TOOL_CONFIGS)).toHaveLength(29);
++    expect(Object.keys(TOOL_CONFIGS)).toHaveLength(30);
 +    for (const name of [
 +      "get_or_create_reading_discussion",
 +      "set_reading_discussion_mood",
@@ -596,7 +616,7 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f
      expect(TOOL_CONFIGS.rename_reading_session.annotations).toMatchObject({
        readOnlyHint: false,
        idempotentHint: true
-@@ -314,7 +350,7 @@ describe("tool descriptors", () => {
+@@ -314,7 +354,7 @@ describe("tool descriptors", () => {
        deleteCloudSource: async () => ({ deleted: true, cloudSourceDeleted: true })
      };
  
@@ -606,10 +626,10 @@ index 764054784994f1f1ca68789fa9c713a8133d132a..539cd31eb2d187e0300a3e28c7a36b2f
        sessionId: "session-1",
        sourceKind: "pasted_text",
 diff --git a/server/src/mcp/register-tools.ts b/server/src/mcp/register-tools.ts
-index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938370d8204 100644
+index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..1d66d6ed1caf7270cc7f8f524e28445f624e11d7 100644
 --- a/server/src/mcp/register-tools.ts
 +++ b/server/src/mcp/register-tools.ts
-@@ -3,12 +3,18 @@ import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
+@@ -3,19 +3,27 @@ import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
  import {
    completeReadingSessionInputSchema,
    clearCompanionCommentsInputSchema,
@@ -627,8 +647,9 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
 +  appendReadingDiscussionUserMessageInputSchema,
    publishCompanionCommentInputSchema,
    renameReadingSessionInputSchema,
++  saveReadingDiscussionReplyInputSchema,
    saveBookmarkInputSchema,
-@@ -16,6 +22,7 @@ import {
+   saveQuoteInputSchema,
    saveReactionInputSchema,
    sendCurrentContextInputSchema,
    setLiveReadingModeInputSchema,
@@ -636,7 +657,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
    setReadingSessionStatusInputSchema,
    setSourceManifestInputSchema,
    startReadingSessionInputSchema,
-@@ -27,10 +34,23 @@ import {
+@@ -27,10 +35,24 @@ import {
  } from "@ss/shared";
  import type { ReadingSession, SendCurrentContextInput, SourceManifest } from "@ss/shared";
  import { ReadingService } from "../services/reading-service.js";
@@ -648,8 +669,9 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
  import { toolResult } from "./tool-result.js";
  
 -export const READING_NEST_URI = "ui://ss-reading-nest/app-v24.html";
-+export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0215.html";
++export const READING_NEST_URI = "ui://widget/ll-reading-nest-v0216.html";
 +export const READING_NEST_COMPAT_URIS = [
++  "ui://widget/ll-reading-nest-v0215.html",
 +  "ui://widget/ll-reading-nest-v0214.html",
 +  "ui://widget/ll-reading-nest-v0213.html",
 +  "ui://widget/ll-reading-nest-v0211.html",
@@ -661,7 +683,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
  
  const readOnly = {
    readOnlyHint: true,
-@@ -48,10 +68,13 @@ export const TOOL_CONFIGS = {
+@@ -48,10 +70,13 @@ export const TOOL_CONFIGS = {
      title: "打开 L&L 共读小窝",
      description: "Use this when the user wants to open the reading nest or continue recent reading.",
      inputSchema: openReadingNestInputSchema,
@@ -676,7 +698,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
        "openai/toolInvocation/invoking": "正在点亮小窝…",
        "openai/toolInvocation/invoked": "小窝已经准备好"
      }
-@@ -69,7 +92,7 @@ export const TOOL_CONFIGS = {
+@@ -69,7 +94,7 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    confirm_assistant_synced_position: {
@@ -685,7 +707,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
      description:
        "Use this only after the user explicitly confirms that ChatGPT replied it has read through a batch end.",
      inputSchema: confirmAssistantSyncedPositionInputSchema,
-@@ -124,26 +147,68 @@ export const TOOL_CONFIGS = {
+@@ -124,26 +149,75 @@ export const TOOL_CONFIGS = {
      annotations: { ...mutation, idempotentHint: true }
    },
    publish_companion_comment: {
@@ -696,6 +718,13 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
      inputSchema: publishCompanionCommentInputSchema,
      annotations: { ...mutation, idempotentHint: true }
    },
++  save_reading_discussion_reply: {
++    title: "保存林序言共读回复",
++    description:
++      "Required for replies initiated from the L&L reading-discussion drawer. Call this exactly once with the final natural reply text before sending that same reply in chat. This persists the assistant turn in the paragraph discussion; do not substitute publish_companion_comment.",
++    inputSchema: saveReadingDiscussionReplyInputSchema,
++    annotations: { ...mutation, idempotentHint: true }
++  },
    list_companion_comments: {
 -    title: "读取烁构陪读短评",
 +    title: "读取林序言陪读短评",
@@ -757,7 +786,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
    rename_reading_session: {
      title: "重命名书籍",
      description: "Use this when the user explicitly changes one reading session title.",
-@@ -217,6 +282,7 @@ export const TOOL_CONFIGS = {
+@@ -217,6 +291,7 @@ export const TOOL_CONFIGS = {
  export function registerReadingTools(
    server: McpServer,
    service: ReadingService,
@@ -765,7 +794,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
    cloudSourceService?: CloudSourceService,
    options: { sourceEndpointBase?: string } = {}
  ) {
-@@ -239,6 +305,7 @@ export function registerReadingTools(
+@@ -239,6 +314,7 @@ export function registerReadingTools(
        ...response,
        _meta: {
          cloudSourceEnabled: Boolean(cloudSourceService),
@@ -773,7 +802,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
          ...(options.sourceEndpointBase ? { sourceEndpointBase: options.sourceEndpointBase } : {})
        }
      };
-@@ -282,7 +349,7 @@ export function registerReadingTools(
+@@ -282,7 +358,7 @@ export function registerReadingTools(
            confirmedBatchId: input.batchId,
            updatedAt: session.updatedAt
          },
@@ -782,7 +811,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
        );
      }
    );
-@@ -399,6 +466,20 @@ export function registerReadingTools(
+@@ -399,6 +475,20 @@ export function registerReadingTools(
      "publish_companion_comment",
      TOOL_CONFIGS.publish_companion_comment,
      async (input) => {
@@ -803,7 +832,28 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
        const comment = await service.publishCompanionComment(input);
        return toolResult(
          { saved: true, comment },
-@@ -412,7 +493,7 @@ export function registerReadingTools(
+@@ -407,12 +497,28 @@ export function registerReadingTools(
+     }
+   );
+ 
++  server.registerTool(
++    "save_reading_discussion_reply",
++    TOOL_CONFIGS.save_reading_discussion_reply,
++    async ({ discussionId, text, operationId }) => {
++      const result = await discussionService.publishAssistantReply({
++        discussionId,
++        text,
++        operationId
++      });
++      return toolResult(
++        { saved: true, discussionId, message: result.message },
++        "林序言的回复已自动保存到这段共读讨论。"
++      );
++    }
++  );
++
+   server.registerTool(
+     "list_companion_comments",
      TOOL_CONFIGS.list_companion_comments,
      async (input) => {
        const result = await service.listCompanionComments(input);
@@ -812,7 +862,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
      }
    );
  
-@@ -428,6 +509,66 @@ export function registerReadingTools(
+@@ -428,6 +534,66 @@ export function registerReadingTools(
      }
    );
  
@@ -879,7 +929,7 @@ index 21a3b3d9a58b208b78b4f832a9d979b10cec95c5..d987753b1542a812ada07b834b94f938
    server.registerTool(
      "rename_reading_session",
      TOOL_CONFIGS.rename_reading_session,
-@@ -471,6 +612,7 @@ export function registerReadingTools(
+@@ -471,6 +637,7 @@ export function registerReadingTools(
        const result = await service.deleteSession(sessionId, operationId, {
          deleteCloudSource: false
        });
@@ -935,10 +985,10 @@ index 9e7643489cce7180588313ad4033028420ff60f4..3f96d192cc56ef2131235edfb54999d7
  }
 diff --git a/server/src/mcp/ui-template.integration.test.ts b/server/src/mcp/ui-template.integration.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..37f4e8e55468745a59e8fd01d8aa9549c62f9a32
+index 0000000000000000000000000000000000000000..6b8ccaf7d6627dbd2eed46d9d10f6093d2526b17
 --- /dev/null
 +++ b/server/src/mcp/ui-template.integration.test.ts
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,76 @@
 +import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 +import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 +import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -983,6 +1033,15 @@ index 0000000000000000000000000000000000000000..37f4e8e55468745a59e8fd01d8aa9549
 +      expect(openTool?.outputSchema).toMatchObject({
 +        type: "object",
 +        required: ["bookshelfSessions", "recentSessions"]
++      });
++      const discussionReplyTool = tools.tools.find(
++        (tool) => tool.name === "save_reading_discussion_reply"
++      );
++      expect(discussionReplyTool).toBeDefined();
++      expect(discussionReplyTool?._meta?.ui).toBeUndefined();
++      expect(discussionReplyTool?.inputSchema).toMatchObject({
++        type: "object",
++        required: ["discussionId", "text", "operationId"]
 +      });
 +
 +      const resources = await client.listResources();
@@ -1855,10 +1914,10 @@ index 858e173465feef19dd7a80854a5d9537a6fdf360..4da9ef3cf296c4d54ba9fe6836750658
      const session = await startSessionWithHistory(service);
 diff --git a/server/src/services/reading-discussion-service.test.ts b/server/src/services/reading-discussion-service.test.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..2ff4bb8888d31912c40313c8627b683b649bbab9
+index 0000000000000000000000000000000000000000..74a2dad8af46428bddd086b007bc186f95465cd3
 --- /dev/null
 +++ b/server/src/services/reading-discussion-service.test.ts
-@@ -0,0 +1,182 @@
+@@ -0,0 +1,180 @@
 +import { describe, expect, it } from "vitest";
 +import type { CompanionComment, ReadingDatabase } from "@ss/shared";
 +import { DEFAULT_SESSION_PREFERENCES } from "@ss/shared";
@@ -1984,8 +2043,6 @@ index 0000000000000000000000000000000000000000..2ff4bb8888d31912c40313c8627b683b
 +    });
 +    await service.publishAssistantReply({
 +      discussionId,
-+      sessionId: anchor.sessionId,
-+      position: anchor.position,
 +      text: "嗯，它先把方向画给我们看。",
 +      operationId: `discussion-reply:${discussionId}:reply-1`
 +    });
@@ -2043,10 +2100,10 @@ index 0000000000000000000000000000000000000000..2ff4bb8888d31912c40313c8627b683b
 +});
 diff --git a/server/src/services/reading-discussion-service.ts b/server/src/services/reading-discussion-service.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..3b63ab15fac28897b81a58eb510d830ef4279dbe
+index 0000000000000000000000000000000000000000..2949a49ba395655fdae55b8e3f1cf416d6d2d81d
 --- /dev/null
 +++ b/server/src/services/reading-discussion-service.ts
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,130 @@
 +import type {
 +  ReadingDiscussionDetail,
 +  ReadingDiscussionMood,
@@ -2117,17 +2174,20 @@ index 0000000000000000000000000000000000000000..3b63ab15fac28897b81a58eb510d830e
 +
 +  async publishAssistantReply(input: {
 +    discussionId: string;
-+    sessionId: string;
-+    position: ReadingPosition;
++    sessionId?: string;
++    position?: ReadingPosition;
 +    text: string;
 +    operationId: string;
 +  }) {
 +    const detail = await this.getDetail(input.discussionId);
 +    const { discussion } = detail;
++    if (input.sessionId && discussion.sessionId !== input.sessionId) {
++      throw new AppError("INVALID_OPERATION", "讨论回复与当前书籍位置不一致。");
++    }
 +    if (
-+      discussion.sessionId !== input.sessionId ||
-+      discussion.position.kind !== input.position.kind ||
-+      discussion.position.index !== input.position.index
++      input.position &&
++      (discussion.position.kind !== input.position.kind ||
++        discussion.position.index !== input.position.index)
 +    ) {
 +      throw new AppError("INVALID_OPERATION", "讨论回复与当前书籍位置不一致。");
 +    }
@@ -2600,7 +2660,7 @@ index 282f116eb4575c838544f3ac0d164a767a7db760..f7c5920077374be332c6ccceea1fb62f
    const value = (await request.json()) as unknown;
    if (!value || typeof value !== "object" || Array.isArray(value)) {
 diff --git a/server/src/standalone-pwa.test.ts b/server/src/standalone-pwa.test.ts
-index ea35efc2291adbaa285eb936597afa90b5fee935..2ce3abfa45edc0d377b2bcff948622724c37a1c2 100644
+index ea35efc2291adbaa285eb936597afa90b5fee935..11364cb2175f4e7ffb02cb48400ef8cce94a18b2 100644
 --- a/server/src/standalone-pwa.test.ts
 +++ b/server/src/standalone-pwa.test.ts
 @@ -1,15 +1,51 @@
@@ -2647,13 +2707,13 @@ index ea35efc2291adbaa285eb936597afa90b5fee935..2ce3abfa45edc0d377b2bcff94862272
    it("adds install metadata and service-worker registration to the widget shell", () => {
 -    const html = buildStandaloneHtml("<html><head><title>Nest</title></head><body>reader</body></html>");
 +    const html = buildStandaloneHtml(
-+      '<html><head><title>Nest</title><link rel="stylesheet" href="/widget-assets/v0215/ll-reading-nest-v0215.css"></head><body>reader<script src="/widget-assets/v0215/ll-reading-nest-v0215.bundle.js"></script></body></html>'
++      '<html><head><title>Nest</title><link rel="stylesheet" href="/widget-assets/v0216/ll-reading-nest-v0216.css"></head><body>reader<script src="/widget-assets/v0216/ll-reading-nest-v0216.bundle.js"></script></body></html>'
 +    );
      expect(html).toContain('name="sxs-standalone"');
      expect(html).toContain('rel="manifest" href="./manifest.webmanifest"');
      expect(html).toContain('navigator.serviceWorker.register("./sw.js"');
-+    expect(html).toContain("ll-reading-nest-v0215.css?v=glass4");
-+    expect(html).toContain("ll-reading-nest-v0215.bundle.js?v=glass4");
++    expect(html).toContain("ll-reading-nest-v0216.css?v=discussion1");
++    expect(html).toContain("ll-reading-nest-v0216.bundle.js?v=discussion1");
      expect(html).toContain("reader");
    });
  
@@ -2672,21 +2732,21 @@ index ea35efc2291adbaa285eb936597afa90b5fee935..2ce3abfa45edc0d377b2bcff94862272
      const response = handleStandaloneApp(new Request(swUrl), new URL(swUrl), token, "");
      const script = await response.text();
 -    expect(script).toContain('const SHELL = ["./", "./manifest.webmanifest", "./icon.svg"]');
-+    expect(script).toContain("/widget-assets/v0215/ll-reading-nest-v0215.bundle.js?v=glass4");
-+    expect(script).toContain("/widget-assets/v0215/ll-reading-nest-v0215.css?v=glass4");
++    expect(script).toContain("/widget-assets/v0216/ll-reading-nest-v0216.bundle.js?v=discussion1");
++    expect(script).toContain("/widget-assets/v0216/ll-reading-nest-v0216.css?v=discussion1");
      expect(script).not.toContain("/mcp/");
      expect(script).not.toContain("/source/");
    });
 diff --git a/server/src/standalone-pwa.ts b/server/src/standalone-pwa.ts
-index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..0cd606cad6e5ef7f185597c2939731793f342971 100644
+index e509afa59e7a78d33ca6d4b78fdd5ebc5b8e670f..a1a208dce8fef7ac72cc2202f9e160636b22feed 100644
 --- a/server/src/standalone-pwa.ts
 +++ b/server/src/standalone-pwa.ts
 @@ -1,4 +1,107 @@
 -const SHELL_CACHE_VERSION = "v24";
 +import { WIDGET_SCRIPT_PATH, WIDGET_STYLE_PATH } from "./widget-assets.js";
 +
-+const SHELL_CACHE_VERSION = "v0215-glass4";
-+const STANDALONE_ASSET_REVISION = "glass4";
++const SHELL_CACHE_VERSION = "v0216-discussion1";
++const STANDALONE_ASSET_REVISION = "discussion1";
 +const SESSION_COOKIE_NAME = "__Secure-ll_nest_session";
 +const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 +
@@ -3350,13 +3410,13 @@ index 0000000000000000000000000000000000000000..1650849ed75cff48fdb9ab332c0c806a
 +});
 diff --git a/server/src/widget-assets.ts b/server/src/widget-assets.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..318fa52e943d2f77fd878d28c09222d0b1f26eff
+index 0000000000000000000000000000000000000000..88407ab190320366f1dedb447a579a180aff6999
 --- /dev/null
 +++ b/server/src/widget-assets.ts
 @@ -0,0 +1,108 @@
-+export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0215";
-+export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0215.bundle.js`;
-+export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0215.css`;
++export const WIDGET_ASSET_BASE_PATH = "/widget-assets/v0216";
++export const WIDGET_SCRIPT_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0216.bundle.js`;
++export const WIDGET_STYLE_PATH = `${WIDGET_ASSET_BASE_PATH}/ll-reading-nest-v0216.css`;
 +export const PREVIOUS_WIDGET_SCRIPT_PATH =
 +  "/widget-assets/v0214/ll-reading-nest-v0214.bundle.js";
 +export const PREVIOUS_WIDGET_STYLE_PATH = "/widget-assets/v0214/ll-reading-nest-v0214.css";
@@ -3463,7 +3523,7 @@ index 0000000000000000000000000000000000000000..318fa52e943d2f77fd878d28c09222d0
 +  return value.replace(/<\/style/gi, "<\\/style");
 +}
 diff --git a/server/src/worker-router.test.ts b/server/src/worker-router.test.ts
-index 1e35705c2ccadfeece1585fb2d379b7846862cae..0469e5b983eda2ca8d30f284ef4e2c62b0c13b33 100644
+index 1e35705c2ccadfeece1585fb2d379b7846862cae..1dc6d9c280c00545650ffa17c140aa30059a0218 100644
 --- a/server/src/worker-router.test.ts
 +++ b/server/src/worker-router.test.ts
 @@ -4,6 +4,48 @@ import { getWorkerRoute } from "./worker-router.js";
@@ -3478,13 +3538,13 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..0469e5b983eda2ca8d30f284ef4e2c62
 +  it("serves only the versioned public widget assets without requiring the private token", () => {
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0215/ll-reading-nest-v0215.bundle.js"),
++        new URL("https://example.workers.dev/widget-assets/v0216/ll-reading-nest-v0216.bundle.js"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0215/ll-reading-nest-v0215.css"),
++        new URL("https://example.workers.dev/widget-assets/v0216/ll-reading-nest-v0216.css"),
 +        undefined
 +      )
 +    ).toBe("widget-asset");
@@ -3508,7 +3568,7 @@ index 1e35705c2ccadfeece1585fb2d379b7846862cae..0469e5b983eda2ca8d30f284ef4e2c62
 +    ).toBe("widget-asset");
 +    expect(
 +      getWorkerRoute(
-+        new URL("https://example.workers.dev/widget-assets/v0215/private.json"),
++        new URL("https://example.workers.dev/widget-assets/v0216/private.json"),
 +        undefined
 +      )
 +    ).toBe("misconfigured");
@@ -3590,14 +3650,14 @@ index 1f8027f84d1621b4dcfc706743adc0cc9e22ab47..3098de31bea4b58d29d3df790ec4c676
      return "source";
    }
 diff --git a/server/src/worker.ts b/server/src/worker.ts
-index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..adb4bb199fa631c8aa4f72f60d21a91408753e60 100644
+index 6f84bb2a764ba8d76180a2d1d80d60e1f7772f24..3b24122219719d3656262a2218047e00d925b85c 100644
 --- a/server/src/worker.ts
 +++ b/server/src/worker.ts
 @@ -1,22 +1,57 @@
  import { createMcpHandler } from "agents/mcp";
  import widgetHtml from "../../web/dist/index.html";
-+import widgetScript from "../../web/dist/ll-reading-nest-v0215.bundle.js";
-+import widgetStyles from "../../web/dist/ll-reading-nest-v0215.css";
++import widgetScript from "../../web/dist/ll-reading-nest-v0216.bundle.js";
++import widgetStyles from "../../web/dist/ll-reading-nest-v0216.css";
  import { createMcpServerFromRepository } from "./mcp/server-factory.js";
  import { D1ReadingRepository } from "./repositories/d1-reading-repository.js";
 +import { D1ReadingDiscussionRepository } from "./repositories/d1-reading-discussion-repository.js";
@@ -3802,10 +3862,10 @@ index b2130585860c7d75aac204e9f7e9d65dd02ca10e..045c46e444341d870f61a9a005cca8dc
    schemaVersion: 4;
    sessions: ReadingSession[];
 diff --git a/shared/src/tool-schemas.test.ts b/shared/src/tool-schemas.test.ts
-index 03860ff0af00c5e74f1ed593afb031b902487ecd..645281fd6590530354f9a9714e5794b5703b4d36 100644
+index 03860ff0af00c5e74f1ed593afb031b902487ecd..b5aef24db6ebdcb2b1610a7c169307780587594e 100644
 --- a/shared/src/tool-schemas.test.ts
 +++ b/shared/src/tool-schemas.test.ts
-@@ -1,22 +1,137 @@
+@@ -1,22 +1,152 @@
  import { describe, expect, it } from "vitest";
  import {
    confirmAssistantSyncedPositionInputSchema,
@@ -3823,6 +3883,7 @@ index 03860ff0af00c5e74f1ed593afb031b902487ecd..645281fd6590530354f9a9714e5794b5
 +  openReadingNestOutputSchema,
    publishCompanionCommentInputSchema,
    renameReadingSessionInputSchema,
++  saveReadingDiscussionReplyInputSchema,
    sendCurrentContextInputSchema,
    setReadingSessionStatusInputSchema,
    setSourceManifestInputSchema,
@@ -3861,6 +3922,13 @@ index 03860ff0af00c5e74f1ed593afb031b902487ecd..645281fd6590530354f9a9714e5794b5
 +        operationId: "message-1"
 +      })
 +    ).toMatchObject({ text: "我也这样觉得。" });
++    expect(
++      saveReadingDiscussionReplyInputSchema.parse({
++        discussionId: "discussion-1",
++        text: "嗯，我们接着聊这一句。",
++        operationId: "discussion-reply:discussion-1:request-1"
++      })
++    ).toMatchObject({ discussionId: "discussion-1" });
 +    expect(getReadingDiscussionInputSchema.parse({ discussionId: "discussion-1" })).toEqual({
 +      discussionId: "discussion-1"
 +    });
@@ -3884,6 +3952,13 @@ index 03860ff0af00c5e74f1ed593afb031b902487ecd..645281fd6590530354f9a9714e5794b5
 +        discussionId: "discussion-1",
 +        text: " ",
 +        operationId: "message-1"
++      })
++    ).toThrow();
++    expect(() =>
++      saveReadingDiscussionReplyInputSchema.parse({
++        discussionId: "discussion-1",
++        text: "不会接受普通操作号。",
++        operationId: "comment-1"
 +      })
 +    ).toThrow();
 +    expect(() =>
@@ -3944,7 +4019,7 @@ index 03860ff0af00c5e74f1ed593afb031b902487ecd..645281fd6590530354f9a9714e5794b5
    it("accepts one top-level current page file reference", () => {
      const result = sendCurrentContextInputSchema.parse({
 diff --git a/shared/src/tool-schemas.ts b/shared/src/tool-schemas.ts
-index d5e154d051a9fdffeb4ca117723a7ff4b14b7acb..62f4193231f76236f6e9328d8239a55a74c82db2 100644
+index d5e154d051a9fdffeb4ca117723a7ff4b14b7acb..ce15d2cb973f407b775571217d699e06bd8e33da 100644
 --- a/shared/src/tool-schemas.ts
 +++ b/shared/src/tool-schemas.ts
 @@ -37,6 +37,14 @@ export const companionCommentSourceSchema = z.enum([
@@ -4059,7 +4134,7 @@ index d5e154d051a9fdffeb4ca117723a7ff4b14b7acb..62f4193231f76236f6e9328d8239a55a
  export const startReadingSessionInputSchema = z.object({
    title: z.string().trim().min(1).max(200),
    type: readingTypeSchema
-@@ -281,6 +379,42 @@ export const clearCompanionCommentsInputSchema = z
+@@ -281,6 +379,55 @@ export const clearCompanionCommentsInputSchema = z
      scope: z.enum(["recent", "history", "all"])
    })
    .strict();
@@ -4084,6 +4159,19 @@ index d5e154d051a9fdffeb4ca117723a7ff4b14b7acb..62f4193231f76236f6e9328d8239a55a
 +    operationId: z.string().min(1).max(200)
 +  })
 +  .strict();
++export const saveReadingDiscussionReplyInputSchema = z
++  .object({
++    discussionId: z.string().min(1).max(200),
++    text: z.string().trim().min(1).max(4_000),
++    operationId: z
++      .string()
++      .min(1)
++      .max(200)
++      .refine((value) => value.startsWith("discussion-reply:"), {
++        message: "Discussion reply operation ids must start with discussion-reply:"
++      })
++  })
++  .strict();
 +export const getReadingDiscussionInputSchema = z
 +  .object({
 +    discussionId: z.string().min(1).max(200)
@@ -4103,7 +4191,7 @@ index d5e154d051a9fdffeb4ca117723a7ff4b14b7acb..62f4193231f76236f6e9328d8239a55a
    .object({
      sessionId: sessionIdSchema,
 diff --git a/web/index.html b/web/index.html
-index b26131350103fa1e2f004ff508fea591ef27e284..c4480446c0802dea117a51e56fa4a8973f19fbae 100644
+index b26131350103fa1e2f004ff508fea591ef27e284..1757af02c595cf8f92f8a4fed1377226e6687154 100644
 --- a/web/index.html
 +++ b/web/index.html
 @@ -3,14 +3,14 @@
@@ -4128,7 +4216,7 @@ index b26131350103fa1e2f004ff508fea591ef27e284..c4480446c0802dea117a51e56fa4a897
          <dl style="display:grid;grid-template-columns:max-content 1fr;gap:8px 14px">
            <dt>resourceVersion</dt>
 -          <dd>app-v24</dd>
-+          <dd>app-v0215</dd>
++          <dd>app-v0216</dd>
            <dt>bootStage</dt>
            <dd>html-loaded</dd>
          </dl>
@@ -4153,7 +4241,7 @@ index 088c89270386b4ce1dd30b11148d0a6d4e16f10c..997a5b6a548b6537fbb8a584d89725b5
    }
  }
 diff --git a/web/src/App.test.tsx b/web/src/App.test.tsx
-index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654cbdaeb5ef 100644
+index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..6fdb366f0e53676f6786c0df578ac59296ee7f16 100644
 --- a/web/src/App.test.tsx
 +++ b/web/src/App.test.tsx
 @@ -20,6 +20,7 @@ describe("App", () => {
@@ -4563,8 +4651,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
 +              createdAt: "2026-06-23T00:01:00.000Z"
              }
 -          }
-+          ]
-         };
+-        };
 -      }
 -      if (name === "publish_companion_comment") {
 -        savedComment = {
@@ -4573,7 +4660,8 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
 -          inRecent: true,
 -          inHistory: true,
 -          createdAt: "2026-06-23T00:00:00.000Z"
--        };
++          ]
+         };
 -        return { structuredContent: { comment: savedComment } };
 -      }
 -      if (name === "list_companion_comments") {
@@ -4595,7 +4683,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
          setWidgetState: vi.fn()
        }
      });
-@@ -1204,60 +1240,42 @@ describe("App", () => {
+@@ -1204,60 +1240,46 @@ describe("App", () => {
      fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
      fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "短评保存测试" } });
      fireEvent.change(screen.getByPlaceholderText("粘贴 TXT 或 Markdown 文本"), {
@@ -4668,8 +4756,12 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
 +      `discussion-reply:${discussion.id}:`
 +    );
 +    expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain(
-+      "必须调用一次 publish_companion_comment"
++      "必须且只能先调用一次 save_reading_discussion_reply"
 +    );
++    expect(String(sendFollowUpMessage.mock.calls[0]?.[0]?.prompt)).toContain(
++      `"discussionId": "${discussion.id}"`
++    );
++    expect(screen.getByRole("button", { name: "等哥哥…" })).toBeDisabled();
 +    expect(requestDisplayMode).not.toHaveBeenCalled();
 +    expect(screen.queryByRole("button", { name: "收入林序言短评" })).not.toBeInTheDocument();
    });
@@ -4679,7 +4771,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      const sessionPreferences = {
        readingCommentMode: "light_chat",
        commentLength: "normal",
-@@ -1265,6 +1283,44 @@ describe("App", () => {
+@@ -1265,6 +1287,44 @@ describe("App", () => {
        liveReadingStyle: "danmaku",
        autoSaveCompanionComments: true
      };
@@ -4724,7 +4816,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
          return {
-@@ -1319,7 +1375,16 @@ describe("App", () => {
+@@ -1319,7 +1379,16 @@ describe("App", () => {
            _meta: { sourceManifest }
          };
        }
@@ -4742,7 +4834,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
        return { structuredContent: {} };
      });
      Object.defineProperty(window, "openai", {
-@@ -1339,17 +1404,14 @@ describe("App", () => {
+@@ -1339,17 +1408,14 @@ describe("App", () => {
        target: { value: "第一段。" }
      });
      fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
@@ -4765,7 +4857,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
          return {
-@@ -1440,15 +1502,6 @@ describe("App", () => {
+@@ -1440,15 +1506,6 @@ describe("App", () => {
        limit: 20
      });
  
@@ -4781,7 +4873,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      fireEvent.click(screen.getByRole("button", { name: "下一段" }));
      await waitFor(() => {
        expect(callTool).toHaveBeenCalledWith(
-@@ -1458,6 +1511,8 @@ describe("App", () => {
+@@ -1458,6 +1515,8 @@ describe("App", () => {
            userCurrentPosition: expect.objectContaining({ index: 2 })
          })
        );
@@ -4790,7 +4882,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      });
  
      fireEvent(
-@@ -1478,6 +1533,7 @@ describe("App", () => {
+@@ -1478,6 +1537,7 @@ describe("App", () => {
            userCurrentPosition: expect.objectContaining({ index: 1 })
          })
        );
@@ -4798,7 +4890,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      });
    });
  
-@@ -1538,7 +1594,7 @@ describe("App", () => {
+@@ -1538,7 +1598,7 @@ describe("App", () => {
      });
    });
  
@@ -4807,7 +4899,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      const deviceCache = new IndexedDbReadingCache();
      const sessionManifest = {
        ...manifest("reader-source", "1"),
-@@ -1573,7 +1629,7 @@ describe("App", () => {
+@@ -1573,7 +1633,7 @@ describe("App", () => {
                  position: { kind: "paragraph", index: 8, label: "第 8 段" },
                  mode: "light_chat",
                  length: "normal",
@@ -4816,7 +4908,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
                  source: "catch_up_complete",
                  inRecent: true,
                  inHistory: true,
-@@ -1600,8 +1656,10 @@ describe("App", () => {
+@@ -1600,8 +1660,10 @@ describe("App", () => {
      fireEvent.click(await screen.findByRole("button", { name: "继续阅读《Reader Comment Book》" }));
  
      expect(await screen.findByText("用户读到：第 3 段")).toBeInTheDocument();
@@ -4829,7 +4921,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      await deviceCache.remove("reader-comment-session");
    });
  
-@@ -1681,8 +1739,10 @@ describe("App", () => {
+@@ -1681,8 +1743,10 @@ describe("App", () => {
          manifestObjectKey: "private/sources/cloud-upload-source/manifest.json"
        }
      };
@@ -4842,7 +4934,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      );
      vi.stubGlobal("fetch", fetchMock);
      const setWidgetState = vi.fn();
-@@ -1738,8 +1798,10 @@ describe("App", () => {
+@@ -1738,8 +1802,10 @@ describe("App", () => {
        "https://worker.example.test/source/secret/upload",
        expect.objectContaining({ method: "POST" })
      );
@@ -4855,7 +4947,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      expect(JSON.parse(String(uploadRequest?.body))).toMatchObject({
        sessionId: "cloud-upload-session",
        sourceKind: "pasted_text",
-@@ -1785,7 +1847,11 @@ describe("App", () => {
+@@ -1785,7 +1851,11 @@ describe("App", () => {
          mimeType: "text/plain; charset=utf-8"
        }
      };
@@ -4868,7 +4960,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      vi.stubGlobal("fetch", fetchMock);
      const callTool = vi.fn(async (name: string, args: Record<string, any>) => {
        if (name === "start_reading_session") {
-@@ -1833,7 +1899,7 @@ describe("App", () => {
+@@ -1833,7 +1903,7 @@ describe("App", () => {
      });
      fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
  
@@ -4877,7 +4969,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      expect(fetchMock).toHaveBeenCalledWith(
        "https://worker.example.test/source/secret/upload",
        expect.objectContaining({ method: "POST" })
-@@ -1953,8 +2019,10 @@ describe("App", () => {
+@@ -1953,8 +2023,10 @@ describe("App", () => {
      });
      const cloudManifest = withCloudSync(baseManifest, "cloud-restore-source");
      const bundle = bookshelfBundle("cloud-restore-session", "云端恢复书", 2, "light_chat", cloudManifest);
@@ -4890,7 +4982,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      );
      vi.stubGlobal("fetch", fetchMock);
      const callTool = vi.fn(async (name: string) => {
-@@ -1994,6 +2062,76 @@ describe("App", () => {
+@@ -1994,6 +2066,76 @@ describe("App", () => {
      await deviceCache.remove("cloud-restore-session");
    });
  
@@ -4967,7 +5059,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
    it("restores a legacy v2 cloud novel with its original reading-unit indexes", async () => {
      const deviceCache = new IndexedDbReadingCache();
      await deviceCache.remove("legacy-cloud-restore-session");
-@@ -2019,8 +2157,10 @@ describe("App", () => {
+@@ -2019,8 +2161,10 @@ describe("App", () => {
        "light_chat",
        legacyManifest
      );
@@ -4980,7 +5072,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      );
      vi.stubGlobal("fetch", fetchMock);
      const callTool = vi.fn(async (name: string) => {
-@@ -2080,7 +2220,7 @@ describe("App", () => {
+@@ -2080,7 +2224,7 @@ describe("App", () => {
  
      expect(await screen.findByText("恢复失败，请重新导入")).toBeInTheDocument();
      expect(screen.getByText("用户：第 3 段")).toBeInTheDocument();
@@ -4989,7 +5081,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      expect(screen.getByRole("button", { name: "重新导入正文《恢复失败书》" })).toBeInTheDocument();
      expect(await deviceCache.get("cloud-fail-session")).toBeNull();
    });
-@@ -2097,7 +2237,11 @@ describe("App", () => {
+@@ -2097,7 +2241,11 @@ describe("App", () => {
      });
      const cloudManifest = withCloudSync(baseManifest, "ipad-cloud-source");
      const bundle = bookshelfBundle("ipad-cloud-session", "iPad 云端书", 2, "light_chat", cloudManifest);
@@ -5002,7 +5094,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      vi.stubGlobal("fetch", fetchMock);
      const callTool = vi.fn(async (name: string) => {
        if (name === "list_companion_comments") return { structuredContent: { comments: [] } };
-@@ -2116,18 +2260,18 @@ describe("App", () => {
+@@ -2116,18 +2264,18 @@ describe("App", () => {
  
      const firstRender = render(<App />);
      expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
@@ -5024,7 +5116,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      expect(screen.queryByText(/必须重新导入正文/)).not.toBeInTheDocument();
      thirdRender.unmount();
      await deviceCache.remove("ipad-cloud-session");
-@@ -2232,8 +2376,10 @@ describe("App", () => {
+@@ -2232,8 +2380,10 @@ describe("App", () => {
          mimeType: "image/png"
        }
      ]);
@@ -5037,7 +5129,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      );
      vi.stubGlobal("fetch", fetchMock);
      const setWidgetState = vi.fn();
-@@ -2281,7 +2427,13 @@ describe("App", () => {
+@@ -2281,7 +2431,13 @@ describe("App", () => {
        value: {
          toolOutput: { recentSessions: [] },
          toolResponseMetadata: {
@@ -5052,7 +5144,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
          },
          callTool,
          requestDisplayMode: vi.fn(),
-@@ -2302,7 +2454,8 @@ describe("App", () => {
+@@ -2302,7 +2458,8 @@ describe("App", () => {
        "/source/secret/upload",
        expect.objectContaining({ method: "POST" })
      );
@@ -5062,7 +5154,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
        expect.objectContaining({
          sessionId: "cloud-manga-session",
          sourceKind: "manga_import",
-@@ -2354,7 +2507,10 @@ describe("App", () => {
+@@ -2354,7 +2511,10 @@ describe("App", () => {
          userCurrentPosition: { kind: "page" as const, index: 2, total: 2, label: "第 2 页" }
        }
      };
@@ -5074,7 +5166,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
        const body = JSON.parse(String(init?.body ?? "{}")) as { pageIndex?: number };
        return jsonResponse({
          pageIndex: body.pageIndex,
-@@ -2384,7 +2540,9 @@ describe("App", () => {
+@@ -2384,7 +2544,9 @@ describe("App", () => {
  
      expect(await screen.findByText("正在从私人云端恢复正文")).toBeInTheDocument();
      expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
@@ -5085,7 +5177,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      const cacheValue = (await deviceCache.get("cloud-manga-restore-session")) as MangaLocalCache | null;
      expect(cacheValue?.pages).toHaveLength(2);
      expect(cacheValue?.metadata.sourceManifest.sourceKind).toBe("manga_import");
-@@ -2434,7 +2592,7 @@ describe("App", () => {
+@@ -2434,7 +2596,7 @@ describe("App", () => {
      expect(await deviceCache.get("cloud-manga-fail-session")).toBeNull();
    });
  
@@ -5094,7 +5186,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      const deviceCache = new IndexedDbReadingCache();
      const manifestA = manifest("source-a", "a");
      const manifestB = manifest("source-b", "b");
-@@ -2491,10 +2649,9 @@ describe("App", () => {
+@@ -2491,10 +2653,9 @@ describe("App", () => {
      expect(await screen.findByText("A 书短评")).toBeInTheDocument();
      expect(screen.queryByText("B 书短评")).not.toBeInTheDocument();
      fireEvent.click(screen.getByRole("button", { name: "更多操作" }));
@@ -5108,7 +5200,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      fireEvent.click(screen.getByRole("button", { name: "取消" }));
      fireEvent.click(screen.getByRole("button", { name: "返回首页" }));
  
-@@ -2505,10 +2662,8 @@ describe("App", () => {
+@@ -2505,10 +2666,8 @@ describe("App", () => {
      expect(await screen.findByText("B 书短评")).toBeInTheDocument();
      expect(screen.queryByText("A 书短评")).not.toBeInTheDocument();
      fireEvent.click(screen.getByRole("button", { name: "更多操作" }));
@@ -5122,7 +5214,7 @@ index 7b93b47f04b6897d781b62ea4ba6fb7b1e509fa5..f662311ca2e5a461a9b164922caf654c
      await deviceCache.remove("bookshelf-a");
      await deviceCache.remove("bookshelf-b");
 diff --git a/web/src/App.tsx b/web/src/App.tsx
-index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f23e4af3e0 100644
+index e200d4efa50ff72f769fbe57ebb20fc46e90340a..9e66172c7abc5f66f1eb22e897688008800fe1a7 100644
 --- a/web/src/App.tsx
 +++ b/web/src/App.tsx
 @@ -5,6 +5,9 @@ import type {
@@ -6117,7 +6209,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
        });
        rememberPendingCommentDraft({
          position,
-@@ -1925,6 +2452,140 @@ export function App() {
+@@ -1925,6 +2452,149 @@ export function App() {
      }
    }
  
@@ -6200,22 +6292,30 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
 +  }
 +
 +  async function sendDiscussionMessage(text: string) {
-+    if (!activeDiscussion || discussionSending) return;
++    if (!activeDiscussion || discussionSending || awaitingDiscussionReply) return;
 +    const discussion = activeDiscussion.discussion;
 +    const userOperationId = `discussion-user:${crypto.randomUUID()}`;
 +    setDiscussionSending(true);
 +    setDiscussionError("");
++    let detail: ReadingDiscussionDetail;
 +    try {
 +      const saved = await cloudSourceClient.appendReadingDiscussionUserMessage({
 +        discussionId: discussion.id,
 +        text,
 +        operationId: userOperationId
 +      });
-+      const detail = readDiscussionDetail(saved.detail);
-+      if (!detail) throw new Error("Missing saved discussion");
++      const savedDetail = readDiscussionDetail(saved.detail);
++      if (!savedDetail) throw new Error("Missing saved discussion");
++      detail = savedDetail;
 +      setActiveDiscussion(detail);
 +      upsertDiscussionSummary(detail);
++    } catch {
++      setDiscussionError("这条消息没有保存成功，请重试。");
++      setDiscussionSending(false);
++      return;
++    }
 +
++    try {
 +      const requestId = crypto.randomUUID();
 +      const replyOperationId = `discussion-reply:${discussion.id}:${requestId}`;
 +      setAwaitingDiscussionReply(replyOperationId);
@@ -6230,10 +6330,11 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
 +      );
 +      if (!sent) {
 +        setAwaitingDiscussionReply(null);
-+        setDiscussionError("消息已经保存，但暂时没能请哥哥回复；可以稍后再发一句继续。" );
++        setDiscussionError("消息已经保存，但 ChatGPT 没有接收这次回复请求，请重试。" );
 +      }
 +    } catch {
-+      setDiscussionError("这条消息没有完整保存，请重试。");
++      setAwaitingDiscussionReply(null);
++      setDiscussionError("消息已经保存，但暂时没能请哥哥回复；请重试。" );
 +    } finally {
 +      setDiscussionSending(false);
 +    }
@@ -6258,7 +6359,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
    function allowAutomaticSync(mode: "range_sync" | "recent_only" | "live_reading") {
      const permission = checkSourceSyncPermission({ mode, sourceAvailability });
      if (permission.allowed) return true;
-@@ -1986,26 +2647,12 @@ export function App() {
+@@ -1986,26 +2656,12 @@ export function App() {
      await callTool("finish_today_reading", {
        sessionId: sessionBundle.session.id,
        position: sessionBundle.session.userCurrentPosition,
@@ -6286,7 +6387,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
    async function openDiary() {
      if (!sessionBundle) return;
      const result = await callTool("generate_diary_context", { sessionId: sessionBundle.session.id });
-@@ -2154,15 +2801,15 @@ export function App() {
+@@ -2154,15 +2810,15 @@ export function App() {
                : "正文/图片只保存在本设备，不会上传到服务器。只有你主动同步的片段或页面会发送给 ChatGPT；请保留原文件以防设备缓存被清理。"}
            </p>
            {existingSession ? (
@@ -6306,7 +6407,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
                ) : null}
                {!companionLoading && !companionError
                  ? companionComments.slice(0, 3).map((comment) => (
-@@ -2198,18 +2845,15 @@ export function App() {
+@@ -2198,18 +2854,15 @@ export function App() {
            onFullscreen={() => void openFullscreenReader()}
            fullscreenLabel={readerImmersive ? "退出全屏" : "全屏阅读"}
            immersive={readerImmersive}
@@ -6330,7 +6431,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
            initialScrollTop={readerScrollTop}
            onScrollPosition={setReaderScrollTop}
            {...readerProps}
-@@ -2220,28 +2864,22 @@ export function App() {
+@@ -2220,28 +2873,22 @@ export function App() {
            session={sessionBundle.session}
            pages={mangaPages}
            description={pageDescription}
@@ -6364,7 +6465,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
            initialScrollTop={readerScrollTop}
            onScrollPosition={setReaderScrollTop}
            {...readerProps}
-@@ -2251,6 +2889,7 @@ export function App() {
+@@ -2251,6 +2898,7 @@ export function App() {
          <AppearanceSheet
            value={appearance}
            backgroundImage={appearanceBackground}
@@ -6372,7 +6473,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
            onChange={setAppearance}
            onBackgroundChange={(dataUrl) => {
              if (!saveAppearanceBackground(dataUrl)) {
-@@ -2265,13 +2904,6 @@ export function App() {
+@@ -2265,13 +2913,6 @@ export function App() {
        {overlay === "cache" && sessionBundle ? <CacheSettings type={sessionBundle.session.type} remembered={remembered} liveReadingEnabled={sessionBundle.session.liveReadingEnabled} onRememberChange={changeRemember} onLiveReadingChange={(enabled) => void changeLiveReading(enabled)} onClear={clearCache} onClose={() => setOverlay(null)} /> : null}
        {overlay === "more" && sessionBundle ? (
          <MoreActions
@@ -6386,7 +6487,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
            onDiary={openDiary}
            onComplete={completeWork}
            onClose={() => setOverlay(null)}
-@@ -2283,12 +2915,15 @@ export function App() {
+@@ -2283,12 +2924,15 @@ export function App() {
            bundle={managedBook}
            cloudSourceEnabled={cloudSourceEnabled}
            comments={historyComments}
@@ -6403,7 +6504,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
            onDelete={(options) => void deleteManagedBook(options)}
            onClose={() => {
              setManagedBook(null);
-@@ -2296,41 +2931,26 @@ export function App() {
+@@ -2296,41 +2940,26 @@ export function App() {
            }}
          />
        ) : null}
@@ -6459,7 +6560,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
            onCancel={() => void cancelCurrentSync()}
          />
        ) : null}
-@@ -2432,6 +3052,61 @@ function nextFrame() {
+@@ -2432,6 +3061,57 @@ function nextFrame() {
    });
  }
  
@@ -6498,21 +6599,17 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
 +    history ? `最近讨论：\n${history}` : "",
 +    `小闪刚刚回复：${input.userText}`,
 +    "请像真正一起读书一样自然回应小闪，可以共鸣、追问、解释或接着聊；不要只说已读到哪里。回复不超过 450 个汉字。",
-+    "重要：先组织好最终回复，然后必须调用一次 publish_companion_comment，把最终回复原文完整写进 text；工具参数必须严格使用下面这些固定值：",
++    "重要：这是共读讨论回复。先组织好最终回复，在输出任何聊天文字之前，必须且只能先调用一次 save_reading_discussion_reply，把最终回复原文完整写进 text；不要用 publish_companion_comment 代替。工具参数必须严格使用下面这些固定值：",
 +    JSON.stringify(
 +      {
-+        sessionId: discussion.sessionId,
-+        position: discussion.position,
-+        mode: "light_chat",
-+        length: "normal",
++        discussionId: discussion.id,
 +        text: "这里替换为你准备发送给小闪的完整回复原文",
-+        source: "current_context",
 +        operationId: input.replyOperationId
 +      },
 +      null,
 +      2
 +    ),
-+    "工具保存成功后，再在普通聊天区发送完全相同的回复。不要调用进度、补课、书签或其他工具。"
++    "只有 save_reading_discussion_reply 返回保存成功后，才在普通聊天区发送完全相同的回复。不要调用进度、补课、书签或其他工具。"
 +  ]
 +    .filter(Boolean)
 +    .join("\n\n");
@@ -6521,7 +6618,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
  function deriveSourceEndpointBase(): string {
    if (typeof window === "undefined") return "/source";
    const match = window.location.pathname.match(/\/mcp\/([^/]+)/);
-@@ -2439,6 +3114,19 @@ function deriveSourceEndpointBase(): string {
+@@ -2439,6 +3119,19 @@ function deriveSourceEndpointBase(): string {
    return `/source/${match[1]}`;
  }
  
@@ -6541,7 +6638,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
  function toBookshelfItems(output?: OpenOutput): BookshelfItem[] {
    return (output?.bookshelfSessions ?? output?.recentSessions ?? []).map(
      ({ cacheState: _cacheState, ...item }) => ({
-@@ -2496,6 +3184,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
+@@ -2496,6 +3189,13 @@ function ensureSessionDefaults(session: ReadingSession): ReadingSession {
    };
  }
  
@@ -6556,7 +6653,7 @@ index e200d4efa50ff72f769fbe57ebb20fc46e90340a..985b36c59611f5a70f5afa30a8d774f2
    return {
      kind: type === "novel" ? "paragraph" : "page",
 diff --git a/web/src/Boot.test.tsx b/web/src/Boot.test.tsx
-index abd502381499a52c09052f004b1ebb609a5639f1..653d43156048f8f4878754f87116c10a930b40f3 100644
+index abd502381499a52c09052f004b1ebb609a5639f1..453b422c27a53a50d9e567c01adc729605e31835 100644
 --- a/web/src/Boot.test.tsx
 +++ b/web/src/Boot.test.tsx
 @@ -46,7 +46,7 @@ describe("Boot", () => {
@@ -6564,7 +6661,7 @@ index abd502381499a52c09052f004b1ebb609a5639f1..653d43156048f8f4878754f87116c10a
  
      expect(await screen.findByText("failed")).toBeInTheDocument();
 -    expect(screen.getByText("app-v24")).toBeInTheDocument();
-+    expect(screen.getByText("app-v0215")).toBeInTheDocument();
++    expect(screen.getByText("app-v0216")).toBeInTheDocument();
      expect(screen.getAllByText("present")).toHaveLength(3);
      expect(screen.getByText("1")).toBeInTheDocument();
      const diagnosticText = screen.getByRole("alert").textContent ?? "";
@@ -6573,12 +6670,12 @@ index abd502381499a52c09052f004b1ebb609a5639f1..653d43156048f8f4878754f87116c10a
  
      expect(html).toContain("data-startup-fallback");
 -    expect(html).toContain("app-v24");
-+    expect(html).toContain("app-v0215");
++    expect(html).toContain("app-v0216");
      expect(html).not.toContain("sourceText");
      expect(html).not.toContain("objectKey");
    });
 diff --git a/web/src/Boot.tsx b/web/src/Boot.tsx
-index c23bd37b0c0ac24d0be3669363489c7474aed801..e97a4228eca0147f498cf1e9711b58abdf8fc42d 100644
+index c23bd37b0c0ac24d0be3669363489c7474aed801..8a093a4186fa11e07ee6da43c226f654e1a66479 100644
 --- a/web/src/Boot.tsx
 +++ b/web/src/Boot.tsx
 @@ -7,8 +7,8 @@ import {
@@ -6587,13 +6684,33 @@ index c23bd37b0c0ac24d0be3669363489c7474aed801..e97a4228eca0147f498cf1e9711b58ab
  
 -const RESOURCE_VERSION = "app-v24";
 -const APP_VERSION = "0.2.7";
-+const RESOURCE_VERSION = "app-v0215";
++const RESOURCE_VERSION = "app-v0216";
 +const APP_VERSION = "0.2.19";
  
  type AppModule = {
    App: ComponentType;
+diff --git a/web/src/bridge/host.test.ts b/web/src/bridge/host.test.ts
+index d185c41381b7b13787f073928955776c9a7d4737..16cd265ff8a130239a89e53fba1c0e0e888395fb 100644
+--- a/web/src/bridge/host.test.ts
++++ b/web/src/bridge/host.test.ts
+@@ -91,6 +91,15 @@ describe("host bridge", () => {
+     });
+   });
+ 
++  it("reports a host-rejected follow-up instead of treating it as sent", async () => {
++    bridge.sendMessage.mockResolvedValueOnce({ isError: true });
++    const { askChatGpt } = await import("./host.js");
++
++    await expect(
++      askChatGpt("继续共读", { scrollToBottom: false, requestPip: false })
++    ).resolves.toBe(false);
++  });
++
+   it("starts the direct ChatGPT fullscreen request in the user gesture call stack", async () => {
+     const requestDisplayMode = vi.fn().mockResolvedValue(undefined);
+     if (window.openai) window.openai.requestDisplayMode = requestDisplayMode;
 diff --git a/web/src/bridge/host.ts b/web/src/bridge/host.ts
-index 08a28caba9ed1572f1b58d39264eed2545953d76..98c7b7a79fb8dcdb1c0e8c29d82b7c16ad9c38e2 100644
+index 08a28caba9ed1572f1b58d39264eed2545953d76..37a3c22170be7afacb6a1c5d12dc47ca1f127746 100644
 --- a/web/src/bridge/host.ts
 +++ b/web/src/bridge/host.ts
 @@ -31,7 +31,7 @@ export interface ReadingHostContext {
@@ -6605,7 +6722,7 @@ index 08a28caba9ed1572f1b58d39264eed2545953d76..98c7b7a79fb8dcdb1c0e8c29d82b7c16
      app.ontoolresult = (result) => publishToolResult(result as ToolCallResult);
      appReady = app.connect().catch(() => undefined);
    }
-@@ -54,25 +54,27 @@ export async function callTool(
+@@ -54,25 +54,30 @@ export async function callTool(
  
  export async function askChatGpt(
    prompt: string,
@@ -6625,9 +6742,13 @@ index 08a28caba9ed1572f1b58d39264eed2545953d76..98c7b7a79fb8dcdb1c0e8c29d82b7c16
    const bridge = connectApp();
    if (bridge) {
      await appReady;
-     await bridge.sendMessage({ role: "user", content: [{ type: "text", text: prompt }] });
+-    await bridge.sendMessage({ role: "user", content: [{ type: "text", text: prompt }] });
 -    return;
-+    return true;
++    const result = await bridge.sendMessage({
++      role: "user",
++      content: [{ type: "text", text: prompt }]
++    });
++    return result?.isError !== true;
    }
 -  await window.openai?.sendFollowUpMessage?.({
 +  if (!window.openai?.sendFollowUpMessage) return false;
@@ -7602,7 +7723,7 @@ index 69174cb6e0fa1488b279395be48c7a268315ba20..ebc2df6043f68263ff62efdfba1143a8
      </div>
 diff --git a/web/src/components/DiscussionDrawer.tsx b/web/src/components/DiscussionDrawer.tsx
 new file mode 100644
-index 0000000000000000000000000000000000000000..66f80ad6cf2cc3277e48e01d26bb12c68a4ffb83
+index 0000000000000000000000000000000000000000..7efb14c83e6567af26f622ddd3390c488c12ae89
 --- /dev/null
 +++ b/web/src/components/DiscussionDrawer.tsx
 @@ -0,0 +1,143 @@
@@ -7647,7 +7768,7 @@ index 0000000000000000000000000000000000000000..66f80ad6cf2cc3277e48e01d26bb12c6
 +
 +  const send = () => {
 +    const text = draft.trim();
-+    if (!text || props.sending) return;
++    if (!text || props.sending || props.awaitingReply) return;
 +    setDraft("");
 +    props.onSend(text);
 +  };
@@ -7723,7 +7844,7 @@ index 0000000000000000000000000000000000000000..66f80ad6cf2cc3277e48e01d26bb12c6
 +              value={draft}
 +              maxLength={4000}
 +              rows={2}
-+              placeholder="回复哥哥……"
++              placeholder={props.awaitingReply ? "哥哥正在回复并自动保存……" : "回复哥哥……"}
 +              onChange={(event) => setDraft(event.target.value)}
 +              onKeyDown={(event) => {
 +                if (event.key === "Enter" && !event.shiftKey) {
@@ -7736,10 +7857,10 @@ index 0000000000000000000000000000000000000000..66f80ad6cf2cc3277e48e01d26bb12c6
 +          <button
 +            type="button"
 +            className="discussion-send-button"
-+            disabled={!draft.trim() || props.sending}
++            disabled={!draft.trim() || props.sending || props.awaitingReply}
 +            onClick={send}
 +          >
-+            {props.sending ? "保存中…" : "发送"}
++            {props.sending ? "保存中…" : props.awaitingReply ? "等哥哥…" : "发送"}
 +          </button>
 +          <button type="button" className="discussion-close-round" onClick={props.onCloseRound}>
 +            结束并保存本轮共读
@@ -7914,10 +8035,10 @@ index 9da7b5bc2da28eb48feb0e64abf7c0ede1c199b2..3ddc6c42365ae46f3f06e49a3b3f7a42
    );
 diff --git a/web/src/components/ReadingDiscussion.test.tsx b/web/src/components/ReadingDiscussion.test.tsx
 new file mode 100644
-index 0000000000000000000000000000000000000000..87e5a1227ad09bc43bbc656a6c48e098854bb4cc
+index 0000000000000000000000000000000000000000..9f3dc85aa5b0af8d6be8a48bf46269e0f9e8308b
 --- /dev/null
 +++ b/web/src/components/ReadingDiscussion.test.tsx
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,127 @@
 +import { fireEvent, render, screen } from "@testing-library/react";
 +import { describe, expect, it, vi } from "vitest";
 +import type { CompanionComment, ReadingDiscussionDetail } from "@ss/shared";
@@ -8004,14 +8125,15 @@ index 0000000000000000000000000000000000000000..87e5a1227ad09bc43bbc656a6c48e098
 +  it("renders long ordered messages in one drawer and sends without a manual save step", () => {
 +    const onSend = vi.fn();
 +    const onCloseRound = vi.fn();
-+    const { container } = render(
++    const onClose = vi.fn();
++    const { container, rerender } = render(
 +      <DiscussionDrawer
 +        bookTitle="悉达多"
 +        detail={detail}
 +        awaitingReply
 +        onSend={onSend}
 +        onCloseRound={onCloseRound}
-+        onClose={vi.fn()}
++        onClose={onClose}
 +      />
 +    );
 +
@@ -8023,8 +8145,21 @@ index 0000000000000000000000000000000000000000..87e5a1227ad09bc43bbc656a6c48e098
 +    expect(container.querySelector(".discussion-drawer")).toHaveClass("discussion-drawer-expanded");
 +    expect(screen.getByRole("button", { name: "收起讨论窗口" })).toBeInTheDocument();
 +    expect(screen.getByText("哥哥正在回复并保存到这里…")).toBeInTheDocument();
-+    const input = screen.getByPlaceholderText("回复哥哥……");
++    const input = screen.getByPlaceholderText("哥哥正在回复并自动保存……");
 +    fireEvent.change(input, { target: { value: "那我们继续读。" } });
++    expect(screen.getByRole("button", { name: "等哥哥…" })).toBeDisabled();
++    expect(onSend).not.toHaveBeenCalled();
++
++    rerender(
++      <DiscussionDrawer
++        bookTitle="悉达多"
++        detail={detail}
++        awaitingReply={false}
++        onSend={onSend}
++        onCloseRound={onCloseRound}
++        onClose={onClose}
++      />
++    );
 +    fireEvent.click(screen.getByRole("button", { name: "发送" }));
 +    expect(onSend).toHaveBeenCalledWith("那我们继续读。");
 +    fireEvent.click(screen.getByRole("button", { name: "结束并保存本轮共读" }));
@@ -8517,7 +8652,7 @@ index d6fc26f0671c933c4b04b98900aebaa38f40b4b8..2416a6cc51c04a53e66898343f9355d6
    sessionId: string;
    title: string;
 diff --git a/web/src/features/source-cloud/cloud-source-client.test.ts b/web/src/features/source-cloud/cloud-source-client.test.ts
-index 2523197e6ba2317df34567a63db060563be71fcc..9eabdfbb12a8a372bc80ea0d9898fc437c7d3053 100644
+index 2523197e6ba2317df34567a63db060563be71fcc..84356dc9424c6134e693c9f33cb6a2d4cf7a7ecf 100644
 --- a/web/src/features/source-cloud/cloud-source-client.test.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.test.ts
 @@ -2,6 +2,166 @@ import { describe, expect, it, vi } from "vitest";
@@ -8693,13 +8828,13 @@ index 2523197e6ba2317df34567a63db060563be71fcc..9eabdfbb12a8a372bc80ea0d9898fc43
  
 -    expect(message).toContain("resourceVersion=app-v24");
 -    expect(message).toContain("appVersion=0.2.7");
-+    expect(message).toContain("resourceVersion=app-v0215");
++    expect(message).toContain("resourceVersion=app-v0216");
 +    expect(message).toContain("appVersion=0.2.19");
      expect(message).toContain("sourceEndpointBase=present");
      expect(message).toContain("uploadOrigin=https://worker.example.test");
      expect(message).toContain("uploadPath=/source/<token>/upload");
 diff --git a/web/src/features/source-cloud/cloud-source-client.ts b/web/src/features/source-cloud/cloud-source-client.ts
-index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..defcc27fd576615e9065c61b6d63e05fac873e62 100644
+index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..c3ab3a0f4b8b3bc1cddd3091ed6a9fd7b904bc38 100644
 --- a/web/src/features/source-cloud/cloud-source-client.ts
 +++ b/web/src/features/source-cloud/cloud-source-client.ts
 @@ -1,5 +1,14 @@
@@ -8730,7 +8865,7 @@ index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..defcc27fd576615e9065c61b6d63e05f
 +  updatedAt?: string;
 +};
 +
-+const RESOURCE_VERSION = "app-v0215";
++const RESOURCE_VERSION = "app-v0216";
 +const APP_VERSION = "0.2.19";
  const MAX_BRIDGE_NOVEL_UPLOAD_BYTES = 2 * 1024 * 1024;
  
@@ -8875,7 +9010,7 @@ index fd4eb1f9e9ed33fb1770218292e9d94f9329c900..defcc27fd576615e9065c61b6d63e05f
      const uploadUrl = `${this.endpointBase}${path}`;
      let response: Response;
 diff --git a/web/src/main.tsx b/web/src/main.tsx
-index b9391dda60310d338ab66c41abb279614aae667b..848c37c98af2675c7a377f453e51ef950a379405 100644
+index b9391dda60310d338ab66c41abb279614aae667b..774d02c313491aeabb03d3677c6bebb92326d957 100644
 --- a/web/src/main.tsx
 +++ b/web/src/main.tsx
 @@ -15,6 +15,6 @@ if (rootElement) {
@@ -8883,7 +9018,7 @@ index b9391dda60310d338ab66c41abb279614aae667b..848c37c98af2675c7a377f453e51ef95
    document.body.insertAdjacentHTML(
      "afterbegin",
 -    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v24</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
-+    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0215</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
++    '<main class="boot-diagnostics" role="alert"><strong>L&amp;L reading nest startup</strong><p>Missing app root. Please refresh the widget.</p><dl><div><dt>resourceVersion</dt><dd>app-v0216</dd></div><div><dt>bootStage</dt><dd>missing-root</dd></div></dl></main>'
    );
  }
 diff --git a/web/src/pages/Home.test.tsx b/web/src/pages/Home.test.tsx
@@ -10551,7 +10686,7 @@ index f68bf4f0daa48f16dc61904941146c825a41511c..3e3896ff50a357ccc5bd06206180a66d
 +  background: var(--backdrop-base);
  }
 diff --git a/web/vite.config.ts b/web/vite.config.ts
-index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..020acbccdb636fa216d92a2261fe3247b4f65367 100644
+index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..49157bae70464a549d84f406ae7fba9773d85941 100644
 --- a/web/vite.config.ts
 +++ b/web/vite.config.ts
 @@ -1,14 +1,27 @@
@@ -10559,7 +10694,7 @@ index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..020acbccdb636fa216d92a2261fe3247
  import react from "@vitejs/plugin-react";
 -import { viteSingleFile } from "vite-plugin-singlefile";
 +
-+const WIDGET_ASSET_BASE = "/widget-assets/v0215/";
++const WIDGET_ASSET_BASE = "/widget-assets/v0216/";
  
  export default defineConfig({
 -  plugins: [react(), viteSingleFile()],
@@ -10576,10 +10711,10 @@ index d41559e772ab22d5fe7f1e2c349d0cf53c01eaea..020acbccdb636fa216d92a2261fe3247
 +    rollupOptions: {
 +      output: {
 +        codeSplitting: false,
-+        entryFileNames: "ll-reading-nest-v0215.bundle.js",
++        entryFileNames: "ll-reading-nest-v0216.bundle.js",
 +        assetFileNames: (assetInfo) =>
 +          assetInfo.names.some((name) => name.endsWith(".css"))
-+            ? "ll-reading-nest-v0215.css"
++            ? "ll-reading-nest-v0216.css"
 +            : "assets/[name]-[hash][extname]"
 +      }
 +    }
